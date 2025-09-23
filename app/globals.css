@@ -1,0 +1,53 @@
+@import "tailwindcss";
+/* @plugin "@tailwindcss/forms"; */
+
+:root { color-scheme: light dark; }
+@theme inline {
+  --color-primary: var(--color-green-700);
+  --color-secondary: #e4f2e8; /* Example: Blue */
+  --color-my-custom-shade-500: #123456;
+
+  --color-brand-50: #eef7ff;
+  --color-brand-100: #d9edff;
+  --color-brand-200: #b6ddfe;
+  --color-brand-300: #86c7fd;
+  --color-brand-400: #54a9f4;
+  --color-brand-500: #3f90de;
+  --color-brand-600: #2e73bd;
+  --color-brand-700: #255c98;
+  --color-brand-800: #224e7d;
+  --color-brand-900: #044716;
+
+  --bg-brand-800: #185e2a;
+  --bg-brand-900: #093d17;
+
+  --border-brand-900: var(--bg-brand-900);
+
+  --shadow-soft: 0 10px 25px -10px rgba(0, 0, 0, 0.25);
+}
+.container-shell { @apply min-h-dvh bg-white text-black; }
+
+.card { @apply bg-gray-50 shadow-soft border-0 p-5 mb-1 lg:m-1 lg:mb-1 ;}
+.card-bg { @apply text-xs bg-green-700 text-white;}
+.card-pad { @apply lg:p-2 md:p-2;}
+.card-label { @apply text-xs text-black;}
+.card-content { @apply flex items-baseline gap-1;}
+.card-sub-content { @apply text-sm font-semibold;}
+
+.kpi-business-card { @apply lg:m-0 m-3 flex items-center bg-white p-2 shadow-soft;}
+.kpi-business-icon-card { @apply flex-shrink-0 bg-primary text-white p-8 lg:p-1 lg:rounded-sm rounded-2xl;}
+.kpi-business-content-card { @apply lg:ml-2 ml-3 flex flex-col min-w-0;}
+.kpi-business-content-value {@apply text-4xl lg:text-xs font-bold text-gray-800 truncate;}
+.kpi-business-content-label {@apply lg:text-xs text-gray-500 truncate;}
+
+.btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium border border-transparent shadow-sm transition; }
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium border border-transparent shadow-sm transition;
+  @apply bg-brand-900 hover:bg-brand-600 text-white;
+}
+.btn-ghost {
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium border border-transparent shadow-sm transition;
+  @apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-200;
+}
+.input { @apply block w-full rounded-md border-gray-300 dark:border-gray-700 bg-white focus:border-brand-500 focus:ring-brand-500; }
+.label { @apply text-sm font-medium dark:text-black; }
