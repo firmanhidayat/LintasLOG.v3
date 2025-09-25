@@ -1,11 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import lintaslogo from "@/images/lintaslog-logo.png";
 import bglintas from "@/images/bg-1.png";
+
+import { useAuth } from "@/components/providers/AuthProvider";
+
+// i18n helpers
+import { loadDictionaries, t, getLang, type Lang } from "@/lib/i18n";
+import { mapFastapi422, mapCommonErrors } from "@/lib/i18n-fastapi";
+// ⬇️ Tambahan: LangToggle
+import LangToggle from "@/components/LangToggle";
 
 const LOGIN_URL = "https://odoodev.linitekno.com/api-tms/auth/login";
 
@@ -45,6 +53,11 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const { login: authLogin } = useAuth();
+
+  // i18n ready state
+  const [i18nReady, setI18nReady] = useState(false);
+
   // error states
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErr, setFieldErr] = useState<{
@@ -58,40 +71,20 @@ export default function LoginPage() {
 
   const router = useRouter();
 
+  useEffect(() => {
+    // pre-load dictionaries once
+    loadDictionaries().then(() => setI18nReady(true));
+  }, []);
+
   const canSubmit = useMemo(
     () => email.trim() !== "" && password.trim().length >= 4 && !loading,
     [email, password, loading]
   );
 
   function parse422(detail: Fastapi422["detail"]) {
-    const next: { email?: string; password?: string } = {};
-    const generic: string[] = [];
-
-    for (const item of detail) {
-      const loc = item.loc ?? [];
-      const lastStr = [...loc].reverse().find((x) => typeof x === "string") as
-        | "email"
-        | "password"
-        | "role"
-        | "tab"
-        | (string & {})
-        | undefined;
-
-      const msg = item.msg || item.type || "Invalid";
-      switch (lastStr) {
-        case "email":
-          next.email = next.email ? `${next.email}; ${msg}` : msg;
-          break;
-        case "password":
-          next.password = next.password ? `${next.password}; ${msg}` : msg;
-          break;
-        // role/tab diabaikan untuk sementara
-        default:
-          generic.push(msg);
-      }
-    }
-
-    setFieldErr(next);
+    const lang = getLang();
+    const { fieldErrors, generic } = mapFastapi422(detail, lang as Lang);
+    setFieldErr(fieldErrors);
     setFormError(generic.length ? generic.join(" | ") : null);
   }
 
@@ -99,21 +92,39 @@ export default function LoginPage() {
     e.preventDefault();
     if (!canSubmit) return;
 
+    // setLoading(true);
+    // setFormError(null);
+    // setFieldErr({});
+    // setVerifyHint({ show: false });
+
     setLoading(true);
     setFormError(null);
     setFieldErr({});
     setVerifyHint({ show: false });
 
     try {
+      // const res = await fetch(LOGIN_URL, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Accept: "application/json",
+      //     // (opsional) bantu BE kalau nanti mau i18n di server
+      //     "Accept-Language": getLang(),
+      //   },
+      //   // HANYA kirim email & password (role di-remark)
+      //   body: JSON.stringify({ login: email, password }),
+      //   credentials: "include",
+      // });
+
       const res = await fetch(LOGIN_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          "Accept-Language": getLang(),
         },
-        // HANYA kirim email & password (role di-remark)
         body: JSON.stringify({ login: email, password }),
-        credentials: "include",
+        credentials: "include", // <-- tetap jika backend pakai cookie; kalau token-only, boleh dihapus
       });
 
       const raw: unknown = await res.json().catch(() => null);
@@ -123,17 +134,18 @@ export default function LoginPage() {
         if (data && isFastapi422Detail(data.detail)) {
           parse422(data.detail);
         } else {
-          setFormError("Validasi gagal (422).");
+          setFormError(t("alerts.validation422"));
         }
         return;
       }
 
       if (!res.ok) {
         const data = raw as HttpErrorPayload | null;
-        const msg =
+        const msgFromServer =
           (typeof data?.detail === "string" && data.detail) ||
           (typeof data?.message === "string" && data.message) ||
-          `Login gagal (HTTP ${res.status}).`;
+          null;
+        const msg = msgFromServer ?? mapCommonErrors("http", res.status);
         setFormError(msg);
         return;
       }
@@ -144,14 +156,16 @@ export default function LoginPage() {
         typeof ok.login !== "string" ||
         typeof ok.mail_verified !== "boolean"
       ) {
-        setFormError("Format respons tidak sesuai.");
+        setFormError(t("alerts.formatInvalid"));
         return;
       }
 
-      const store = remember ? localStorage : sessionStorage;
-      store.setItem("llog.login", ok.login);
-      store.setItem("llog.mail_verified", String(ok.mail_verified));
-      // store.setItem("llog.role", tab); // <- tetap di-remark
+      // const store = remember ? localStorage : sessionStorage;
+      // store.setItem("llog.login", ok.login);
+      // store.setItem("llog.mail_verified", String(ok.mail_verified));
+      // // store.setItem("llog.role", tab); // <- tetap di-remark
+
+      authLogin({ login: ok.login, mail_verified: ok.mail_verified, remember });
 
       if (ok.mail_verified) {
         router.push("/dashboard");
@@ -159,13 +173,27 @@ export default function LoginPage() {
         setVerifyHint({ show: true, login: ok.login });
       }
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Terjadi kesalahan jaringan.";
+      const msg = mapCommonErrors("network");
       setFormError(msg);
     } finally {
       setLoading(false);
     }
   }
+
+  // Render awal sebelum kamus siap
+  if (!i18nReady) {
+    return (
+      <div className="grid min-h-screen place-items-center">
+        <div className="text-sm text-gray-500">
+          {/** keep minimal */}Loading…
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Aman memanggil t() setelah i18nReady
+  const roleLabel =
+    tab === "shipper" ? t("roles.shipper") : t("roles.transporter");
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
@@ -173,15 +201,20 @@ export default function LoginPage() {
       <div className="flex items-center justify-center bg-white px-8">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="mb-8 text-center">
+          <div className="mb-4 text-center">
             <Image
               src={lintaslogo}
-              alt="LintasLOG"
+              alt={t("app.brand")}
               width={180}
               height={40}
               priority
               className="mx-auto"
             />
+          </div>
+
+          {/* ⬇️ Toggle Bahasa di area form (kanan atas) */}
+          <div className="mb-2 flex items-center justify-end">
+            <LangToggle />
           </div>
 
           {/* Tabs (UI saja, belum kirim ke API) */}
@@ -197,7 +230,7 @@ export default function LoginPage() {
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                Shipper
+                {t("tabs.shipper")}
               </button>
               <button
                 type="button"
@@ -209,18 +242,17 @@ export default function LoginPage() {
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                Transporter
+                {t("tabs.transporter")}
               </button>
             </nav>
-            {/* Tidak render fieldErr.role lagi */}
           </div>
 
           {/* Form Login */}
           <div className="mb-6 text-center">
             <h2 className="text-2xl font-bold text-gray-800">
-              Sign In as {tab === "shipper" ? "Shipper" : "Transporter"}
+              {t("title.signin", { role: roleLabel })}
             </h2>
-            <p className="mt-1 text-gray-400">Sign in to stay connected</p>
+            <p className="mt-1 text-gray-400">{t("subtitle.signin")}</p>
           </div>
 
           {/* Alert umum */}
@@ -240,14 +272,14 @@ export default function LoginPage() {
               className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
             >
               {verifyHint.login
-                ? `Akun ${verifyHint.login} belum terverifikasi. Silakan verifikasi email terlebih dahulu.`
-                : "Email belum terverifikasi. Silakan verifikasi email terlebih dahulu."}
+                ? t("alerts.unverifiedWithLogin", { login: verifyHint.login })
+                : t("alerts.unverified")}
               <div className="mt-2">
                 <Link
                   href="/verify-email"
                   className="text-sm font-medium text-amber-900 underline underline-offset-2"
                 >
-                  Buka halaman verifikasi
+                  {t("alerts.openVerifyPage")}
                 </Link>
               </div>
             </div>
@@ -259,7 +291,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                Email
+                {t("form.email.label")}
               </label>
               <input
                 id="email"
@@ -269,7 +301,7 @@ export default function LoginPage() {
                 className={`mt-1 w-full rounded-md border px-3 py-2 focus:border-primary focus:ring-primary ${
                   fieldErr.email ? "border-red-400" : "border-gray-300"
                 }`}
-                placeholder="you@example.com"
+                placeholder={t("form.email.placeholder")}
                 autoComplete="username"
                 required
               />
@@ -283,7 +315,7 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700"
               >
-                Password
+                {t("form.password.label")}
               </label>
               <input
                 id="password"
@@ -293,7 +325,7 @@ export default function LoginPage() {
                 className={`mt-1 w-full rounded-md border px-3 py-2 focus:border-primary focus:ring-primary ${
                   fieldErr.password ? "border-red-400" : "border-gray-300"
                 }`}
-                placeholder="********"
+                placeholder={t("form.password.placeholder")}
                 autoComplete="current-password"
                 minLength={4}
                 required
@@ -312,13 +344,15 @@ export default function LoginPage() {
                   onChange={(e) => setRemember(e.currentTarget.checked)}
                   className="mr-2 rounded border-gray-300 text-primary focus:ring-primary"
                 />
-                <span className="text-sm text-gray-600">Remember me</span>
+                <span className="text-sm text-gray-600">
+                  {t("form.remember")}
+                </span>
               </label>
               <Link
                 href="/maccount/reset"
                 className="text-sm font-medium text-primary hover:underline"
               >
-                Forgot password?
+                {t("form.forgot")}
               </Link>
             </div>
 
@@ -349,21 +383,21 @@ export default function LoginPage() {
                       />
                       <path d="M21 12a9 9 0 0 1-9 9" strokeWidth="4" />
                     </svg>
-                    Signing in…
+                    {t("form.submitting")}
                   </span>
                 ) : (
-                  "Sign In"
+                  t("form.submit")
                 )}
               </button>
             </div>
 
             <p className="mt-4 text-center text-sm text-gray-500">
-              Don&apos;t have an account?{" "}
+              {t("form.noAccount")}{" "}
               <Link
                 href="/maccount/signup"
                 className="text-sm font-medium text-primary hover:underline"
               >
-                Click here to sign up
+                {t("form.signup")}
               </Link>
             </p>
           </form>
@@ -372,7 +406,12 @@ export default function LoginPage() {
 
       {/* Kanan: Background full */}
       <div className="relative hidden min-h-screen lg:block">
-        <Image src={bglintas} alt="Background" fill className="object-cover" />
+        <Image
+          src={bglintas}
+          alt={t("app.bgAlt")}
+          fill
+          className="object-cover"
+        />
       </div>
     </div>
   );

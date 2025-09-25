@@ -12,6 +12,8 @@ import {
 import AvatarMenu from "@/components/AvatarMenu";
 import { LogoutButton } from "@/components/buttons/LogoutButton";
 import { UserCog, KeyRound, Activity } from "lucide-react";
+// ⬇️ Tambahan: LangToggle
+import LangToggle from "@/components/LangToggle";
 
 const ICON_BTN_BASE =
   "inline-flex items-center justify-center rounded-full p-0 " +
@@ -83,8 +85,13 @@ export default function Header({
             </form>
           </div>
 
-          {/* KANAN: Icon Buttons + Avatar dropdown */}
+          {/* KANAN: LangToggle + Icon Buttons + Avatar dropdown */}
           <div className="ml-auto flex items-center gap-1">
+            {/* ⬇️ LangToggle: tampil di semua ukuran; bisa di-hide di xs jika mau */}
+            <div className="mr-1">
+              <LangToggle />
+            </div>
+
             {/* Search (mobile trigger) */}
             <button
               type="button"
@@ -168,19 +175,10 @@ export default function Header({
                 </li>
 
                 <li role="none">
-                  {/* <Link
-                    href="/maccount/logout/"
-                    role="menuitem"
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-red-600 hover:bg-gray-100"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                  </Link> */}
-
                   <LogoutButton
                     role="menuitem"
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-red-600 hover:bg-gray-100"
-                  ></LogoutButton>
+                  />
                 </li>
               </ul>
             </details>

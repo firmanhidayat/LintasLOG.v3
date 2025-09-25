@@ -1,0 +1,65 @@
+{
+    "app": {
+        "brand": "LintasLOG",
+        "bgAlt": "Background"
+    },
+    "tabs": {
+        "shipper": "Shipper",
+        "transporter": "Transporter"
+    },
+    "title": {
+        "signin": "Sign In as {{role}}"
+    },
+    "subtitle": {
+        "signin": "Sign in to stay connected"
+    },
+    "form": {
+        "email": {
+            "label": "Email",
+            "placeholder": "you@example.com"
+        },
+        "password": {
+            "label": "Password",
+            "placeholder": "********"
+        },
+        "remember": "Remember me",
+        "forgot": "Forgot password?",
+        "submit": "Sign In",
+        "submitting": "Signing in…",
+        "noAccount": "Don't have an account?",
+        "signup": "Click here to sign up"
+    },
+    "states": {
+        "loading": "Loading…"
+    },
+    "alerts": {
+        "genericError": "Something went wrong.",
+        "validation422": "Validation failed (422).",
+        "formatInvalid": "Response format is invalid.",
+        "loginFailed": "Login failed (HTTP {{status}}).",
+        "networkError": "Network error occurred.",
+        "unverified": "Email is not verified. Please verify your email first.",
+        "unverifiedWithLogin": "Account {{login}} is not verified. Please verify your email first.",
+        "openVerifyPage": "Open verification page"
+    },
+    "roles": {
+        "shipper": "Shipper",
+        "transporter": "Transporter"
+    },
+    "fields": {
+        "email": "email",
+        "password": "password"
+    },
+    "errors": {
+        "required": "{{field}} is required.",
+        "invalid": "Invalid {{field}}.",
+        "minLength": "{{field}} must be at least {{min}} characters.",
+        "maxLength": "{{field}} must be at most {{max}} characters.",
+        "email": "Please enter a valid email address.",
+        "credentials": "Invalid email or password.",
+        "inactive": "Your account is inactive.",
+        "blocked": "Your account is blocked.",
+        "server": "Server error. Please try again.",
+        "rateLimited": "Too many attempts. Please try again later."
+    }
+}

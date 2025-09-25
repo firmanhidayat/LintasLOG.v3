@@ -1,0 +1,65 @@
+{
+    "app": {
+        "brand": "LintasLOG",
+        "bgAlt": "Latar Belakang"
+    },
+    "tabs": {
+        "shipper": "Shipper",
+        "transporter": "Transporter"
+    },
+    "title": {
+        "signin": "Masuk sebagai {{role}}"
+    },
+    "subtitle": {
+        "signin": "Masuk untuk tetap terhubung"
+    },
+    "form": {
+        "email": {
+            "label": "Email",
+            "placeholder": "you@example.com"
+        },
+        "password": {
+            "label": "Kata Sandi",
+            "placeholder": "********"
+        },
+        "remember": "Ingat saya",
+        "forgot": "Lupa kata sandi?",
+        "submit": "Masuk",
+        "submitting": "Sedang masuk…",
+        "noAccount": "Belum punya akun?",
+        "signup": "Klik di sini untuk daftar"
+    },
+    "states": {
+        "loading": "Memuat…"
+    },
+    "alerts": {
+        "genericError": "Terjadi kesalahan.",
+        "validation422": "Validasi gagal (422).",
+        "formatInvalid": "Format respons tidak sesuai.",
+        "loginFailed": "Login gagal (HTTP {{status}}).",
+        "networkError": "Terjadi kesalahan jaringan.",
+        "unverified": "Email belum terverifikasi. Silakan verifikasi terlebih dahulu.",
+        "unverifiedWithLogin": "Akun {{login}} belum terverifikasi. Silakan verifikasi terlebih dahulu.",
+        "openVerifyPage": "Buka halaman verifikasi"
+    },
+    "roles": {
+        "shipper": "Shipper",
+        "transporter": "Transporter"
+    },
+    "fields": {
+        "email": "email",
+        "password": "kata sandi"
+    },
+    "errors": {
+        "required": "{{field}} wajib diisi.",
+        "invalid": "{{field}} tidak valid.",
+        "minLength": "{{field}} minimal {{min}} karakter.",
+        "maxLength": "{{field}} maksimal {{max}} karakter.",
+        "email": "Masukkan alamat email yang benar.",
+        "credentials": "Email atau kata sandi salah.",
+        "inactive": "Akun Anda tidak aktif.",
+        "blocked": "Akun Anda diblokir.",
+        "server": "Terjadi kesalahan server. Coba lagi.",
+        "rateLimited": "Terlalu banyak percobaan. Coba lagi nanti."
+    }
+}

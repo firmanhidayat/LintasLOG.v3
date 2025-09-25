@@ -1,6 +1,5 @@
-// app/layout.tsx
 import "./globals.css";
-import SessionProvider from "@/components/providers/SessionProvider";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 export const metadata = {
   title: "Lini Trans Logistik",
@@ -15,10 +14,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="container-shell bg-white text-black">
-        <SessionProvider>
-          {/* Jangan render Header/Sidebar di root; biarkan di nested layout */}
+        <AuthProvider>
           <main className="min-h-[60vh]">{children}</main>
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   );
