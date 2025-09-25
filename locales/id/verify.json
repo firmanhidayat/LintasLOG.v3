@@ -1,0 +1,35 @@
+{
+    "app": {
+        "brand": "LintasLOG",
+        "bgAlt": "Latar belakang"
+    },
+    "verify": {
+        "title": "Verifikasi Email",
+        "subtitle": "Kami sedang memproses token verifikasi Anda.",
+        "ui": {
+            "pleaseWait": "Mohon tunggu sebentar…",
+            "waitingToken": "Menunggu token…"
+        },
+        "a11y": {
+            "verifying": "Memverifikasi…"
+        },
+        "result": {
+            "success": "Email berhasil diverifikasi!",
+            "failed": "Verifikasi gagal"
+        },
+        "cta": {
+            "goSignin": "Lanjut Masuk",
+            "backSignin": "Kembali ke Sign In",
+            "tryAgain": "Coba Lagi",
+            "createAccount": "Daftar akun baru"
+        },
+        "errors": {
+            "tokenMissing": "Token tidak ditemukan di URL.",
+            "http": "Gagal verifikasi (HTTP {{code}})",
+            "network": "Terjadi kesalahan jaringan."
+        },
+        "footer": {
+            "help": "Tidak menerima email? Periksa folder spam atau hubungi admin."
+        }
+    }
+}

@@ -1,0 +1,31 @@
+{
+    "app": {
+        "brand": "LintasLOG",
+        "bgAlt": "Background"
+    },
+    "reset": {
+        "title": "Reset Password",
+        "subtitle": "Enter your email and we’ll send instructions to reset your password.",
+        "form": {
+            "email": {
+                "label": "Email",
+                "placeholder": "you@example.com"
+            }
+        },
+        "ui": {
+            "submit": "Reset",
+            "sending": "Sending…"
+        },
+        "alerts": {
+            "sent": "We’ve sent reset instructions to your email.",
+            "failed": "Failed to send reset email. Please try again.",
+            "networkError": "Network error. Please try again."
+        },
+        "errors": {
+            "emailRequired": "Email is required."
+        },
+        "footer": {
+            "backToSignin": "Back to Sign In"
+        }
+    }
+}

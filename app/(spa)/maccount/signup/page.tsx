@@ -1,11 +1,21 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import lintaslogo from "@/images/lintaslog-logo.png";
 import bglintas from "@/images/bg-1.png";
 import { useRouter } from "next/navigation";
+
+// i18n
+import {
+  loadDictionaries,
+  t,
+  getLang,
+  onLangChange,
+  type Lang,
+} from "@/lib/i18n";
+import LangToggle from "@/components/LangToggle";
 
 const REGISTER_URL = "https://odoodev.linitekno.com/api-tms/auth/register";
 
@@ -14,15 +24,6 @@ type FastapiErrorItem = {
   msg: string;
   type: string;
 };
-
-// type Fastapi422 = {
-//   detail: FastapiErrorItem[];
-// };
-
-// type HttpErrorPayload = {
-//   detail?: string | Fastapi422["detail"];
-//   message?: string;
-// };
 
 type TmsUserType = "shipper" | "transporter";
 
@@ -56,25 +57,53 @@ function isFastapiErrorItems(v: unknown): v is FastapiErrorItem[] {
 
 export default function SignUpPage() {
   const router = useRouter();
+
+  // i18n state
+  const [i18nReady, setI18nReady] = useState(false);
+  const [activeLang, setActiveLang] = useState<Lang>(getLang());
+
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
 
+  useEffect(() => {
+    let mounted = true;
+
+    // muat kamus (kamu bisa merge signup.json ke loader kamu)
+    loadDictionaries().then(() => {
+      if (!mounted) return;
+      setI18nReady(true);
+      setActiveLang(getLang());
+    });
+
+    // reactive i18n
+    const off = onLangChange((lang) => {
+      if (!mounted) return;
+      // kamus sudah di-cache; cukup trigger re-render
+      setActiveLang(lang);
+    });
+
+    return () => {
+      mounted = false;
+      off();
+    };
+  }, []);
+
   function parseFastapiError(payload: unknown): string {
     if (isRecord(payload)) {
       const detail = (payload as Record<string, unknown>)["detail"];
       if (isFastapiErrorItems(detail)) {
         const first = detail[0];
-        return first?.msg ?? "Validation error";
+        return first?.msg ?? t("signup.alerts.validation");
       }
       if (typeof detail === "string") return detail;
 
       const message = (payload as Record<string, unknown>)["message"];
       if (typeof message === "string") return message;
     }
-    return "Registration failed";
+    return t("signup.alerts.failed");
   }
 
   async function handleSubmit(
@@ -85,8 +114,8 @@ export default function SignUpPage() {
     setOkMsg(null);
 
     const form = new FormData(e.currentTarget);
-    const accName = String(form.get("accountName") || "").trim(); // name
-    const email = String(form.get("email") || "").trim(); // login
+    const accName = String(form.get("accountName") || "").trim();
+    const email = String(form.get("email") || "").trim();
     const phone = String(form.get("phone") || "").trim();
     const userType = String(
       form.get("tms_user_type") || ""
@@ -95,29 +124,29 @@ export default function SignUpPage() {
     const confirmPassword = String(form.get("confirmPassword") || "");
 
     if (!accName) {
-      setErrMsg("Complete Name wajib diisi.");
+      setErrMsg(t("signup.errors.accountNameRequired"));
       return;
     }
     if (!email) {
-      setErrMsg("Email (sebagai login) wajib diisi.");
+      setErrMsg(t("signup.errors.emailRequired"));
       return;
     }
     if (!userType || (userType !== "shipper" && userType !== "transporter")) {
-      setErrMsg("Pilih jenis user: shipper atau transporter.");
+      setErrMsg(t("signup.errors.userTypeRequired"));
       return;
     }
     if (password !== confirmPassword) {
-      setErrMsg("Password dan konfirmasi tidak sama.");
+      setErrMsg(t("signup.errors.passwordMismatch"));
       return;
     }
     if (password.length < 8) {
-      setErrMsg("Password minimal 8 karakter.");
+      setErrMsg(t("signup.errors.passwordMin"));
       return;
     }
 
     const payload: RegisterPayload = {
-      login: email, // <- dipisah: login = email
-      name: accName, // <- name = account name
+      login: email,
+      name: accName,
       mobile: phone,
       password,
       tms_user_type: userType,
@@ -127,7 +156,11 @@ export default function SignUpPage() {
       setSubmitting(true);
       const res = await fetch(REGISTER_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "Accept-Language": getLang(), // kirim lang ke BE
+        },
         body: JSON.stringify(payload),
       });
 
@@ -144,22 +177,32 @@ export default function SignUpPage() {
         return;
       }
 
-      const store = sessionStorage;
-      if (res.ok) {
-        store.setItem("llog.emailcurrent", email);
-      }
+      // simpan email untuk halaman success / verify
+      sessionStorage.setItem("llog.emailcurrent", email);
+      sessionStorage.setItem(
+        "llog.signup_gate",
+        JSON.stringify({ ok: true, ts: Date.now() })
+      );
 
-      setOkMsg("Registrasi berhasil.");
+      setOkMsg(t("signup.alerts.success"));
       setTimeout(() => {
         router.push("/maccount/signup/success");
       }, 200);
     } catch (err) {
       setErrMsg(
-        err instanceof Error ? err.message : "Network error. Coba lagi."
+        err instanceof Error ? err.message : t("signup.alerts.networkError")
       );
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (!i18nReady) {
+    return (
+      <div className="grid min-h-screen place-items-center">
+        <div className="text-sm text-gray-500">Loading…</div>
+      </div>
+    );
   }
 
   return (
@@ -168,7 +211,7 @@ export default function SignUpPage() {
       <div className="relative hidden min-h-screen lg:block">
         <Image
           src={bglintas}
-          alt="Background"
+          alt={t("app.bgAlt")}
           fill
           className="object-cover"
           priority
@@ -179,10 +222,10 @@ export default function SignUpPage() {
       <div className="flex items-center justify-center bg-white px-8 py-10">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="mb-8 text-center">
+          <div className="mb-4 text-center">
             <Image
               src={lintaslogo}
-              alt="LintasLOG"
+              alt={t("app.brand")}
               width={180}
               height={40}
               priority
@@ -190,7 +233,20 @@ export default function SignUpPage() {
             />
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          {/* Toggle Bahasa */}
+          <div className="mb-6 flex items-center justify-end">
+            <LangToggle />
+          </div>
+
+          {/* Judul */}
+          <div className="mb-6 text-center">
+            <h2 className="text-2xl font-bold text-gray-800">
+              {t("signup.title")}
+            </h2>
+            <p className="mt-1 text-gray-400">{t("signup.subtitle")}</p>
+          </div>
+
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             {/* Alert */}
             {errMsg && (
               <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -209,7 +265,7 @@ export default function SignUpPage() {
                 htmlFor="accountName"
                 className="block text-sm font-medium text-gray-700"
               >
-                Complete Name
+                {t("signup.form.accountName.label")}
               </label>
               <input
                 id="accountName"
@@ -217,7 +273,7 @@ export default function SignUpPage() {
                 type="text"
                 required
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                placeholder="Nama akun / perusahaan / display name"
+                placeholder={t("signup.form.accountName.placeholder")}
                 autoComplete="name"
               />
             </div>
@@ -228,7 +284,7 @@ export default function SignUpPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                Email / Username
+                {t("signup.form.email.label")}
               </label>
               <input
                 id="email"
@@ -236,7 +292,7 @@ export default function SignUpPage() {
                 type="email"
                 required
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                placeholder="you@example.com"
+                placeholder={t("signup.form.email.placeholder")}
                 autoComplete="email"
               />
             </div>
@@ -247,7 +303,7 @@ export default function SignUpPage() {
                 htmlFor="phone"
                 className="block text-sm font-medium text-gray-700"
               >
-                Phone no
+                {t("signup.form.phone.label")}
               </label>
               <input
                 id="phone"
@@ -255,7 +311,7 @@ export default function SignUpPage() {
                 type="tel"
                 inputMode="tel"
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                placeholder="+62 812-xxxx-xxxx"
+                placeholder={t("signup.form.phone.placeholder")}
                 autoComplete="tel"
               />
             </div>
@@ -266,7 +322,7 @@ export default function SignUpPage() {
                 htmlFor="tms_user_type"
                 className="block text-sm font-medium text-gray-700"
               >
-                User Type
+                {t("signup.form.userType.label")}
               </label>
               <select
                 id="tms_user_type"
@@ -276,10 +332,10 @@ export default function SignUpPage() {
                 defaultValue=""
               >
                 <option value="" disabled>
-                  Pilih tipe user
+                  {t("signup.form.userType.placeholder")}
                 </option>
-                <option value="shipper">Shipper</option>
-                <option value="transporter">Transporter</option>
+                <option value="shipper">{t("roles.shipper")}</option>
+                <option value="transporter">{t("roles.transporter")}</option>
               </select>
             </div>
 
@@ -290,7 +346,7 @@ export default function SignUpPage() {
                   htmlFor="password"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Password
+                  {t("signup.form.password.label")}
                 </label>
                 <div className="mt-1 flex">
                   <input
@@ -300,16 +356,20 @@ export default function SignUpPage() {
                     required
                     minLength={8}
                     className="w-full rounded-l-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                    placeholder="Min. 8 characters"
+                    placeholder={t("signup.form.password.placeholder")}
                     autoComplete="new-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPwd(!showPwd)}
                     className="rounded-r-md border border-l-0 border-gray-300 px-3 text-sm text-gray-600 hover:bg-gray-50"
-                    aria-label={showPwd ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPwd
+                        ? t("signup.a11y.hidePassword")
+                        : t("signup.a11y.showPassword")
+                    }
                   >
-                    {showPwd ? "Hide" : "Show"}
+                    {showPwd ? t("signup.ui.hide") : t("signup.ui.show")}
                   </button>
                 </div>
               </div>
@@ -319,7 +379,7 @@ export default function SignUpPage() {
                   htmlFor="confirmPassword"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Confirm password
+                  {t("signup.form.confirm.label")}
                 </label>
                 <div className="mt-1 flex">
                   <input
@@ -329,7 +389,7 @@ export default function SignUpPage() {
                     required
                     minLength={8}
                     className="w-full rounded-l-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                    placeholder="Re-type your password"
+                    placeholder={t("signup.form.confirm.placeholder")}
                     autoComplete="new-password"
                   />
                   <button
@@ -338,11 +398,11 @@ export default function SignUpPage() {
                     className="rounded-r-md border border-l-0 border-gray-300 px-3 text-sm text-gray-600 hover:bg-gray-50"
                     aria-label={
                       showConfirm
-                        ? "Hide confirm password"
-                        : "Show confirm password"
+                        ? t("signup.a11y.hideConfirm")
+                        : t("signup.a11y.showConfirm")
                     }
                   >
-                    {showConfirm ? "Hide" : "Show"}
+                    {showConfirm ? t("signup.ui.hide") : t("signup.ui.show")}
                   </button>
                 </div>
               </div>
@@ -358,12 +418,12 @@ export default function SignUpPage() {
                 className="mt-1 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
-                I agree to the{" "}
+                {t("signup.form.terms.text")}{" "}
                 <a
                   href="/terms"
                   className="font-medium text-primary hover:underline"
                 >
-                  Terms & Privacy
+                  {t("signup.form.terms.link")}
                 </a>
               </label>
             </div>
@@ -375,18 +435,18 @@ export default function SignUpPage() {
                 disabled={submitting}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2 text-base font-medium text-white hover:bg-primary/90 disabled:opacity-60"
               >
-                {submitting ? "Signing Up…" : "Sign Up"}
+                {submitting ? t("signup.ui.submitting") : t("signup.ui.submit")}
               </button>
             </div>
 
             {/* Link ke Sign In */}
             <p className="mt-4 text-center text-sm text-gray-500">
-              Already have an account?{" "}
+              {t("signup.footer.haveAccount")}{" "}
               <Link
                 href="/maccount/signin"
                 className="font-medium text-primary hover:underline"
               >
-                Sign in here
+                {t("signup.footer.signinHere")}
               </Link>
             </p>
           </form>

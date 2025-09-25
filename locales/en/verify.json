@@ -1,0 +1,35 @@
+{
+    "app": {
+        "brand": "LintasLOG",
+        "bgAlt": "Background"
+    },
+    "verify": {
+        "title": "Verify Email",
+        "subtitle": "We are processing your verification token.",
+        "ui": {
+            "pleaseWait": "Please wait…",
+            "waitingToken": "Waiting for token…"
+        },
+        "a11y": {
+            "verifying": "Verifying…"
+        },
+        "result": {
+            "success": "Email verified successfully!",
+            "failed": "Verification failed"
+        },
+        "cta": {
+            "goSignin": "Go to Sign In",
+            "backSignin": "Back to Sign In",
+            "tryAgain": "Try Again",
+            "createAccount": "Create a new account"
+        },
+        "errors": {
+            "tokenMissing": "Token is missing in URL.",
+            "http": "Verification failed (HTTP {{code}})",
+            "network": "A network error occurred."
+        },
+        "footer": {
+            "help": "Didn't receive the email? Check your spam folder or contact admin."
+        }
+    }
+}

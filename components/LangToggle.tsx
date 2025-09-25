@@ -1,35 +1,30 @@
 "use client";
 import { useEffect, useState } from "react";
-import {
-  getLang,
-  setLang,
-  loadDictionaries,
-  LANG_KEY,
-  type Lang,
-} from "@/lib/i18n";
+import { getLang, setLang, type Lang } from "@/lib/i18n";
 
 export default function LangToggle() {
   const [ready, setReady] = useState(false);
   const [lang, setLangState] = useState<Lang>("id");
 
   useEffect(() => {
-    loadDictionaries().then(() => {
-      const cur = getLang();
-      setLangState(cur);
-      setReady(true);
-    });
+    // ambil lang tersimpan; tidak perlu loadDictionaries di sini
+    setLangState(getLang());
+    setReady(true);
   }, []);
 
   if (!ready) return null;
+
+  function choose(next: Lang) {
+    if (next === lang) return;
+    setLang(next); // 🔔 broadcast ke semua subscriber
+    setLangState(next); // ubah tampilan toggle
+  }
 
   return (
     <div className="inline-flex rounded-md border px-1 py-1 text-sm">
       <button
         type="button"
-        onClick={() => {
-          setLang("id");
-          setLangState("id");
-        }}
+        onClick={() => choose("id")}
         className={`px-2 py-1 rounded ${lang === "id" ? "bg-gray-200" : ""}`}
         aria-pressed={lang === "id"}
       >
@@ -37,10 +32,7 @@ export default function LangToggle() {
       </button>
       <button
         type="button"
-        onClick={() => {
-          setLang("en");
-          setLangState("en");
-        }}
+        onClick={() => choose("en")}
         className={`px-2 py-1 rounded ${lang === "en" ? "bg-gray-200" : ""}`}
         aria-pressed={lang === "en"}
       >

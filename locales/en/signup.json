@@ -1,0 +1,81 @@
+{
+    "app": {
+        "brand": "LintasLOG",
+        "bgAlt": "Background"
+    },
+    "roles": {
+        "shipper": "Shipper",
+        "transporter": "Transporter"
+    },
+    "signup": {
+        "title": "Create a new account",
+        "subtitle": "Fill in the form below to register",
+        "alerts": {
+            "validation": "A validation error occurred",
+            "failed": "Registration failed",
+            "success": "Registration successful.",
+            "networkError": "Network error. Please try again."
+        },
+        "errors": {
+            "accountNameRequired": "Complete Name is required.",
+            "emailRequired": "Email (as login) is required.",
+            "userTypeRequired": "Choose user type: shipper or transporter.",
+            "passwordMismatch": "Password and confirmation do not match.",
+            "passwordMin": "Password must be at least 8 characters."
+        },
+        "form": {
+            "accountName": {
+                "label": "Complete Name",
+                "placeholder": "Account / company / display name"
+            },
+            "email": {
+                "label": "Email / Username",
+                "placeholder": "you@example.com"
+            },
+            "phone": {
+                "label": "Phone number",
+                "placeholder": "+62 812-xxxx-xxxx"
+            },
+            "userType": {
+                "label": "User Type",
+                "placeholder": "Select user type"
+            },
+            "password": {
+                "label": "Password",
+                "placeholder": "Min. 8 characters"
+            },
+            "confirm": {
+                "label": "Confirm password",
+                "placeholder": "Re-type your password"
+            },
+            "terms": {
+                "text": "I agree to the",
+                "link": "Terms & Privacy"
+            }
+        },
+        "ui": {
+            "show": "Show",
+            "hide": "Hide",
+            "submit": "Sign Up",
+            "submitting": "Signing Up…"
+        },
+        "a11y": {
+            "showPassword": "Show password",
+            "hidePassword": "Hide password",
+            "showConfirm": "Show confirm password",
+            "hideConfirm": "Hide confirm password"
+        },
+        "footer": {
+            "haveAccount": "Already have an account?",
+            "signinHere": "Sign in here"
+        },
+        "success": {
+            "iconAlt": "Success icon",
+            "title": "Success!",
+            "message": "An email has been sent to {{email}}. Please check your inbox and click the included link to verify your account.",
+            "ctaHome": "Back to Home",
+            "didntReceive": "Didn’t receive the email?",
+            "openVerifyPage": "Open verify page"
+        }
+    }
+}

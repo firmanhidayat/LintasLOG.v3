@@ -7,6 +7,16 @@ import Link from "next/link";
 import lintaslogo from "@/images/lintaslog-logo.png";
 import bglintas from "@/images/bg-1.png";
 
+// i18n
+import {
+  loadDictionaries,
+  t,
+  getLang,
+  onLangChange,
+  type Lang,
+} from "@/lib/i18n";
+import LangToggle from "@/components/LangToggle";
+
 const VERIFY_EMAIL_URL =
   "https://odoodev.linitekno.com/api-tms/auth/validate_email";
 
@@ -76,7 +86,7 @@ export default function VerifyEmailPage() {
               <div className="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-xl backdrop-blur">
                 <div className="flex flex-col items-center gap-3">
                   <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-primary" />
-                  <p className="text-sm text-gray-600">Memuat…</p>
+                  <p className="text-sm text-gray-600">Loading…</p>
                 </div>
               </div>
             </div>
@@ -95,6 +105,10 @@ function VerifyEmailInner() {
   const sp = useSearchParams();
   const token = sp.get("token") ?? "";
 
+  // i18n reactive
+  const [i18nReady, setI18nReady] = useState(false);
+  const [activeLang, setActiveLang] = useState<Lang>(getLang());
+
   const [state, setState] = useState<
     | { kind: "idle" }
     | { kind: "verifying" }
@@ -104,9 +118,32 @@ function VerifyEmailInner() {
 
   const disabled = useMemo(() => state.kind === "verifying", [state.kind]);
 
+  // boot i18n + subscribe perubahan bahasa
+  useEffect(() => {
+    let mounted = true;
+
+    loadDictionaries().then(() => {
+      if (!mounted) return;
+      setI18nReady(true);
+      setActiveLang(getLang());
+    });
+
+    const off = onLangChange((lang) => {
+      if (!mounted) return;
+      // kamus sudah di-cache; cukup trigger re-render
+      setActiveLang(lang);
+    });
+
+    return () => {
+      mounted = false;
+      off();
+    };
+  }, []);
+
+  // lakukan verifikasi
   useEffect(() => {
     if (!token) {
-      setState({ kind: "error", reason: "Token tidak ditemukan di URL." });
+      setState({ kind: "error", reason: t("verify.errors.tokenMissing") });
       return;
     }
     let aborted = false;
@@ -115,12 +152,16 @@ function VerifyEmailInner() {
       try {
         const res = await fetch(VERIFY_EMAIL_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "Accept-Language": getLang(), // kirim lang aktif
+          },
           body: JSON.stringify({ token }),
         });
 
         if (!res.ok) {
-          let reason = `Gagal verifikasi (HTTP ${res.status})`;
+          let reason = t("verify.errors.http", { code: res.status });
           try {
             const payload = (await res.json()) as unknown;
             const p = parseHttpErrorPayload(payload);
@@ -153,7 +194,7 @@ function VerifyEmailInner() {
         if (!aborted) setState({ kind: "success", email, note: message });
       } catch (err) {
         const msg =
-          err instanceof Error ? err.message : "Terjadi kesalahan jaringan.";
+          err instanceof Error ? err.message : t("verify.errors.network");
         if (!aborted) setState({ kind: "error", reason: msg });
       }
     };
@@ -162,7 +203,31 @@ function VerifyEmailInner() {
     return () => {
       aborted = true;
     };
-  }, [token]);
+  }, [token, activeLang]); // depend ke activeLang agar error mapping ikut bahasa
+
+  // sembunyikan UI sampai kamus siap agar teks konsisten
+  if (!i18nReady) {
+    return (
+      <div className="relative min-h-svh w-full overflow-hidden bg-white text-black">
+        <Image
+          src={bglintas}
+          alt="bg"
+          priority
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover opacity-20"
+        />
+        <div className="relative mx-auto flex min-h-svh max-w-7xl items-center justify-center px-4 py-10">
+          <div className="w-full max-w-md">
+            <div className="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-xl backdrop-blur">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-primary" />
+                <p className="text-sm text-gray-600">Loading…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-svh w-full overflow-hidden bg-white text-black">
@@ -178,23 +243,34 @@ function VerifyEmailInner() {
       <div className="relative mx-auto flex min-h-svh max-w-7xl items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
           {/* Brand */}
-          <div className="mb-8 flex items-center justify-center gap-3">
-            <Image src={lintaslogo} alt="LintasLOG" className="h-10 w-auto" />
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <Image
+              src={lintaslogo}
+              alt={t("app.brand")}
+              className="h-10 w-auto"
+            />
+          </div>
+
+          {/* Toggle Bahasa */}
+          <div className="mb-4 flex items-center justify-end">
+            <LangToggle />
           </div>
 
           {/* Card */}
           <div className="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-xl backdrop-blur">
             <h1 className="mb-1 text-center text-2xl font-bold">
-              Verifikasi Email
+              {t("verify.title")}
             </h1>
             <p className="mb-6 text-center text-sm text-gray-600">
-              Kami sedang memproses token verifikasi Anda.
+              {t("verify.subtitle")}
             </p>
 
             {state.kind === "verifying" && (
               <div className="flex flex-col items-center gap-3">
-                <Spinner ariaLabel="Memverifikasi..." />
-                <p className="text-sm text-gray-600">Mohon tunggu sebentar…</p>
+                <Spinner ariaLabel={t("verify.a11y.verifying")} />
+                <p className="text-sm text-gray-600">
+                  {t("verify.ui.pleaseWait")}
+                </p>
               </div>
             )}
 
@@ -203,7 +279,7 @@ function VerifyEmailInner() {
                 <SuccessIcon />
                 <div>
                   <p className="text-base font-medium">
-                    Email berhasil diverifikasi!
+                    {t("verify.result.success")}
                   </p>
                   {state.email && (
                     <p className="text-sm text-gray-600">{state.email}</p>
@@ -217,7 +293,7 @@ function VerifyEmailInner() {
                     href="/maccount/signin/"
                     className="inline-flex w-full items-center justify-center rounded-xl border border-primary/30 bg-primary/90 px-4 py-2 text-white hover:bg-primary"
                   >
-                    Lanjut Masuk
+                    {t("verify.cta.goSignin")}
                   </Link>
                 </div>
               </div>
@@ -228,7 +304,7 @@ function VerifyEmailInner() {
                 <ErrorIcon />
                 <div>
                   <p className="text-base font-medium text-red-600">
-                    Verifikasi gagal
+                    {t("verify.result.failed")}
                   </p>
                   <p className="mt-1 text-sm text-gray-600">{state.reason}</p>
                 </div>
@@ -237,14 +313,14 @@ function VerifyEmailInner() {
                     href="/maccount/signin/"
                     className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2 hover:bg-gray-50"
                   >
-                    Kembali ke Sign In
+                    {t("verify.cta.backSignin")}
                   </Link>
                   <button
                     disabled={disabled}
                     onClick={() => router.refresh()}
                     className="inline-flex items-center justify-center rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-primary hover:bg-primary/15 disabled:opacity-50"
                   >
-                    Coba Lagi
+                    {t("verify.cta.tryAgain")}
                   </button>
                 </div>
               </div>
@@ -252,12 +328,12 @@ function VerifyEmailInner() {
 
             {state.kind === "idle" && (
               <div className="text-center text-sm text-gray-600">
-                Menunggu token…
+                {t("verify.ui.waitingToken")}
               </div>
             )}
 
             <div className="mt-6 text-center text-xs text-gray-500">
-              Tidak menerima email? Periksa folder spam atau hubungi admin.
+              {t("verify.footer.help")}
             </div>
           </div>
 
@@ -266,7 +342,7 @@ function VerifyEmailInner() {
               href="/maccount/signup/"
               className="text-primary hover:underline"
             >
-              Daftar akun baru
+              {t("verify.cta.createAccount")}
             </Link>
           </div>
         </div>

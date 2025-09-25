@@ -1,0 +1,81 @@
+{
+    "app": {
+        "brand": "LintasLOG",
+        "bgAlt": "Latar belakang"
+    },
+    "roles": {
+        "shipper": "Shipper",
+        "transporter": "Transporter"
+    },
+    "signup": {
+        "title": "Buat akun baru",
+        "subtitle": "Isi data di bawah untuk mendaftar",
+        "alerts": {
+            "validation": "Terjadi kesalahan validasi",
+            "failed": "Registrasi gagal",
+            "success": "Registrasi berhasil.",
+            "networkError": "Jaringan bermasalah. Coba lagi."
+        },
+        "errors": {
+            "accountNameRequired": "Complete Name wajib diisi.",
+            "emailRequired": "Email (sebagai login) wajib diisi.",
+            "userTypeRequired": "Pilih jenis user: shipper atau transporter.",
+            "passwordMismatch": "Password dan konfirmasi tidak sama.",
+            "passwordMin": "Password minimal 8 karakter."
+        },
+        "form": {
+            "accountName": {
+                "label": "Nama Lengkap",
+                "placeholder": "Nama akun / perusahaan / display name"
+            },
+            "email": {
+                "label": "Email / Nama Login",
+                "placeholder": "you@example.com"
+            },
+            "phone": {
+                "label": "Nomor Telepon",
+                "placeholder": "+62 812-xxxx-xxxx"
+            },
+            "userType": {
+                "label": "Jenis Pengguna",
+                "placeholder": "Pilih tipe user"
+            },
+            "password": {
+                "label": "Kata Sandi",
+                "placeholder": "Min. 8 characters"
+            },
+            "confirm": {
+                "label": "Konfirmasi Kata Sandi",
+                "placeholder": "Ketik ulang kata sandi"
+            },
+            "terms": {
+                "text": "Saya setuju dengan",
+                "link": "Syarat & Privasi"
+            }
+        },
+        "ui": {
+            "show": "Tampilkan",
+            "hide": "Sembunyikan",
+            "submit": "Daftar",
+            "submitting": "Menyiapkan Pendaftaran…"
+        },
+        "a11y": {
+            "showPassword": "Tampilkan kata sandi",
+            "hidePassword": "Sembunyikan kata sandi",
+            "showConfirm": "Tampilkan konfirmasi kata sandi",
+            "hideConfirm": "Sembunyikan konfirmasi kata sandi"
+        },
+        "footer": {
+            "haveAccount": "Sudah punya akun?",
+            "signinHere": "Masuk di sini"
+        },
+        "success": {
+            "iconAlt": "Ikon sukses",
+            "title": "Berhasil!",
+            "message": "Email telah dikirim ke {{email}}. Silakan periksa email dari kami dan klik tautan yang disertakan untuk memverifikasi akun Anda.",
+            "ctaHome": "Kembali ke Beranda",
+            "didntReceive": "Tidak menerima email?",
+            "openVerifyPage": "Buka halaman verifikasi"
+        }
+    }
+}

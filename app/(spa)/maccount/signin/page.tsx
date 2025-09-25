@@ -10,14 +10,18 @@ import bglintas from "@/images/bg-1.png";
 import { useAuth } from "@/components/providers/AuthProvider";
 
 // i18n helpers
-import { loadDictionaries, t, getLang, type Lang } from "@/lib/i18n";
+import {
+  loadDictionaries,
+  t,
+  getLang,
+  onLangChange, // ▲ subscribe perubahan bahasa
+  type Lang,
+} from "@/lib/i18n";
 import { mapFastapi422, mapCommonErrors } from "@/lib/i18n-fastapi";
-// ⬇️ Tambahan: LangToggle
 import LangToggle from "@/components/LangToggle";
 
 const LOGIN_URL = "https://odoodev.linitekno.com/api-tms/auth/login";
 
-// NOTE: role sementara tidak dipakai
 type Role = "shipper" | "transporter";
 
 type LoginOk = {
@@ -47,7 +51,7 @@ function isFastapi422Detail(v: unknown): v is Fastapi422["detail"] {
 }
 
 export default function LoginPage() {
-  const [tab, setTab] = useState<Role>("shipper"); // UI saja, belum dipakai ke API
+  const [tab, setTab] = useState<Role>("shipper");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -55,8 +59,9 @@ export default function LoginPage() {
 
   const { login: authLogin } = useAuth();
 
-  // i18n ready state
+  // i18n state
   const [i18nReady, setI18nReady] = useState(false);
+  const [activeLang, setActiveLang] = useState<Lang>(getLang()); // ▲ trigger re-render saat lang ganti
 
   // error states
   const [formError, setFormError] = useState<string | null>(null);
@@ -72,8 +77,26 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // pre-load dictionaries once
-    loadDictionaries().then(() => setI18nReady(true));
+    let mounted = true;
+
+    // pre-load dictionaries once (memuat ID & EN sekaligus)
+    loadDictionaries().then(() => {
+      if (!mounted) return;
+      setI18nReady(true);
+      setActiveLang(getLang()); // sinkron awal
+    });
+
+    // ▲ subscribe perubahan bahasa dari LangToggle
+    const off = onLangChange((lang) => {
+      // tidak perlu reload kamus, cukup re-render agar t() pakai currentLang baru
+      if (!mounted) return;
+      setActiveLang(lang);
+    });
+
+    return () => {
+      mounted = false;
+      off();
+    };
   }, []);
 
   const canSubmit = useMemo(
@@ -82,8 +105,8 @@ export default function LoginPage() {
   );
 
   function parse422(detail: Fastapi422["detail"]) {
-    const lang = getLang();
-    const { fieldErrors, generic } = mapFastapi422(detail, lang as Lang);
+    const lang = getLang(); // ▲ sudah bertipe Lang; tidak perlu cast
+    const { fieldErrors, generic } = mapFastapi422(detail, lang);
     setFieldErr(fieldErrors);
     setFormError(generic.length ? generic.join(" | ") : null);
   }
@@ -92,39 +115,21 @@ export default function LoginPage() {
     e.preventDefault();
     if (!canSubmit) return;
 
-    // setLoading(true);
-    // setFormError(null);
-    // setFieldErr({});
-    // setVerifyHint({ show: false });
-
     setLoading(true);
     setFormError(null);
     setFieldErr({});
     setVerifyHint({ show: false });
 
     try {
-      // const res = await fetch(LOGIN_URL, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     Accept: "application/json",
-      //     // (opsional) bantu BE kalau nanti mau i18n di server
-      //     "Accept-Language": getLang(),
-      //   },
-      //   // HANYA kirim email & password (role di-remark)
-      //   body: JSON.stringify({ login: email, password }),
-      //   credentials: "include",
-      // });
-
       const res = await fetch(LOGIN_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Accept-Language": getLang(),
+          "Accept-Language": getLang(), // ▲ selalu kirim lang terbaru
         },
         body: JSON.stringify({ login: email, password }),
-        credentials: "include", // <-- tetap jika backend pakai cookie; kalau token-only, boleh dihapus
+        credentials: "include",
       });
 
       const raw: unknown = await res.json().catch(() => null);
@@ -160,11 +165,6 @@ export default function LoginPage() {
         return;
       }
 
-      // const store = remember ? localStorage : sessionStorage;
-      // store.setItem("llog.login", ok.login);
-      // store.setItem("llog.mail_verified", String(ok.mail_verified));
-      // // store.setItem("llog.role", tab); // <- tetap di-remark
-
       authLogin({ login: ok.login, mail_verified: ok.mail_verified, remember });
 
       if (ok.mail_verified) {
@@ -172,7 +172,7 @@ export default function LoginPage() {
       } else {
         setVerifyHint({ show: true, login: ok.login });
       }
-    } catch (err: unknown) {
+    } catch {
       const msg = mapCommonErrors("network");
       setFormError(msg);
     } finally {
@@ -184,14 +184,12 @@ export default function LoginPage() {
   if (!i18nReady) {
     return (
       <div className="grid min-h-screen place-items-center">
-        <div className="text-sm text-gray-500">
-          {/** keep minimal */}Loading…
-        </div>
+        <div className="text-sm text-gray-500">Loading…</div>
       </div>
     );
   }
 
-  // ✅ Aman memanggil t() setelah i18nReady
+  // setiap kali activeLang berubah, komponen re-render → semua t() ikut ganti
   const roleLabel =
     tab === "shipper" ? t("roles.shipper") : t("roles.transporter");
 
@@ -212,12 +210,12 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* ⬇️ Toggle Bahasa di area form (kanan atas) */}
+          {/* Toggle Bahasa */}
           <div className="mb-2 flex items-center justify-end">
             <LangToggle />
           </div>
 
-          {/* Tabs (UI saja, belum kirim ke API) */}
+          {/* Tabs (UI saja) */}
           <div className="mb-6">
             <nav className="-mb-px flex justify-center gap-8">
               <button

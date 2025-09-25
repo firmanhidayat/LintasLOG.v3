@@ -1,0 +1,31 @@
+{
+    "app": {
+        "brand": "LintasLOG",
+        "bgAlt": "Latar belakang"
+    },
+    "reset": {
+        "title": "Reset Kata Sandi",
+        "subtitle": "Masukkan email Anda, kami akan mengirimkan instruksi untuk reset kata sandi.",
+        "form": {
+            "email": {
+                "label": "Email",
+                "placeholder": "you@example.com"
+            }
+        },
+        "ui": {
+            "submit": "Reset",
+            "sending": "Mengirim…"
+        },
+        "alerts": {
+            "sent": "Instruksi reset telah kami kirim ke email Anda.",
+            "failed": "Gagal mengirim email reset. Coba lagi.",
+            "networkError": "Gangguan jaringan. Coba lagi."
+        },
+        "errors": {
+            "emailRequired": "Email wajib diisi."
+        },
+        "footer": {
+            "backToSignin": "Kembali ke Masuk"
+        }
+    }
+}
