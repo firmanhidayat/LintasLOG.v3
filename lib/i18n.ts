@@ -74,7 +74,7 @@ function interpolate(
 
 // ——————————————— Namespaces (login, signup, …) ———————————————
 // Tambah nama file JSON di sini jika perlu namespace baru.
-type Namespace = "login" | "signup" | "reset" | "verify";
+type Namespace = "login" | "signup" | "reset" | "verify" | "ringkasanorder";
 
 // Import eksplisit per namespace supaya bundler bisa mengikutkan file.
 // (Template path dinamis sering tidak ter-trace oleh bundler.)
@@ -96,6 +96,10 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("../locales/id/verify.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "ringkasanorder") {
+      const m = await import("../locales/id/ringkasanorder.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   } else {
     if (ns === "login") {
       const m = await import("../locales/en/login.json");
@@ -113,6 +117,10 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("../locales/en/verify.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "ringkasanorder") {
+      const m = await import("../locales/en/ringkasanorder.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   }
   // fallback aman (tidak terjadi jika mapping di atas lengkap)
   return {};
@@ -123,7 +131,13 @@ export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
   if (dictionaries) return dictionaries;
 
   // Tentukan namespace yang ingin digabung
-  const namespaces: Namespace[] = ["login", "signup", "reset", "verify"];
+  const namespaces: Namespace[] = [
+    "login",
+    "signup",
+    "reset",
+    "verify",
+    "ringkasanorder",
+  ];
 
   // Muat semua namespace per bahasa, lalu deep-merge
   const [idDicts, enDicts] = await Promise.all([

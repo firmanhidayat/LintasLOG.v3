@@ -1,5 +1,11 @@
 "use client";
-import { redirect } from "next/navigation";
-export default function Page() {
-  redirect("dashboard");
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export default function HomePage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/dashboard");
+  }, [router]);
+  return null; // tidak render apa-apa
 }
