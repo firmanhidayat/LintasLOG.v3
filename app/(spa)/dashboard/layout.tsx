@@ -10,7 +10,6 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard nextPath="/dashboard">
-      {/* SectionShell sudah handle Sidebar/Header */}
       <SectionShell>{children}</SectionShell>
     </AuthGuard>
   );

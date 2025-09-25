@@ -1,5 +1,11 @@
-import { redirect } from "next/navigation";
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ManagementAccountPage() {
-  redirect("edit");
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/maccount/edit");
+  }, [router]);
+  return null; // tidak render apa-apa
 }

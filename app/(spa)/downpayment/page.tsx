@@ -1,5 +1,12 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function DownpaymentPage() {
-  redirect("list");
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/downpayment/list");
+  }, [router]);
+  return null; // tidak render apa-apa
 }

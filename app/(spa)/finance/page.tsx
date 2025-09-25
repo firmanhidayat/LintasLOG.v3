@@ -1,5 +1,11 @@
-import { redirect } from "next/navigation";
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function FinancePage() {
-  redirect("invoices");
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/finance/invoices");
+  }, [router]);
+  return null; // tidak render apa-apa
 }
