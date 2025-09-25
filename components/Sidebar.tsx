@@ -1,3 +1,4 @@
+// components/Sidebar.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -5,6 +6,9 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NavGroup, NavLink } from "@/components/NavLink";
 import lintaslogo from "@/images/lintaslog-logo.png";
+
+// i18n
+import { t, getLang, onLangChange, type Lang } from "@/lib/i18n";
 
 /** ====== NEW: Props agar bisa dikontrol dari Header (mobile) ====== */
 export default function Sidebar({
@@ -52,10 +56,6 @@ export default function Sidebar({
     </>
   );
 }
-
-/* ============================================================= */
-/* =============== Di bawah ini KONTEN ASLI kamu =============== */
-/* ============================================================= */
 
 type SectionKey =
   | "dashboard"
@@ -193,12 +193,21 @@ const DEFAULT_OPEN: OpenMap = {
   vendorbill: false,
 };
 
-/** ====== Komponen isi sidebar (dibagi supaya bisa dipakai di mobile & desktop) ====== */
+/** ====== Komponen isi sidebar (dipakai di mobile & desktop) ====== */
 function SidebarContent() {
   const pathname = usePathname();
 
   const [openMap, setOpenMap] = useState<OpenMap>(DEFAULT_OPEN);
   const loaded = useMemo(() => typeof window !== "undefined", []);
+
+  // === i18n reactive: trigger re-render saat bahasa berubah dari Header ===
+  // gunakan lazy initializer agar aman di mounting (lebih stabil)
+  const [activeLang, setActiveLang] = useState<Lang>(() => getLang());
+  useEffect(() => {
+    const off = onLangChange((lang) => setActiveLang(lang));
+    return () => off?.();
+  }, []);
+  // Catatan: activeLang TIDAK dipakai langsung — hanya untuk memicu re-render agar label t(...) ikut berubah.
 
   // load dari localStorage
   useEffect(() => {
@@ -209,13 +218,16 @@ function SidebarContent() {
         const parsed = JSON.parse(raw) as OpenMap;
         setOpenMap((prev) => ({ ...prev, ...parsed }));
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
   }, [loaded]);
 
   // auto-open sesuai route + accordion
   useEffect(() => {
     const match = (prefix: string) =>
       pathname === prefix || (prefix !== "/" && pathname.startsWith(prefix));
+
     const next: OpenMap = { ...openMap };
 
     if (match("/dashboard") || pathname === "/") next.dashboard = true;
@@ -250,14 +262,16 @@ function SidebarContent() {
 
     setOpenMap(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [pathname]); // sengaja hanya bergantung pada pathname (perilaku aslinya)
 
   // persist ke localStorage
   useEffect(() => {
     if (!loaded) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(openMap));
-    } catch {}
+    } catch {
+      // ignore
+    }
   }, [openMap, loaded]);
 
   const toggle = (key: SectionKey) => (next: boolean) => {
@@ -293,16 +307,16 @@ function SidebarContent() {
       <nav className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
         <NavGroup
           href="/"
-          label="Dashboard"
+          label={t("nav.dashboard.title")}
           icon={IconDashboard}
           items={[
             {
-              label: "Ringkasan Order",
+              label: t("nav.dashboard.summary"),
               href: "/dashboard/ringkasanorder",
               icon: IconSummary,
             },
             {
-              label: "Status Tracking",
+              label: t("nav.dashboard.tracking"),
               href: "/dashboard/statustracking",
               icon: IconTracking,
             },
@@ -315,10 +329,10 @@ function SidebarContent() {
 
         <NavGroup
           href="/orders"
-          label="Orders"
+          label={t("nav.orders.title")}
           icon={IconOrders}
           items={[
-            { label: "Order List", href: "/orders/list", icon: IconList },
+            { label: t("nav.orders.list"), href: "/orders/list", icon: IconList },
           ]}
           open={openMap.orders}
           onToggle={toggle("orders")}
@@ -328,10 +342,10 @@ function SidebarContent() {
 
         <NavGroup
           href="/claims"
-          label="Claims"
+          label={t("nav.claims.title")}
           icon={IconClaims}
           items={[
-            { label: "Claim List", href: "/claims/list", icon: IconList },
+            { label: t("nav.claims.list"), href: "/claims/list", icon: IconList },
           ]}
           open={openMap.claims}
           onToggle={toggle("claims")}
@@ -341,15 +355,19 @@ function SidebarContent() {
 
         <NavGroup
           href="/finance"
-          label="Finance"
+          label={t("nav.finance.title")}
           icon={IconFinance}
           items={[
             {
-              label: "Invoice List",
+              label: t("nav.finance.invoices"),
               href: "/finance/invoices",
               icon: IconInvoice,
             },
-            { label: "Price List", href: "/finance/pricelist", icon: IconList },
+            {
+              label: t("nav.finance.pricelist"),
+              href: "/finance/pricelist",
+              icon: IconList,
+            },
           ]}
           open={openMap.finance}
           onToggle={toggle("finance")}
@@ -359,10 +377,10 @@ function SidebarContent() {
 
         <NavGroup
           href="/downpayment"
-          label="Down Payment"
+          label={t("nav.downpayment.title")}
           icon={IconDownPayment}
           items={[
-            { label: "DP List", href: "/downpayment/list", icon: IconList },
+            { label: t("nav.downpayment.list"), href: "/downpayment/list", icon: IconList },
           ]}
           open={openMap.downpayment}
           onToggle={toggle("downpayment")}
@@ -372,11 +390,11 @@ function SidebarContent() {
 
         <NavGroup
           href="/vendorbill"
-          label="Vendor Bill"
+          label={t("nav.vendorbill.title")}
           icon={IconVendorBill}
           items={[
             {
-              label: "Vendor Bill List",
+              label: t("nav.vendorbill.list"),
               href: "/vendorbill/list",
               icon: IconList,
             },
@@ -392,7 +410,7 @@ function SidebarContent() {
       <div className="mt-auto border-t border-white/10 px-4 py-3">
         <NavLink
           href="/docs"
-          label="Docs & Components"
+          label={t("nav.docs")}
           icon={IconDocs}
           className="inline-flex w-full items-center justify-center rounded-md bg-white/10 px-3 py-2 text-sm font-medium hover:bg-white/20"
         />

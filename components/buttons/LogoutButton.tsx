@@ -8,9 +8,11 @@ import { LogOut } from "lucide-react";
 export function LogoutButton({
   className,
   role,
+  caption,
 }: {
   className?: string;
   role?: string;
+  caption: string;
 }) {
   const router = useRouter();
   async function onLogout() {
@@ -26,7 +28,7 @@ export function LogoutButton({
       className={className ?? "text-red-600"}
     >
       <LogOut className="h-4 w-4" />
-      <span>Logout</span>
+      <span>{caption}</span>
     </button>
   );
 }

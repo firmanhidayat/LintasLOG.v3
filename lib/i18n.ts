@@ -74,53 +74,72 @@ function interpolate(
 
 // ——————————————— Namespaces (login, signup, …) ———————————————
 // Tambah nama file JSON di sini jika perlu namespace baru.
-type Namespace = "login" | "signup" | "reset" | "verify" | "ringkasanorder";
+type Namespace = "login" | "signup" | "reset" | "verify" | "ringkasanorder" | "nav" | "avatarnav";
 
 // Import eksplisit per namespace supaya bundler bisa mengikutkan file.
 // (Template path dinamis sering tidak ter-trace oleh bundler.)
 async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
   if (lang === "id") {
     if (ns === "login") {
-      const m = await import("../locales/id/login.json");
+      const m = await import("@/locales/id/login.json");
       return (m.default ?? {}) as unknown as Dict;
     }
     if (ns === "signup") {
-      const m = await import("../locales/id/signup.json");
+      const m = await import("@/locales/id/signup.json");
       return (m.default ?? {}) as unknown as Dict;
     }
     if (ns === "reset") {
-      const m = await import("../locales/id/reset.json");
+      const m = await import("@/locales/id/reset.json");
       return (m.default ?? {}) as unknown as Dict;
     }
     if (ns === "verify") {
-      const m = await import("../locales/id/verify.json");
+      const m = await import("@/locales/id/verify.json");
       return (m.default ?? {}) as unknown as Dict;
     }
     if (ns === "ringkasanorder") {
-      const m = await import("../locales/id/ringkasanorder.json");
+      const m = await import("@/locales/id/ringkasanorder.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "nav") {
+      const m = await import("@/locales/id/nav.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "avatarnav") {
+      const m = await import("@/locales/id/avatarnav.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+
   } else {
     if (ns === "login") {
-      const m = await import("../locales/en/login.json");
+      const m = await import("@/locales/en/login.json");
       return (m.default ?? {}) as unknown as Dict;
     }
     if (ns === "signup") {
-      const m = await import("../locales/en/signup.json");
+      const m = await import("@/locales/en/signup.json");
       return (m.default ?? {}) as unknown as Dict;
     }
     if (ns === "reset") {
-      const m = await import("../locales/en/reset.json");
+      const m = await import("@/locales/en/reset.json");
       return (m.default ?? {}) as unknown as Dict;
     }
     if (ns === "verify") {
-      const m = await import("../locales/en/verify.json");
+      const m = await import("@/locales/en/verify.json");
       return (m.default ?? {}) as unknown as Dict;
     }
     if (ns === "ringkasanorder") {
-      const m = await import("../locales/en/ringkasanorder.json");
+      const m = await import("@/locales/en/ringkasanorder.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "nav") {
+      const m = await import("@/locales/en/nav.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "avatarnav") {
+      const m = await import("@/locales/en/avatarnav.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+
+
   }
   // fallback aman (tidak terjadi jika mapping di atas lengkap)
   return {};
@@ -137,6 +156,8 @@ export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
     "reset",
     "verify",
     "ringkasanorder",
+    "nav",
+    "avatarnav",
   ];
 
   // Muat semua namespace per bahasa, lalu deep-merge

@@ -1,3 +1,4 @@
+// components/SectionShell.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,18 +6,15 @@ import { usePathname } from "next/navigation";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 
+// i18n gate
+import { loadDictionaries } from "@/lib/i18n";
+
 type SectionShellProps = {
-  /** Konten halaman (wajib) */
   children: React.ReactNode;
-  /** Max width konten (default: max-w-screen-2xl) */
   contentMaxWidthClassName?: string;
-  /** Padding konten (default: p-4) */
   contentPaddingClassName?: string;
-  /** Tampilkan sidebar? (default: true) */
   showSidebar?: boolean;
-  /** Tampilkan header? (default: true) */
   showHeader?: boolean;
-  /** Sidebar mobile default open? (default: false) */
   defaultSidebarOpen?: boolean;
 };
 
@@ -29,12 +27,54 @@ export default function SectionShell({
   defaultSidebarOpen = false,
 }: SectionShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(defaultSidebarOpen);
+  const [i18nReady, setI18nReady] = useState(false);
   const pathname = usePathname();
 
   // Tutup drawer saat route berubah (UX mobile lebih enak)
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
+
+  // === I18n gate: load kamus SEKALI sebelum render Sidebar/Header yang pakai t() ===
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await loadDictionaries(); // aman dipanggil berkali-kali; idempotent
+        if (!cancelled) setI18nReady(true);
+      } catch (err) {
+        console.error("[i18n] loadDictionaries failed:", err);
+        if (!cancelled) setI18nReady(true); // fallback: tetap render agar app tidak blank
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Skeleton ringan saat i18n belum siap (hindari memanggil t())
+  if (!i18nReady) {
+    return (
+      <div className="flex min-h-dvh">
+        {showSidebar && (
+          <div className="hidden md:flex w-64 shrink-0 h-dvh sticky top-0 border-r border-gray-200/70 bg-brand-900" />
+        )}
+        <div className="flex flex-1 flex-col">
+          {showHeader && (
+            <div className="h-14 border-b border-gray-200 bg-white" />
+          )}
+          <main
+            id="main-content"
+            className={`mx-auto w-full ${contentMaxWidthClassName} ${contentPaddingClassName}`}
+          >
+            {/* shimmer / placeholder */}
+            <div className="h-6 w-40 animate-pulse rounded bg-gray-200" />
+            <div className="mt-4 h-48 w-full animate-pulse rounded bg-gray-100" />
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-dvh">

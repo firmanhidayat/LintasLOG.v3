@@ -1,0 +1,15 @@
+{
+    "header" : {
+        "search" : {
+            "title" : "Cari",
+            "placeholder" : "pencarian..."
+        }
+    },
+    "avatarnav" : {
+        "mgtacc" : "Kelola Akun",
+        "mgtchg" : "Ubah Kata sandi",
+        "mgtacl" : "Catatan Aktifitas",
+        "mgtlou" : "Keluar"
+   
+    }
+}

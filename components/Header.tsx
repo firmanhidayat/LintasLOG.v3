@@ -12,8 +12,10 @@ import {
 import AvatarMenu from "@/components/AvatarMenu";
 import { LogoutButton } from "@/components/buttons/LogoutButton";
 import { UserCog, KeyRound, Activity } from "lucide-react";
-// ⬇️ Tambahan: LangToggle
+// LangToggle
 import LangToggle from "@/components/LangToggle";
+// i18n
+import { t, getLang, onLangChange, type Lang } from "@/lib/i18n";
 
 const ICON_BTN_BASE =
   "inline-flex items-center justify-center rounded-full p-0 " +
@@ -30,6 +32,14 @@ export default function Header({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // === i18n reactive: trigger re-render saat bahasa berubah dari Header ===
+  // gunakan lazy initializer agar aman di mounting (lebih stabil)
+  const [activeLang, setActiveLang] = useState<Lang>(() => getLang());
+  useEffect(() => {
+    const off = onLangChange((lang) => setActiveLang(lang));
+    return () => off?.();
+  }, []);
 
   // Tutup overlay search jika viewport berubah ke md (mis. rotate/resize)
   useEffect(() => {
@@ -79,7 +89,7 @@ export default function Header({
               <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               <input
                 type="search"
-                placeholder="Search…"
+                placeholder={t("header.search.placeholder")}
                 className="h-9 w-full rounded-full border border-gray-300 bg-white pl-9 pr-3 text-sm text-black outline-none focus:ring-2 focus:ring-primary/40"
               />
             </form>
@@ -146,7 +156,7 @@ export default function Header({
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-gray-100"
                   >
                     <UserCog className="h-4 w-4" />
-                    <span>Manage Account</span>
+                    <span>{t("avatarnav.mgtacc")}</span>
                   </Link>
                 </li>
                 <li role="none">
@@ -156,7 +166,7 @@ export default function Header({
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-gray-100"
                   >
                     <KeyRound className="h-4 w-4" />
-                    <span>Change Password</span>
+                    <span>{t("avatarnav.mgtchg")}</span>
                   </Link>
                 </li>
                 <li role="none">
@@ -166,7 +176,7 @@ export default function Header({
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-gray-100"
                   >
                     <Activity className="h-4 w-4" />
-                    <span>Activity Log</span>
+                    <span>{t("avatarnav.mgtacl")}</span>
                   </Link>
                 </li>
 
@@ -176,6 +186,7 @@ export default function Header({
 
                 <li role="none">
                   <LogoutButton
+                    caption={t("avatarnav.mgtlou")}
                     role="menuitem"
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-red-600 hover:bg-gray-100"
                   />
@@ -188,16 +199,14 @@ export default function Header({
 
       {/* ===== Mobile Search Overlay ===== */}
       <div
-        className={`fixed inset-0 z-50 md:hidden ${
-          searchOpen ? "pointer-events-auto" : "pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-50 md:hidden ${searchOpen ? "pointer-events-auto" : "pointer-events-none"
+          }`}
         aria-hidden={!searchOpen}
       >
         {/* Backdrop */}
         <div
-          className={`absolute inset-0 bg-black/40 transition-opacity ${
-            searchOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 bg-black/40 transition-opacity ${searchOpen ? "opacity-100" : "opacity-0"
+            }`}
           onClick={() => setSearchOpen(false)}
         />
 
@@ -222,7 +231,7 @@ export default function Header({
               <input
                 autoFocus
                 type="search"
-                placeholder="Search…"
+                placeholder={t("header.search.placeholder")}
                 className="h-10 w-full rounded-full border border-gray-300 bg-white pl-9 pr-3 text-sm text-black outline-none focus:ring-2 focus:ring-primary/40"
                 onKeyDown={(e) => {
                   if (e.key === "Escape") setSearchOpen(false);

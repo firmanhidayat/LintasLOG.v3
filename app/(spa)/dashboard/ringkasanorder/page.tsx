@@ -24,7 +24,7 @@ export default function RingkasanOrderPage() {
     let cancelled = false;
     (async () => {
       try {
-        await loadDictionaries(); // tidak pakai argumen
+        await loadDictionaries();
         if (!cancelled) setI18nReady(true);
       } catch (err) {
         console.error("[i18n] loadDictionaries failed:", err);
@@ -36,13 +36,13 @@ export default function RingkasanOrderPage() {
     };
   }, []);
 
-  // ⬇️ Penting: early return loading SEBELUM memanggil t()
+  // early return loading SEBELUM memanggil t()
   if (!i18nReady) {
     // pakai string hardcoded agar tidak memanggil t() lebih awal
     return <section className="p-4 text-sm text-gray-500">Memuat…</section>;
   }
 
-  // Setelah kamus siap, baru panggil t()
+  // define teks bahasa ready
   const title = t("ringkasanorder.title");
   const subtitle = t("ringkasanorder.subtitle");
   const statsToday = t("ringkasanorder.statsToday");

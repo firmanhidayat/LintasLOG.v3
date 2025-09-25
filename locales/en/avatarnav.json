@@ -1,0 +1,15 @@
+{
+    "header" : {
+        "search" : {
+            "title" : "Search",
+            "placeholder" : "search..."
+        }
+    },
+    "avatarnav" : {
+        "mgtacc" : "Manage Account",
+        "mgtchg" : "Change Password",
+        "mgtacl" : "Activity Log",
+        "mgtlou" : "Logout"
+   
+    }
+}
