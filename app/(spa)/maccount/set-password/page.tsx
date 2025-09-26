@@ -17,8 +17,10 @@ import {
 } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 
-const SET_PASSWORD_URL =
-  "https://odoodev.linitekno.com/api-tms/auth/set_password";
+// const SET_PASSWORD_URL =
+//   "https://odoodev.linitekno.com/api-tms/auth/set_password";
+
+const SET_PASSWORD_URL = process.env.NEXT_PUBLIC_TMS_SET_PASSWORD_URL!;
 
 // -------------------- Types --------------------
 interface VerifyOk {

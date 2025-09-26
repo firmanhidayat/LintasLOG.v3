@@ -20,7 +20,8 @@ import {
 import { mapFastapi422, mapCommonErrors } from "@/lib/i18n-fastapi";
 import LangToggle from "@/components/LangToggle";
 
-const LOGIN_URL = "https://odoodev.linitekno.com/api-tms/auth/login";
+// const LOGIN_URL = "https://odoodev.linitekno.com/api-tms/auth/login";
+const LOGIN_URL = process.env.NEXT_PUBLIC_TMS_LOGIN_URL!;
 
 type Role = "shipper" | "transporter";
 

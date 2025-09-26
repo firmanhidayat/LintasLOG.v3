@@ -17,7 +17,8 @@ import {
 } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 
-const REGISTER_URL = "https://odoodev.linitekno.com/api-tms/auth/register";
+// const REGISTER_URL = "https://odoodev.linitekno.com/api-tms/auth/register";
+const REGISTER_URL = process.env.NEXT_PUBLIC_TMS_REGISTER_URL!;
 
 type FastapiErrorItem = {
   loc: (string | number)[];

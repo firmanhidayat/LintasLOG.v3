@@ -16,8 +16,11 @@ import {
 } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 
-const RESET_URL =
-  "https://odoodev.linitekno.com/api-tms/auth/request_reset_password";
+// const RESET_URL =
+//   "https://odoodev.linitekno.com/api-tms/auth/request_reset_password";
+
+const RESET_URL = process.env.NEXT_PUBLIC_TMS_RESET_URL!;
+
 
 export default function ResetPasswordPage() {
   // i18n state
