@@ -20,7 +20,7 @@ type SectionShellProps = {
 
 export default function SectionShell({
   children,
-  contentMaxWidthClassName = "max-w-screen-2xl",
+  contentMaxWidthClassName = "max-w-screen-2xxl",
   contentPaddingClassName = "p-4",
   showSidebar = true,
   showHeader = true,
