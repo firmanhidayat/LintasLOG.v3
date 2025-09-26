@@ -1,0 +1,30 @@
+{
+    "setPwd": {
+        "title": "Set New Password",
+        "subtitle": "Enter a new password for your account.",
+        "cta": {
+            "save": "Set Password",
+            "setting": "Saving…"
+        }
+    },
+    "form": {
+        "password": "Password",
+        "confirmPassword": "Confirm Password",
+        "placeholders": {
+            "password": "Enter new password",
+            "confirmPassword": "Re-enter new password"
+        },
+        "errors": {
+            "minLength": "Minimum {n} characters",
+            "passwordMismatch": "Passwords do not match"
+        }
+    },
+    "ui": {
+        "show": "Show",
+        "hide": "Hide"
+    },
+    "ally": {
+        "show": "Show",
+        "hide": "Hide"
+    }
+}
