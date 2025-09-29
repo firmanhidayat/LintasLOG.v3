@@ -1,4 +1,3 @@
-// src/components/AvatarMenu.tsx
 "use client";
 
 import Image from "next/image";
@@ -18,16 +17,13 @@ function getInitials(name?: string | null) {
 
 function nameFromLogin(login?: string | null) {
   if (!login) return "";
-  // contoh: "john.doe@example.com" -> "john doe"
   const [left] = login.split("@");
   return left.replace(/[._-]+/g, " ").trim();
 }
 
 export default function AvatarMenu() {
-  // Ambil status login dari AuthProvider
   const { loggedIn } = useAuth();
 
-  // Baca profil ringan dari storage (opsional, jika Anda set ini di tempat lain)
   const profileName =
     (typeof window !== "undefined" &&
       localStorage.getItem("llog.profile_name")) ||
@@ -47,7 +43,6 @@ export default function AvatarMenu() {
     (typeof window !== "undefined" && sessionStorage.getItem("llog.login")) ||
     null;
 
-  // Tentukan display name & initials
   const displayName = useMemo(() => {
     if (profileName && profileName.trim()) return profileName;
     if (loginId) return nameFromLogin(loginId);
@@ -56,7 +51,6 @@ export default function AvatarMenu() {
 
   const initials = useMemo(() => getInitials(displayName), [displayName]);
 
-  // Jika belum login, tampilkan avatar default (agar ukuran & hit area konsisten)
   if (!loggedIn) {
     return (
       <div

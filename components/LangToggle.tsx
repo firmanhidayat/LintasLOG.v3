@@ -7,7 +7,6 @@ export default function LangToggle() {
   const [lang, setLangState] = useState<Lang>("id");
 
   useEffect(() => {
-    // ambil lang tersimpan; tidak perlu loadDictionaries di sini
     setLangState(getLang());
     setReady(true);
   }, []);
@@ -16,8 +15,8 @@ export default function LangToggle() {
 
   function choose(next: Lang) {
     if (next === lang) return;
-    setLang(next); // 🔔 broadcast ke semua subscriber
-    setLangState(next); // ubah tampilan toggle
+    setLang(next); 
+    setLangState(next); 
   }
 
   return (

@@ -1,31 +1,32 @@
 {
-    "setPwd" : {
-        "title" : "Password Baru",
-        "subtitle" :"Ketikan kata sandi baru.",
-        "cta" : {
-            "save" : "Ubah Kata Sandi",
-            "setting": "Simpan…"
-        }
-    },
-
-    "form" : {
-      "password" : "Kata Sandi",
+  "setPwd": {
+    "title": "Password Baru",
+    "subtitle": "Ketikan kata sandi baru.",
+    "cta": {
+      "save": "Ubah Kata Sandi",
+      "setting": "Simpan…"
+    }
+  },
+  "forgot": {
+    "form": {
+      "password": "Kata Sandi",
       "confirmPassword": "Konfirmasi Kata Sandi",
-      "placeholders" : {
+      "placeholders": {
         "password": "Ketik kata sandi baru",
         "confirmPassword": "Ketik ulang kata sandi baru"
       },
-      "errors" : {
-        "minLength" :"Minimum {n} characters",
+      "errors": {
+        "minLength": "Minimum {n} characters",
         "passwordMismatch": "Passwords do not match"
       }
     },
-    "ui" : {
-      "show" :  "Show",
-      "hide" : "Hide"
+    "ui": {
+      "show": "Show",
+      "hide": "Hide"
     },
-    "ally" : {
-      "show" : "Show",
-      "hide" : "Hide"
+    "ally": {
+      "show": "Show",
+      "hide": "Hide"
     }
   }
+}

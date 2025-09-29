@@ -7,7 +7,6 @@ export default function ManagementAccountChgPasswordLayout({
 }) {
   return (
     <AuthGuard nextPath="/claims">
-      {/* SectionShell sudah handle Sidebar/Header */}
       <SectionShell>{children}</SectionShell>
     </AuthGuard>
   );

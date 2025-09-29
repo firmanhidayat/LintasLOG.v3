@@ -6,7 +6,6 @@ import { FormEvent, useEffect, useState } from "react";
 import lintaslogo from "@/images/lintaslog-logo.png";
 import bglintas from "@/images/bg-1.png";
 
-// i18n
 import {
   loadDictionaries,
   t,
@@ -16,14 +15,9 @@ import {
 } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 
-// const RESET_URL =
-//   "https://odoodev.linitekno.com/api-tms/auth/request_reset_password";
-
 const RESET_URL = process.env.NEXT_PUBLIC_TMS_RESET_URL!;
 
-
 export default function ResetPasswordPage() {
-  // i18n state
   const [i18nReady, setI18nReady] = useState(false);
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
 
@@ -43,7 +37,6 @@ export default function ResetPasswordPage() {
 
     const off = onLangChange((lang) => {
       if (!mounted) return;
-      // kamus sudah di-cache; cukup trigger re-render
       setActiveLang(lang);
     });
 
@@ -72,7 +65,7 @@ export default function ResetPasswordPage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Accept-Language": getLang(), // kirim lang aktif
+          "Accept-Language": getLang(), 
         },
         body: JSON.stringify({ login: email }),
       });
@@ -98,10 +91,8 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      {/* Kiri: Reset Password Form */}
       <div className="flex items-center justify-center bg-white px-8">
         <div className="w-full max-w-md">
-          {/* Logo */}
           <div className="mb-4 text-center">
             <Image
               src={lintaslogo}
@@ -113,12 +104,10 @@ export default function ResetPasswordPage() {
             />
           </div>
 
-          {/* Toggle Bahasa */}
           <div className="mb-6 flex items-center justify-end">
             <LangToggle />
           </div>
 
-          {/* Title & Subtitle */}
           <div className="mb-6 text-center">
             <h2 className="text-3xl font-bold text-black">
               {t("reset.title")}
@@ -128,7 +117,6 @@ export default function ResetPasswordPage() {
             </p>
           </div>
 
-          {/* Form */}
           <form
             className="space-y-4"
             method="post"
@@ -168,7 +156,6 @@ export default function ResetPasswordPage() {
               </button>
             </div>
 
-            {/* Status message */}
             <div aria-live="polite" className="min-h-6 text-center text-sm">
               {status === "success" && (
                 <span className="text-green-600">{msg}</span>
@@ -179,7 +166,6 @@ export default function ResetPasswordPage() {
             </div>
           </form>
 
-          {/* Optional: Back to Sign In */}
           <div className="mt-4 text-center text-sm">
             <Link
               href="/maccount/signin"

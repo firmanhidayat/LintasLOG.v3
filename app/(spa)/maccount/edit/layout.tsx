@@ -7,7 +7,6 @@ export default function ManagementAccountEditLayout({
 }) {
   return (
     <AuthGuard nextPath="/maccount/edit">
-      {/* SectionShell sudah handle Sidebar/Header */}
       <SectionShell>{children}</SectionShell>
     </AuthGuard>
   );

@@ -7,7 +7,6 @@ export default function DocsLayout({
 }) {
   return (
     <AuthGuard nextPath="/docs">
-      {/* SectionShell sudah handle Sidebar/Header */}
       <SectionShell>{children}</SectionShell>
     </AuthGuard>
   );

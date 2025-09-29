@@ -7,7 +7,6 @@ export default function FinanceLayout({
 }) {
   return (
     <AuthGuard nextPath="/finance">
-      {/* SectionShell sudah handle Sidebar/Header */}
       <SectionShell>{children}</SectionShell>
     </AuthGuard>
   );

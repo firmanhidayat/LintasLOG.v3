@@ -1,4 +1,3 @@
-// src/components/auth/AuthGuard.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,10 +8,9 @@ import { useAuth } from "@/components/providers/AuthProvider";
 
 type Props = {
   children: React.ReactNode;
-  nextPath?: string; // jika kosong, pakai pathname aktif
+  nextPath?: string; 
 };
 
-// halaman yang tidak boleh memicu redirect loop
 const AUTH_PUBLIC_PREFIXES = [
   "/maccount/signin",
   "/maccount/signup",
@@ -25,8 +23,7 @@ export default function AuthGuard({ children, nextPath }: Props) {
   const pathname = usePathname();
   const [ok, setOk] = useState(false);
 
-  // ✅ panggil hook di top-level, tidak dibungkus function/try-catch
-  const { loggedIn } = useAuth(); // pastikan AuthProvider membungkus app
+  const { loggedIn } = useAuth(); 
 
   useEffect(() => {
     const isAuthPublic = AUTH_PUBLIC_PREFIXES.some((p) =>
@@ -34,13 +31,12 @@ export default function AuthGuard({ children, nextPath }: Props) {
     );
 
     const doCheck = () => {
-      // Pakai state dari context sebagai sumber utama; fallback helper kalau perlu
       const logged = loggedIn ?? isLoggedIn();
 
       if (!logged && !isAuthPublic) {
         const target = nextPath || pathname || "/";
         const encodedNext = encodeURIComponent(withBase(target));
-        const loginUrl = `/maccount/signin?next=${encodedNext}`; // basePath otom. ditangani Next
+        const loginUrl = `/maccount/signin?next=${encodedNext}`;  
         router.replace(loginUrl);
         return;
       }
@@ -49,7 +45,6 @@ export default function AuthGuard({ children, nextPath }: Props) {
 
     doCheck();
 
-    // dengarkan perubahan login dari tab lain
     const onStorage = (e: StorageEvent) => {
       if (!e.key) return;
       if (["llog.login", "llog.mail_verified"].includes(e.key)) {
@@ -59,7 +54,7 @@ export default function AuthGuard({ children, nextPath }: Props) {
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [router, pathname, nextPath, loggedIn]); // ✅ depend ke loggedIn dari context
+  }, [router, pathname, nextPath, loggedIn]);  
 
   if (!ok) {
     return (

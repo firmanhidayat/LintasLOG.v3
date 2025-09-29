@@ -11,14 +11,11 @@ import {
   type ComponentProps,
 } from "react";
 import { usePathname } from "next/navigation";
-import type React from "react"; // untuk React.ComponentType & React.SVGProps
-// import Collapse from "./collapse";
+import type React from "react";  
 
-// ====== 🔑 Ambil tipe href dari komponen Link (tanpa LinkProps) ======
 type NextLinkProps = ComponentProps<typeof Link>;
 type Href = NextLinkProps["href"];
 
-// util cn sederhana
 function cn(...a: Array<string | false | null | undefined>) {
   return a.filter(Boolean).join(" ");
 }
@@ -31,13 +28,11 @@ type BaseProps = {
   className?: string;
 };
 
-// Helper: normalisasi href ke path string untuk cek active & key
 function hrefToPath(href: Href): string {
   if (typeof href === "string") return href;
   return href?.pathname ?? "";
 }
 
-/* ---------- Link biasa ---------- */
 export type NavLinkProps = BaseProps & { href: Href };
 
 export function NavLink({ href, label, icon: Icon, className }: NavLinkProps) {
@@ -76,11 +71,9 @@ export type NavGroupProps = BaseProps & {
   items: NavGroupItem[];
   defaultOpen?: boolean;
 
-  // controlled mode
   open?: boolean;
   onToggle?: (next: boolean) => void;
 
-  // collapse behavior
   unmountOnExit?: boolean; // default true
   duration?: number; // default 220
   easing?: string; // default 'ease'
@@ -124,7 +117,6 @@ export function NavGroup(props: NavGroupProps) {
       if (onToggle) onToggle(true);
       else setUncontrolledOpen(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInGroup]);
 
   const handleToggle = () => {
@@ -204,10 +196,10 @@ export function NavGroup(props: NavGroupProps) {
 type CollapseProps = {
   open: boolean;
   children: React.ReactNode;
-  id?: string; // untuk aria-controls
-  duration?: number; // ms, default 220
-  easing?: string; // css easing, default 'ease'
-  unmountOnExit?: boolean; // unmount saat closed, default false (bisa diatur dari NavGroup)
+  id?: string;  
+  duration?: number;  
+  easing?: string;  
+  unmountOnExit?: boolean; 
   className?: string;
 };
 
@@ -241,7 +233,7 @@ export default function Collapse({
     if (!el) return;
 
     const onEnd = () => {
-      if (open) el.style.height = "auto"; // biar responsif saat konten berubah
+      if (open) el.style.height = "auto"; 
       el.removeEventListener("transitionend", onEnd);
     };
 
@@ -260,8 +252,6 @@ export default function Collapse({
     } else {
       const current = el.getBoundingClientRect().height;
       el.style.height = `${current}px`;
-      // force reflow
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       el.offsetHeight;
       el.style.height = "0px";
     }

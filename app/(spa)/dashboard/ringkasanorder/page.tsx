@@ -13,13 +13,11 @@ export default function RingkasanOrderPage() {
   const [i18nReady, setI18nReady] = useState(false);
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
 
-  // Subscribe perubahan bahasa
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
     return () => off?.();
   }, []);
 
-  // Muat semua kamus sekali
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -28,7 +26,7 @@ export default function RingkasanOrderPage() {
         if (!cancelled) setI18nReady(true);
       } catch (err) {
         console.error("[i18n] loadDictionaries failed:", err);
-        if (!cancelled) setI18nReady(true); // tetap jalan pakai fallback hardcoded
+        if (!cancelled) setI18nReady(true);  
       }
     })();
     return () => {
@@ -36,13 +34,10 @@ export default function RingkasanOrderPage() {
     };
   }, []);
 
-  // early return loading SEBELUM memanggil t()
   if (!i18nReady) {
-    // pakai string hardcoded agar tidak memanggil t() lebih awal
     return <section className="p-4 text-sm text-gray-500">Memuat…</section>;
   }
 
-  // define teks bahasa ready
   const title = t("ringkasanorder.title");
   const subtitle = t("ringkasanorder.subtitle");
   const statsToday = t("ringkasanorder.statsToday");

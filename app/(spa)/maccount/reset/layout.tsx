@@ -4,7 +4,6 @@ export default function ManagementAccountResetLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // SectionShell sudah handle: Sidebar (desktop + mobile drawer), Header, dan state sidebarOpen.
   return (
     <SectionShell
       contentPaddingClassName="p-0"

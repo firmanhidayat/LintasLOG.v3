@@ -7,7 +7,6 @@ import lintaslogo from "@/images/lintaslog-logo.png";
 import bglintas from "@/images/bg-1.png";
 import { useRouter } from "next/navigation";
 
-// i18n
 import {
   loadDictionaries,
   t,
@@ -17,7 +16,6 @@ import {
 } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 
-// const REGISTER_URL = "https://odoodev.linitekno.com/api-tms/auth/register";
 const REGISTER_URL = process.env.NEXT_PUBLIC_TMS_REGISTER_URL!;
 
 type FastapiErrorItem = {
@@ -36,7 +34,6 @@ type RegisterPayload = {
   tms_user_type: TmsUserType;
 };
 
-// ---------- Type guards (tanpa any) ----------
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
@@ -59,7 +56,6 @@ function isFastapiErrorItems(v: unknown): v is FastapiErrorItem[] {
 export default function SignUpPage() {
   const router = useRouter();
 
-  // i18n state
   const [i18nReady, setI18nReady] = useState(false);
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
 
@@ -72,17 +68,14 @@ export default function SignUpPage() {
   useEffect(() => {
     let mounted = true;
 
-    // muat kamus (kamu bisa merge signup.json ke loader kamu)
     loadDictionaries().then(() => {
       if (!mounted) return;
       setI18nReady(true);
       setActiveLang(getLang());
     });
 
-    // reactive i18n
     const off = onLangChange((lang) => {
       if (!mounted) return;
-      // kamus sudah di-cache; cukup trigger re-render
       setActiveLang(lang);
     });
 
@@ -160,7 +153,7 @@ export default function SignUpPage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Accept-Language": getLang(), // kirim lang ke BE
+          "Accept-Language": getLang(), 
         },
         body: JSON.stringify(payload),
       });
@@ -178,7 +171,6 @@ export default function SignUpPage() {
         return;
       }
 
-      // simpan email untuk halaman success / verify
       sessionStorage.setItem("llog.emailcurrent", email);
       sessionStorage.setItem(
         "llog.signup_gate",
@@ -208,7 +200,6 @@ export default function SignUpPage() {
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      {/* Kiri: Background full */}
       <div className="relative hidden min-h-screen lg:block">
         <Image
           src={bglintas}
@@ -219,10 +210,8 @@ export default function SignUpPage() {
         />
       </div>
 
-      {/* Kanan: Form */}
       <div className="flex items-center justify-center bg-white px-8 py-10">
         <div className="w-full max-w-md">
-          {/* Logo */}
           <div className="mb-4 text-center">
             <Image
               src={lintaslogo}
@@ -234,12 +223,10 @@ export default function SignUpPage() {
             />
           </div>
 
-          {/* Toggle Bahasa */}
           <div className="mb-6 flex items-center justify-end">
             <LangToggle />
           </div>
 
-          {/* Judul */}
           <div className="mb-6 text-center">
             <h2 className="text-2xl font-bold text-gray-800">
               {t("signup.title")}
@@ -248,7 +235,6 @@ export default function SignUpPage() {
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-            {/* Alert */}
             {errMsg && (
               <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 {errMsg}
@@ -260,7 +246,6 @@ export default function SignUpPage() {
               </div>
             )}
 
-            {/* AccountName (name) */}
             <div>
               <label
                 htmlFor="accountName"
@@ -279,7 +264,6 @@ export default function SignUpPage() {
               />
             </div>
 
-            {/* Email (login) */}
             <div>
               <label
                 htmlFor="email"
@@ -298,7 +282,6 @@ export default function SignUpPage() {
               />
             </div>
 
-            {/* Phone */}
             <div>
               <label
                 htmlFor="phone"
@@ -317,7 +300,6 @@ export default function SignUpPage() {
               />
             </div>
 
-            {/* TMS User Type */}
             <div>
               <label
                 htmlFor="tms_user_type"
@@ -340,7 +322,6 @@ export default function SignUpPage() {
               </select>
             </div>
 
-            {/* Password & Confirm */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label
@@ -409,7 +390,6 @@ export default function SignUpPage() {
               </div>
             </div>
 
-            {/* Terms */}
             <div className="flex items-start gap-2">
               <input
                 id="terms"
@@ -429,7 +409,6 @@ export default function SignUpPage() {
               </label>
             </div>
 
-            {/* Submit */}
             <div className="text-center">
               <button
                 type="submit"
@@ -440,7 +419,6 @@ export default function SignUpPage() {
               </button>
             </div>
 
-            {/* Link ke Sign In */}
             <p className="mt-4 text-center text-sm text-gray-500">
               {t("signup.footer.haveAccount")}{" "}
               <Link

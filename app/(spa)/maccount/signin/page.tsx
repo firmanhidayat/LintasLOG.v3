@@ -9,18 +9,16 @@ import bglintas from "@/images/bg-1.png";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 
-// i18n helpers
 import {
   loadDictionaries,
   t,
   getLang,
-  onLangChange, // ▲ subscribe perubahan bahasa
+  onLangChange,
   type Lang,
 } from "@/lib/i18n";
 import { mapFastapi422, mapCommonErrors } from "@/lib/i18n-fastapi";
 import LangToggle from "@/components/LangToggle";
 
-// const LOGIN_URL = "https://odoodev.linitekno.com/api-tms/auth/login";
 const LOGIN_URL = process.env.NEXT_PUBLIC_TMS_LOGIN_URL!;
 
 type Role = "shipper" | "transporter";
@@ -60,11 +58,9 @@ export default function LoginPage() {
 
   const { login: authLogin } = useAuth();
 
-  // i18n state
   const [i18nReady, setI18nReady] = useState(false);
-  const [activeLang, setActiveLang] = useState<Lang>(getLang()); // ▲ trigger re-render saat lang ganti
+  const [activeLang, setActiveLang] = useState<Lang>(getLang());
 
-  // error states
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErr, setFieldErr] = useState<{
     email?: string;
@@ -80,16 +76,13 @@ export default function LoginPage() {
   useEffect(() => {
     let mounted = true;
 
-    // pre-load dictionaries once (memuat ID & EN sekaligus)
     loadDictionaries().then(() => {
       if (!mounted) return;
       setI18nReady(true);
       setActiveLang(getLang()); // sinkron awal
     });
 
-    // ▲ subscribe perubahan bahasa dari LangToggle
     const off = onLangChange((lang) => {
-      // tidak perlu reload kamus, cukup re-render agar t() pakai currentLang baru
       if (!mounted) return;
       setActiveLang(lang);
     });
@@ -106,7 +99,7 @@ export default function LoginPage() {
   );
 
   function parse422(detail: Fastapi422["detail"]) {
-    const lang = getLang(); // ▲ sudah bertipe Lang; tidak perlu cast
+    const lang = getLang();
     const { fieldErrors, generic } = mapFastapi422(detail, lang);
     setFieldErr(fieldErrors);
     setFormError(generic.length ? generic.join(" | ") : null);
@@ -127,7 +120,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Accept-Language": getLang(), // ▲ selalu kirim lang terbaru
+          "Accept-Language": getLang(),
         },
         body: JSON.stringify({ login: email, password }),
         credentials: "include",
@@ -181,7 +174,6 @@ export default function LoginPage() {
     }
   }
 
-  // Render awal sebelum kamus siap
   if (!i18nReady) {
     return (
       <div className="grid min-h-screen place-items-center">
@@ -190,16 +182,13 @@ export default function LoginPage() {
     );
   }
 
-  // setiap kali activeLang berubah, komponen re-render → semua t() ikut ganti
   const roleLabel =
     tab === "shipper" ? t("roles.shipper") : t("roles.transporter");
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      {/* Kiri: Form */}
       <div className="flex items-center justify-center bg-white px-8">
         <div className="w-full max-w-md">
-          {/* Logo */}
           <div className="mb-4 text-center">
             <Image
               src={lintaslogo}
@@ -211,12 +200,10 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Toggle Bahasa */}
           <div className="mb-2 flex items-center justify-end">
             <LangToggle />
           </div>
 
-          {/* Tabs (UI saja) */}
           <div className="mb-6">
             <nav className="-mb-px flex justify-center gap-8">
               <button
@@ -246,7 +233,6 @@ export default function LoginPage() {
             </nav>
           </div>
 
-          {/* Form Login */}
           <div className="mb-6 text-center">
             <h2 className="text-2xl font-bold text-gray-800">
               {t("title.signin", { role: roleLabel })}
@@ -254,7 +240,6 @@ export default function LoginPage() {
             <p className="mt-1 text-gray-400">{t("subtitle.signin")}</p>
           </div>
 
-          {/* Alert umum */}
           {formError && (
             <div
               role="alert"
@@ -264,7 +249,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Alert verify email */}
           {verifyHint.show && (
             <div
               role="status"
@@ -403,7 +387,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Kanan: Background full */}
       <div className="relative hidden min-h-screen lg:block">
         <Image
           src={bglintas}

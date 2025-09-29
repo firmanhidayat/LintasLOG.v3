@@ -7,7 +7,6 @@ import Link from "next/link";
 import lintaslogo from "@/images/lintaslog-logo.png";
 import bglintas from "@/images/bg-1.png";
 
-// i18n
 import {
   loadDictionaries,
   t,
@@ -17,12 +16,8 @@ import {
 } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 
-// const SET_PASSWORD_URL =
-//   "https://odoodev.linitekno.com/api-tms/auth/set_password";
-
 const SET_PASSWORD_URL = process.env.NEXT_PUBLIC_TMS_SET_PASSWORD_URL!;
 
-// -------------------- Types --------------------
 interface VerifyOk {
   status: "ok";
   email?: string;
@@ -38,7 +33,6 @@ interface HttpErrorPayload {
   message?: string;
 }
 
-// ---------- Type guards ----------
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
@@ -64,7 +58,6 @@ function parseHttpErrorPayload(v: unknown): HttpErrorPayload | null {
   return { detail, message };
 }
 
-// ========== Wrapper with Suspense ==========
 export default function VerifyForgotPasswordPage() {
   return (
     <Suspense
@@ -100,18 +93,14 @@ export default function VerifyForgotPasswordPage() {
     </Suspense>
   );
 }
-
-// ========== Actual page content (uses useSearchParams) ==========
 function VerifyTokenForgotPwdInner() {
   const router = useRouter();
   const sp = useSearchParams();
   const token = sp.get("token") ?? "";
 
-  // i18n reactive
   const [i18nReady, setI18nReady] = useState(false);
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
 
-  // form states
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -126,13 +115,10 @@ function VerifyTokenForgotPwdInner() {
 
   const disabled = useMemo(() => state.kind === "submitting", [state.kind]);
 
-  // validation helpers
   const minLen = 8;
   const mismatch = confirm.length > 0 && password !== confirm;
   const tooShort = password.length > 0 && password.length < minLen;
   const formInvalid = !password || !confirm || mismatch || tooShort;
-
-  // boot i18n + subscribe perubahan bahasa
   useEffect(() => {
     let mounted = true;
 
@@ -211,7 +197,6 @@ function VerifyTokenForgotPwdInner() {
     }
   }
 
-  // sembunyikan UI sampai kamus siap agar teks konsisten
   if (!i18nReady) {
     return (
       <div className="relative min-h-svh w-full overflow-hidden bg-white text-black">
@@ -237,7 +222,6 @@ function VerifyTokenForgotPwdInner() {
 
   return (
     <div className="relative min-h-svh w-full overflow-hidden bg-white text-black">
-      {/* Background */}
       <Image
         src={bglintas}
         alt="bg"
@@ -245,10 +229,8 @@ function VerifyTokenForgotPwdInner() {
         className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover opacity-20"
       />
 
-      {/* Page container */}
       <div className="relative mx-auto flex min-h-svh max-w-7xl items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
-          {/* Brand */}
           <div className="mb-4 flex items-center justify-center gap-3">
             <Image
               src={lintaslogo}
@@ -257,12 +239,10 @@ function VerifyTokenForgotPwdInner() {
             />
           </div>
 
-          {/* Toggle Bahasa */}
           <div className="mb-4 flex items-center justify-end">
             <LangToggle />
           </div>
 
-          {/* Card */}
           <div className="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-xl backdrop-blur">
             <h1 className="mb-1 text-center text-2xl font-bold">
               {t("setPwd.title", { default: "Set New Password" })}
@@ -318,10 +298,9 @@ function VerifyTokenForgotPwdInner() {
               </div>
             ) : (
               <form onSubmit={onSubmit} className="space-y-4">
-                {/* Password */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">
-                    {t("form.password")}
+                    {t("forgot.form.password")}
                   </label>
                   <div className="relative">
                     <input
@@ -332,7 +311,7 @@ function VerifyTokenForgotPwdInner() {
                       minLength={minLen}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t("form.placeholders.password", {
+                      placeholder={t("forgot.form.placeholders.password", {
                         default: "Enter new password",
                       })}
                       className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 pr-11 outline-none ring-0 placeholder:text-gray-400"
@@ -343,12 +322,12 @@ function VerifyTokenForgotPwdInner() {
                       className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
                       aria-label={showPwd ? t("a11y.hide") : t("a11y.show")}
                     >
-                      {showPwd ? t("ui.hide") : t("ui.show")}
+                      {showPwd ? t("forgot.ui.hide") : t("forgot.ui.show")}
                     </button>
                   </div>
                   {tooShort && (
                     <p className="text-xs text-red-600">
-                      {t("form.errors.minLength", {
+                      {t("forgot.form.errors.minLength", {
                         default: "Minimum {n} characters",
                         n: minLen,
                       })}
@@ -356,10 +335,9 @@ function VerifyTokenForgotPwdInner() {
                   )}
                 </div>
 
-                {/* Confirm */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">
-                    {t("form.confirmPassword", { default: "Confirm Password" })}
+                    {t("forgot.form.confirmPassword", { default: "Confirm Password" })}
                   </label>
                   <div className="relative">
                     <input
@@ -370,7 +348,7 @@ function VerifyTokenForgotPwdInner() {
                       minLength={minLen}
                       value={confirm}
                       onChange={(e) => setConfirm(e.target.value)}
-                      placeholder={t("form.placeholders.confirmPassword", {
+                      placeholder={t("forgot.form.placeholders.confirmPassword", {
                         default: "Re-enter new password",
                       })}
                       className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 pr-11 outline-none ring-0 placeholder:text-gray-400"
@@ -380,22 +358,21 @@ function VerifyTokenForgotPwdInner() {
                       onClick={() => setShowConfirm((v) => !v)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
                       aria-label={
-                        showConfirm ? t("a11y.hide") : t("a11y.show")
+                        showConfirm ? t("forgot.a11y.hide") : t("forgot.a11y.show")
                       }
                     >
-                      {showConfirm ? t("ui.hide") : t("ui.show")}
+                      {showConfirm ? t("forgot.ui.hide") : t("forgot.ui.show")}
                     </button>
                   </div>
                   {mismatch && (
                     <p className="text-xs text-red-600">
-                      {t("form.errors.passwordMismatch", {
+                      {t("forgot.form.errors.passwordMismatch", {
                         default: "Passwords do not match",
                       })}
                     </p>
                   )}
                 </div>
 
-                {/* Actions */}
                 {state.kind === "error" && token && (
                   <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                     {state.reason}
@@ -454,8 +431,6 @@ function VerifyTokenForgotPwdInner() {
     </div>
   );
 }
-
-// ---------- UI bits ----------
 function Spinner({ ariaLabel = "Loading" }: { ariaLabel?: string }) {
   return (
     <div
