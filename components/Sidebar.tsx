@@ -1,7 +1,7 @@
 // components/Sidebar.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition, memo } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NavGroup, NavLink } from "@/components/NavLink";
@@ -18,6 +18,9 @@ export default function Sidebar({
   open?: boolean;
   onClose?: () => void;
 }) {
+  const [isPending, startTransition] = useTransition();
+  const safeClose = () => startTransition(() => onClose?.());
+
   return (
     <>
       {/* ===== Mobile Drawer (md:hidden) ===== */}
@@ -28,8 +31,14 @@ export default function Sidebar({
         aria-hidden={!open}
       >
         {/* Backdrop */}
-        <div
+        {/* <div
           onClick={onClose}
+          className={`absolute inset-0 bg-black/40 transition-opacity ${
+            open ? "opacity-100" : "opacity-0"
+          }`}
+        /> */}
+        <div
+          onClick={safeClose}
           className={`absolute inset-0 bg-black/40 transition-opacity ${
             open ? "opacity-100" : "opacity-0"
           }`}
@@ -39,7 +48,7 @@ export default function Sidebar({
           className={`
             absolute left-0 top-0 h-full w-72
             border-r border-gray-200/70 bg-brand-900 text-white shadow-xl
-            transition-transform duration-200 ease-out
+            transition-transform duration-200 ease-out will-change-transform motion-reduce:transition-none
             ${open ? "translate-x-0" : "-translate-x-full"}
           `}
           role="dialog"
@@ -194,7 +203,7 @@ const DEFAULT_OPEN: OpenMap = {
 };
 
 /** ====== Komponen isi sidebar (dipakai di mobile & desktop) ====== */
-function SidebarContent() {
+const SidebarContent = memo(function SidebarContent() {
   const pathname = usePathname();
 
   const [openMap, setOpenMap] = useState<OpenMap>(DEFAULT_OPEN);
@@ -228,7 +237,8 @@ function SidebarContent() {
     const match = (prefix: string) =>
       pathname === prefix || (prefix !== "/" && pathname.startsWith(prefix));
 
-    const next: OpenMap = { ...openMap };
+    // const next: OpenMap = { ...openMap };
+    const next: OpenMap = { ...DEFAULT_OPEN };
 
     if (match("/dashboard") || pathname === "/") next.dashboard = true;
     if (match("/orders")) next.orders = true;
@@ -332,7 +342,11 @@ function SidebarContent() {
           label={t("nav.orders.title")}
           icon={IconOrders}
           items={[
-            { label: t("nav.orders.list"), href: "/orders/list", icon: IconList },
+            {
+              label: t("nav.orders.list"),
+              href: "/orders/list",
+              icon: IconList,
+            },
           ]}
           open={openMap.orders}
           onToggle={toggle("orders")}
@@ -345,7 +359,11 @@ function SidebarContent() {
           label={t("nav.claims.title")}
           icon={IconClaims}
           items={[
-            { label: t("nav.claims.list"), href: "/claims/list", icon: IconList },
+            {
+              label: t("nav.claims.list"),
+              href: "/claims/list",
+              icon: IconList,
+            },
           ]}
           open={openMap.claims}
           onToggle={toggle("claims")}
@@ -380,7 +398,11 @@ function SidebarContent() {
           label={t("nav.downpayment.title")}
           icon={IconDownPayment}
           items={[
-            { label: t("nav.downpayment.list"), href: "/downpayment/list", icon: IconList },
+            {
+              label: t("nav.downpayment.list"),
+              href: "/downpayment/list",
+              icon: IconList,
+            },
           ]}
           open={openMap.downpayment}
           onToggle={toggle("downpayment")}
@@ -417,4 +439,4 @@ function SidebarContent() {
       </div>
     </div>
   );
-}
+});
