@@ -7,7 +7,6 @@ import Link from "next/link";
 import lintaslogo from "@/images/lintaslog-logo.png";
 import bglintas from "@/images/bg-1.png";
 
-// i18n
 import {
   loadDictionaries,
   t,
@@ -17,12 +16,8 @@ import {
 } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 
-// const VERIFY_EMAIL_URL =
-//   "https://odoodev.linitekno.com/api-tms/auth/validate_email";
 
 const VERIFY_EMAIL_URL = process.env.NEXT_PUBLIC_TMS_VERIFY_EMAIL_URL!;
-
-// -------------------- Types --------------------
 interface VerifyOk {
   status: "ok";
   email?: string;
@@ -38,7 +33,6 @@ interface HttpErrorPayload {
   message?: string;
 }
 
-// ---------- Type guards ----------
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
@@ -64,7 +58,6 @@ function parseHttpErrorPayload(v: unknown): HttpErrorPayload | null {
   return { detail, message };
 }
 
-// ========== Wrapper with Suspense ==========
 export default function VerifyEmailPage() {
   return (
     <Suspense
@@ -101,13 +94,11 @@ export default function VerifyEmailPage() {
   );
 }
 
-// ========== Actual page content (uses useSearchParams) ==========
 function VerifyEmailInner() {
   const router = useRouter();
   const sp = useSearchParams();
   const token = sp.get("token") ?? "";
 
-  // i18n reactive
   const [i18nReady, setI18nReady] = useState(false);
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
 
@@ -120,7 +111,6 @@ function VerifyEmailInner() {
 
   const disabled = useMemo(() => state.kind === "verifying", [state.kind]);
 
-  // boot i18n + subscribe perubahan bahasa
   useEffect(() => {
     let mounted = true;
 
@@ -132,7 +122,6 @@ function VerifyEmailInner() {
 
     const off = onLangChange((lang) => {
       if (!mounted) return;
-      // kamus sudah di-cache; cukup trigger re-render
       setActiveLang(lang);
     });
 
@@ -142,7 +131,6 @@ function VerifyEmailInner() {
     };
   }, []);
 
-  // lakukan verifikasi
   useEffect(() => {
     if (!token) {
       setState({ kind: "error", reason: t("verify.errors.tokenMissing") });
@@ -157,7 +145,7 @@ function VerifyEmailInner() {
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
-            "Accept-Language": getLang(), // kirim lang aktif
+            "Accept-Language": getLang(), 
           },
           body: JSON.stringify({ token }),
         });
@@ -205,9 +193,8 @@ function VerifyEmailInner() {
     return () => {
       aborted = true;
     };
-  }, [token, activeLang]); // depend ke activeLang agar error mapping ikut bahasa
+  }, [token, activeLang]);
 
-  // sembunyikan UI sampai kamus siap agar teks konsisten
   if (!i18nReady) {
     return (
       <div className="relative min-h-svh w-full overflow-hidden bg-white text-black">
@@ -233,7 +220,6 @@ function VerifyEmailInner() {
 
   return (
     <div className="relative min-h-svh w-full overflow-hidden bg-white text-black">
-      {/* Background */}
       <Image
         src={bglintas}
         alt="bg"
@@ -241,10 +227,8 @@ function VerifyEmailInner() {
         className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover opacity-20"
       />
 
-      {/* Page container */}
       <div className="relative mx-auto flex min-h-svh max-w-7xl items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
-          {/* Brand */}
           <div className="mb-4 flex items-center justify-center gap-3">
             <Image
               src={lintaslogo}
@@ -253,12 +237,10 @@ function VerifyEmailInner() {
             />
           </div>
 
-          {/* Toggle Bahasa */}
           <div className="mb-4 flex items-center justify-end">
             <LangToggle />
           </div>
 
-          {/* Card */}
           <div className="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-xl backdrop-blur">
             <h1 className="mb-1 text-center text-2xl font-bold">
               {t("verify.title")}
@@ -353,7 +335,6 @@ function VerifyEmailInner() {
   );
 }
 
-// ---------- UI bits ----------
 function Spinner({ ariaLabel = "Loading" }: { ariaLabel?: string }) {
   return (
     <div

@@ -1,6 +1,4 @@
-// lib/odoo.ts
 
-// Define the payload shape for Odoo JSON-RPC
 export interface OdooRpcParams<A = unknown[], K = Record<string, unknown>> {
   model: string;
   method: string;
@@ -8,7 +6,6 @@ export interface OdooRpcParams<A = unknown[], K = Record<string, unknown>> {
   kwargs?: K;
 }
 
-// JSON-RPC request envelope
 interface JsonRpcRequest<A = unknown[], K = Record<string, unknown>> {
   jsonrpc: "2.0";
   method: "call";
@@ -16,7 +13,6 @@ interface JsonRpcRequest<A = unknown[], K = Record<string, unknown>> {
   id: number;
 }
 
-// JSON-RPC response envelope
 interface JsonRpcResponse<T> {
   jsonrpc: "2.0";
   id: number;
@@ -24,7 +20,6 @@ interface JsonRpcResponse<T> {
   error?: { code: number; message: string; data?: unknown };
 }
 
-// Generic helper to call Odoo via our proxy
 export async function odooJsonRpc<
   T = unknown,
   A extends unknown[] = unknown[],

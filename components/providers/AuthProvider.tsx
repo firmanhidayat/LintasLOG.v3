@@ -18,17 +18,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loggedIn, setLoggedIn] = useState(false);
 
-  // cek status login saat pertama render
   useEffect(() => {
     setLoggedIn(isLoggedIn());
   }, []);
-
-  //   const login = (data: { login: string; mail_verified: boolean }) => {
-  //     // simpan ke localStorage / sessionStorage
-  //     localStorage.setItem("llog.login", data.login);
-  //     localStorage.setItem("llog.mail_verified", String(data.mail_verified));
-  //     setLoggedIn(true);
-  //   };
 
   const login = (data: {
     login: string;

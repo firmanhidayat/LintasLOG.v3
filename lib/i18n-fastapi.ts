@@ -4,7 +4,7 @@ import { t } from "./i18n";
 type FastapiErrorItem = {
   loc: (string | number)[];
   msg: string;
-  type: string; // e.g., 'value_error.missing', 'type_error.email'
+  type: string;  
 };
 
 export function mapFastapi422(
@@ -22,7 +22,6 @@ export function mapFastapi422(
       .reverse()
       .find((x) => typeof x === "string");
 
-    // Contoh pemetaan sederhana berdasarkan type
     const isMissing = item.type?.includes("missing");
     const isMinLen = item.type?.includes("min_length");
     const isEmail = item.type?.includes("email");

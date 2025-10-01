@@ -1,4 +1,3 @@
-// components/Sidebar.tsx
 "use client";
 
 import { useEffect, useMemo, useState, useTransition, memo } from "react";
@@ -7,10 +6,8 @@ import { usePathname } from "next/navigation";
 import { NavGroup, NavLink } from "@/components/NavLink";
 import lintaslogo from "@/images/lintaslog-logo.png";
 
-// i18n
 import { t, getLang, onLangChange, type Lang } from "@/lib/i18n";
 
-/** ====== NEW: Props agar bisa dikontrol dari Header (mobile) ====== */
 export default function Sidebar({
   open = false,
   onClose,
@@ -23,7 +20,6 @@ export default function Sidebar({
 
   return (
     <>
-      {/* ===== Mobile Drawer (md:hidden) ===== */}
       <div
         className={`fixed inset-0 z-40 md:hidden ${
           open ? "pointer-events-auto" : "pointer-events-none"
@@ -58,7 +54,6 @@ export default function Sidebar({
         </aside>
       </div>
 
-      {/* ===== Desktop Sidebar (sticky) ===== */}
       <aside className="hidden md:flex w-64 shrink-0 h-dvh sticky top-0 border-r border-gray-200/70 bg-brand-900 text-white">
         <SidebarContent />
       </aside>
@@ -209,16 +204,12 @@ const SidebarContent = memo(function SidebarContent() {
   const [openMap, setOpenMap] = useState<OpenMap>(DEFAULT_OPEN);
   const loaded = useMemo(() => typeof window !== "undefined", []);
 
-  // === i18n reactive: trigger re-render saat bahasa berubah dari Header ===
-  // gunakan lazy initializer agar aman di mounting (lebih stabil)
   const [activeLang, setActiveLang] = useState<Lang>(() => getLang());
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
     return () => off?.();
   }, []);
-  // Catatan: activeLang TIDAK dipakai langsung — hanya untuk memicu re-render agar label t(...) ikut berubah.
 
-  // load dari localStorage
   useEffect(() => {
     if (!loaded) return;
     try {
@@ -232,7 +223,6 @@ const SidebarContent = memo(function SidebarContent() {
     }
   }, [loaded]);
 
-  // auto-open sesuai route + accordion
   useEffect(() => {
     const match = (prefix: string) =>
       pathname === prefix || (prefix !== "/" && pathname.startsWith(prefix));
@@ -271,10 +261,8 @@ const SidebarContent = memo(function SidebarContent() {
     }
 
     setOpenMap(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]); // sengaja hanya bergantung pada pathname (perilaku aslinya)
+  }, [pathname]);
 
-  // persist ke localStorage
   useEffect(() => {
     if (!loaded) return;
     try {
@@ -299,7 +287,6 @@ const SidebarContent = memo(function SidebarContent() {
 
   return (
     <div className="flex w-full flex-col">
-      {/* Logo */}
       <div className="px-4 pt-4 pb-10">
         <div className="flex items-center gap-3">
           <Image
@@ -313,7 +300,6 @@ const SidebarContent = memo(function SidebarContent() {
         </div>
       </div>
 
-      {/* Navigasi */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
         <NavGroup
           href="/"
@@ -428,7 +414,6 @@ const SidebarContent = memo(function SidebarContent() {
         />
       </nav>
 
-      {/* Bottom button */}
       <div className="mt-auto border-t border-white/10 px-4 py-3">
         <NavLink
           href="/docs"

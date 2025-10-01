@@ -1,10 +1,9 @@
-// src/lib/paths.ts
-export const BASE_PATH = "/tms"; // atau "" saat build tanpa subpath
+export const BASE_PATH = "/tms"; 
 
 export function withBase(p: string) {
   if (!BASE_PATH) return ensureLeadingSlash(p);
   const path = ensureLeadingSlash(p);
-  if (path === BASE_PATH || path.startsWith(`${BASE_PATH}/`)) return path; // sudah ada
+  if (path === BASE_PATH || path.startsWith(`${BASE_PATH}/`)) return path;
   return `${BASE_PATH}${path}`;
 }
 

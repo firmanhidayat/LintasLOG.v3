@@ -7,5 +7,5 @@ export default function ManagementAccountPage() {
   useEffect(() => {
     router.replace("/maccount/edit");
   }, [router]);
-  return null; // tidak render apa-apa
+  return null;
 }

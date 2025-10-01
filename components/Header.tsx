@@ -12,9 +12,7 @@ import {
 import AvatarMenu from "@/components/AvatarMenu";
 import { LogoutButton } from "@/components/buttons/LogoutButton";
 import { UserCog, KeyRound, Activity } from "lucide-react";
-// LangToggle
 import LangToggle from "@/components/LangToggle";
-// i18n
 import { t, getLang, onLangChange, type Lang } from "@/lib/i18n";
 
 const ICON_BTN_BASE =
@@ -22,7 +20,6 @@ const ICON_BTN_BASE =
   "hover:bg-gray-100 dark:hover:bg-gray-200 " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
 
-// Samakan ukuran tombol dengan Avatar (32px)
 const ICON_BTN = `${ICON_BTN_BASE} h-8 w-8`;
 
 export default function Header({
@@ -32,16 +29,12 @@ export default function Header({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-
-  // === i18n reactive: trigger re-render saat bahasa berubah dari Header ===
-  // gunakan lazy initializer agar aman di mounting (lebih stabil)
   const [activeLang, setActiveLang] = useState<Lang>(() => getLang());
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
     return () => off?.();
   }, []);
 
-  // Tutup overlay search jika viewport berubah ke md (mis. rotate/resize)
   useEffect(() => {
     const handler = () => {
       if (window.matchMedia("(min-width: 768px)").matches) {
@@ -56,7 +49,6 @@ export default function Header({
     <>
       <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white text-black">
         <div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-3 px-4 sm:px-6">
-          {/* KIRI: Hamburger */}
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -80,7 +72,6 @@ export default function Header({
             </button>
           </div>
 
-          {/* TENGAH: Search field (desktop) */}
           <div className="flex flex-1 justify-center">
             <form
               role="search"
@@ -95,14 +86,11 @@ export default function Header({
             </form>
           </div>
 
-          {/* KANAN: LangToggle + Icon Buttons + Avatar dropdown */}
           <div className="ml-auto flex items-center gap-1">
-            {/* ⬇️ LangToggle: tampil di semua ukuran; bisa di-hide di xs jika mau */}
             <div className="mr-1">
               <LangToggle />
             </div>
 
-            {/* Search (mobile trigger) */}
             <button
               type="button"
               className={`md:hidden ${ICON_BTN}`}
@@ -113,7 +101,6 @@ export default function Header({
               <SearchIcon className="h-4 w-4" />
             </button>
 
-            {/* Notifikasi */}
             <button
               type="button"
               className={ICON_BTN}
@@ -122,12 +109,10 @@ export default function Header({
               <Bell className="h-4 w-4" />
             </button>
 
-            {/* Messages */}
             <button type="button" className={ICON_BTN} aria-label="Messages">
               <MessageSquare className="h-4 w-4" />
             </button>
 
-            {/* Push Notification */}
             <button
               type="button"
               className={ICON_BTN}
@@ -136,7 +121,6 @@ export default function Header({
               <Megaphone className="h-4 w-4" />
             </button>
 
-            {/* Avatar + Dropdown */}
             <details className="relative group">
               <summary
                 className={`${ICON_BTN_BASE} h-8 w-8 list-none cursor-pointer`}
@@ -197,20 +181,17 @@ export default function Header({
         </div>
       </header>
 
-      {/* ===== Mobile Search Overlay ===== */}
       <div
         className={`fixed inset-0 z-50 md:hidden ${searchOpen ? "pointer-events-auto" : "pointer-events-none"
           }`}
         aria-hidden={!searchOpen}
       >
-        {/* Backdrop */}
         <div
           className={`absolute inset-0 bg-black/40 transition-opacity ${searchOpen ? "opacity-100" : "opacity-0"
             }`}
           onClick={() => setSearchOpen(false)}
         />
 
-        {/* Panel atas */}
         <div
           className={`absolute left-0 right-0 top-0 border-b border-gray-200 bg-white p-3 shadow-sm transition-transform duration-150
             ${searchOpen ? "translate-y-0" : "-translate-y-full"}`}

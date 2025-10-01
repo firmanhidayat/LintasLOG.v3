@@ -1,18 +1,14 @@
 export type Lang = "id" | "en";
 export const LANG_KEY = "llog.lang";
 
-/** Kamus bertingkat: leaf = string, node = Dict (rekursif). */
 interface Dict {
   [key: string]: string | Dict;
 }
 
-/** Cache seluruh kamus per bahasa. Null artinya belum dimuat. */
 let dictionaries: Record<Lang, Dict> | null = null;
 
-/** Event listeners untuk perubahan bahasa (reactive i18n). */
 const listeners = new Set<(lang: Lang) => void>();
 
-// ————————————————— Utils —————————————————
 function getInitialLang(): Lang {
   if (typeof window === "undefined") return "id";
   const saved = localStorage.getItem(LANG_KEY) as Lang | null;
@@ -42,7 +38,6 @@ function mergeAll(dicts: ReadonlyArray<Dict>): Dict {
   return dicts.reduce<Dict>((acc, d) => deepMerge(acc, d), {});
 }
 
-/** Ambil nilai dari kamus berdasarkan path (a.b.c) */
 function getFromDict(
   dict: Dict,
   path: ReadonlyArray<string>
@@ -72,12 +67,8 @@ function interpolate(
   );
 }
 
-// ——————————————— Namespaces (login, signup, …) ———————————————
-// Tambah nama file JSON di sini jika perlu namespace baru.
 type Namespace = "login" | "signup" | "reset" | "verify" | "ringkasanorder" | "nav" | "avatarnav" | "forgot";
 
-// Import eksplisit per namespace supaya bundler bisa mengikutkan file.
-// (Template path dinamis sering tidak ter-trace oleh bundler.)
 async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
   if (lang === "id") {
     if (ns === "login") {
@@ -146,15 +137,13 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       return (m.default ?? {}) as unknown as Dict;
     }
   }
-  // fallback aman (tidak terjadi jika mapping di atas lengkap)
   return {};
 }
 
-// ——————————————— Public API ———————————————
+
 export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
   if (dictionaries) return dictionaries;
 
-  // Tentukan namespace yang ingin digabung
   const namespaces: Namespace[] = [
     "login",
     "signup",
@@ -166,7 +155,7 @@ export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
     "forgot",
   ];
 
-  // Muat semua namespace per bahasa, lalu deep-merge
+
   const [idDicts, enDicts] = await Promise.all([
     Promise.all(namespaces.map((ns) => importDict("id", ns))),
     Promise.all(namespaces.map((ns) => importDict("en", ns))),

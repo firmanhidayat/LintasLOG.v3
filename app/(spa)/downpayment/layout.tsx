@@ -7,7 +7,6 @@ export default function DownpaymentLayout({
 }) {
   return (
     <AuthGuard nextPath="/downpayment">
-      {/* SectionShell sudah handle Sidebar/Header */}
       <SectionShell>{children}</SectionShell>
     </AuthGuard>
   );
