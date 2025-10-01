@@ -26,7 +26,7 @@ export default function RingkasanOrderPage() {
         if (!cancelled) setI18nReady(true);
       } catch (err) {
         console.error("[i18n] loadDictionaries failed:", err);
-        if (!cancelled) setI18nReady(true);  
+        if (!cancelled) setI18nReady(true);
       }
     })();
     return () => {

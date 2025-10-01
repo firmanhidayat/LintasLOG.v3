@@ -1,5 +1,6 @@
 import AuthGuard from "@/components/auth/AuthGuard";
 import SectionShell from "@/components/layouts/SectionShell";
+
 export default function ClaimsLayout({
   children,
 }: {

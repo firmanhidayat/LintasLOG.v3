@@ -25,19 +25,34 @@ function getCookie(name: string): string | null {
   return m ? decodeURIComponent(m[2]) : null;
 }
 
+// export function isLoggedIn(): boolean {
+//   const login =
+//     (typeof window !== "undefined" && localStorage.getItem("llog.login")) ||
+//     (typeof window !== "undefined" && sessionStorage.getItem("llog.login")) ||
+//     null;
+
+//   const verified =
+//     (typeof window !== "undefined" &&
+//       (localStorage.getItem("llog.mail_verified") ||
+//         sessionStorage.getItem("llog.mail_verified"))) ||
+//     null;
+
+//   return !!login && verified === "true";
+// }
+
 export function isLoggedIn(): boolean {
-  const login =
-    (typeof window !== "undefined" && localStorage.getItem("llog.login")) ||
-    (typeof window !== "undefined" && sessionStorage.getItem("llog.login")) ||
-    null;
-
-  const verified =
-    (typeof window !== "undefined" &&
-      (localStorage.getItem("llog.mail_verified") ||
-        sessionStorage.getItem("llog.mail_verified"))) ||
-    null;
-
-  return !!login && verified === "true";
+  if (typeof window === "undefined") return false;
+  try {
+    const login =
+      localStorage.getItem("llog.login") ||
+      sessionStorage.getItem("llog.login");
+    const verified =
+      localStorage.getItem("llog.mail_verified") ||
+      sessionStorage.getItem("llog.mail_verified");
+    return !!login && verified === "true";
+  } catch {
+    return false;
+  }
 }
 
 export async function clearAuth(): Promise<void> {
@@ -79,20 +94,19 @@ export async function apiLogout(opts?: {
   try {
     const res = await fetch(LOGOUT_URL, {
       method: "POST",
-      credentials: "include", 
+      credentials: "include",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
         ...(csrf ? { "X-CSRFToken": csrf } : {}),
       },
-      body: "{}", 
+      body: "{}",
       signal,
     });
 
     status = res.status;
     ok = res.ok;
 
-    
     try {
       const data: unknown = await res.json();
       if (isApiLogoutResponse(data)) {
