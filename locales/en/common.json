@@ -10,6 +10,7 @@
         "cancel": "Discard",
         "confirm": "Confirmation",
         "discard": "Discard",
-        "idNotFound": "ID Not Found"
+        "idNotFound": "ID Not Found",
+        "back": "Back"
     }
 }

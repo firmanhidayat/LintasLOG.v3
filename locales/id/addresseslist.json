@@ -59,6 +59,9 @@
             "update": "Pembaharuan Alamat",
             "create": "Buat Alamat"
         },
+        "page": {
+            "editTitle": "Ubah Data Alamat"
+        },
         "selectedDistrict": "terpilih district_id"
     }
 }

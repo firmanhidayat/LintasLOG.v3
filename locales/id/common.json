@@ -10,6 +10,7 @@
         "cancel": "Batal",
         "confirm": "Konfirmasi",
         "discard": "Batal",
-        "idNotFound": "ID Tidak Ditemukan"
+        "idNotFound": "ID Tidak Ditemukan",
+        "back": "Back"
     }
 }

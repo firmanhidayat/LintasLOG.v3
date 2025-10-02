@@ -59,6 +59,9 @@
             "update": "Update Address",
             "create": "Create Address"
         },
+        "page": {
+            "editTitle": "Address Detail"
+        },
         "selectedDistrict": "Selected district_id"
     }
 }
