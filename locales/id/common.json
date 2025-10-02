@@ -1,0 +1,15 @@
+{
+    "common": {
+        "loading": "Memuat...",
+        "noData": "Tidak ada data",
+        "prev": "Sebelumnya",
+        "next": "Berikutnya",
+        "noResults": "Tidak ada hasil",
+        "toDelete": "ingin dihapus",
+        "areYouSure": "Anda yakin",
+        "cancel": "Batal",
+        "confirm": "Konfirmasi",
+        "discard": "Batal",
+        "idNotFound": "ID Tidak Ditemukan"
+    }
+}

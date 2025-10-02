@@ -333,6 +333,11 @@ const SidebarContent = memo(function SidebarContent() {
               href: "/orders/list",
               icon: IconList,
             },
+            {
+              label: t("nav.orders.addresses"),
+              href: "/orders/addresses/list",
+              icon: IconList,
+            },
           ]}
           open={openMap.orders}
           onToggle={toggle("orders")}

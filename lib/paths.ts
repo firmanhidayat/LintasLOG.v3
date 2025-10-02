@@ -1,4 +1,5 @@
-export const BASE_PATH = "/tms"; 
+// export const BASE_PATH = "/tms";
+export const BASE_PATH = process.env.NEXT_PUBLIC_URL_BASE ?? "/tms";
 
 export function withBase(p: string) {
   if (!BASE_PATH) return ensureLeadingSlash(p);

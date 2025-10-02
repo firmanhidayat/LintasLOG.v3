@@ -1,32 +1,32 @@
 {
-    "nav": {
-      "dashboard": {
-        "title": "Dasbor",
-        "summary": "Ringkasan Order",
-        "tracking": "Status Tracking"
-      },
-      "orders": {
-        "title": "Order",
-        "list": "Daftar Order"
-      },
-      "claims": {
-        "title": "Klaim",
-        "list": "Daftar Klaim"
-      },
-      "finance": {
-        "title": "Keuangan",
-        "invoices": "Daftar Invoice",
-        "pricelist": "Daftar Harga"
-      },
-      "downpayment": {
-        "title": "Uang Muka",
-        "list": "Daftar DP"
-      },
-      "vendorbill": {
-        "title": "Tagihan Vendor",
-        "list": "Daftar Tagihan Vendor"
-      },
-      "docs": "Dokumentasi & Komponen"
-    }
+  "nav": {
+    "dashboard": {
+      "title": "Dasbor",
+      "summary": "Ringkasan Order",
+      "tracking": "Status Tracking"
+    },
+    "orders": {
+      "title": "Order",
+      "list": "Daftar Order",
+      "addresses": "Daftar Alamat"
+    },
+    "claims": {
+      "title": "Klaim",
+      "list": "Daftar Klaim"
+    },
+    "finance": {
+      "title": "Keuangan",
+      "invoices": "Daftar Invoice",
+      "pricelist": "Daftar Harga"
+    },
+    "downpayment": {
+      "title": "Uang Muka",
+      "list": "Daftar DP"
+    },
+    "vendorbill": {
+      "title": "Tagihan Vendor",
+      "list": "Daftar Tagihan Vendor"
+    },
+    "docs": "Dokumentasi & Komponen"
   }
-  
+}

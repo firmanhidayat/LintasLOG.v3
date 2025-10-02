@@ -1,32 +1,32 @@
 {
-    "nav": {
-      "dashboard": {
-        "title": "Dashboard",
-        "summary": "Order Summary",
-        "tracking": "Status Tracking"
-      },
-      "orders": {
-        "title": "Orders",
-        "list": "Order List"
-      },
-      "claims": {
-        "title": "Claims",
-        "list": "Claim List"
-      },
-      "finance": {
-        "title": "Finance",
-        "invoices": "Invoice List",
-        "pricelist": "Price List"
-      },
-      "downpayment": {
-        "title": "Down Payment",
-        "list": "DP List"
-      },
-      "vendorbill": {
-        "title": "Vendor Bill",
-        "list": "Vendor Bill List"
-      },
-      "docs": "Docs & Components"
-    }
+  "nav": {
+    "dashboard": {
+      "title": "Dashboard",
+      "summary": "Order Summary",
+      "tracking": "Status Tracking"
+    },
+    "orders": {
+      "title": "Orders",
+      "list": "Order List",
+      "addresses": "Addresses"
+    },
+    "claims": {
+      "title": "Claims",
+      "list": "Claim List"
+    },
+    "finance": {
+      "title": "Finance",
+      "invoices": "Invoice List",
+      "pricelist": "Price List"
+    },
+    "downpayment": {
+      "title": "Down Payment",
+      "list": "DP List"
+    },
+    "vendorbill": {
+      "title": "Vendor Bill",
+      "list": "Vendor Bill List"
+    },
+    "docs": "Docs & Components"
   }
-  
+}

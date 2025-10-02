@@ -1,0 +1,15 @@
+{
+    "common": {
+        "loading": "Loading…",
+        "noData": "No data",
+        "prev": "Prev",
+        "next": "Next",
+        "noResults": "No results",
+        "toDelete": "want to delete",
+        "areYouSure": "Are you sure",
+        "cancel": "Discard",
+        "confirm": "Confirmation",
+        "discard": "Discard",
+        "idNotFound": "ID Not Found"
+    }
+}

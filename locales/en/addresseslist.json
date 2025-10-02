@@ -1,0 +1,64 @@
+{
+    "addresses": {
+        "create": "Create New Address",
+        "title": "Addresses",
+        "search": {
+            "placeholder": "search…"
+        },
+        "columns": {
+            "name": "Name",
+            "street": "Street",
+            "street2": "Street 2",
+            "district": "District",
+            "zip": "ZIP Code",
+            "email": "Email",
+            "phone": "Phone Number"
+        },
+        "pagination": {
+            "summary": "Page {page} of {pages} • Total {total}"
+        },
+        "source": "Source",
+        "rowsPerPage": "Rows per page"
+    },
+    "addr": {
+        "name": {
+            "placeholder": "e.g. Gudang Karadenan",
+            "aria": "Name"
+        },
+        "address": {
+            "label": "Address",
+            "placeholder": "Street"
+        },
+        "phone": {
+            "label": "Phone Mobile",
+            "placeholder": "08xxxxxxxxxx"
+        },
+        "street2": {
+            "placeholder": "Street 2",
+            "aria": "Street 2"
+        },
+        "email": {
+            "label": "Email",
+            "placeholder": "user@example.com"
+        },
+        "district": {
+            "placeholder": "Type min 2 characters…",
+            "aria": "District"
+        },
+        "zip": {
+            "placeholder": "Zip Code",
+            "aria": "Zip Code"
+        },
+        "validation": {
+            "nameRequired": "Name is required",
+            "streetRequired": "Street is required",
+            "districtRequired": "District is required"
+        },
+        "actions": {
+            "saving": "Saving…",
+            "update": "Update Address",
+            "create": "Create Address"
+        },
+        "selectedDistrict": "Selected district_id"
+    }
+}

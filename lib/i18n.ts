@@ -67,7 +67,17 @@ function interpolate(
   );
 }
 
-type Namespace = "login" | "signup" | "reset" | "verify" | "ringkasanorder" | "nav" | "avatarnav" | "forgot";
+type Namespace =
+  | "login"
+  | "signup"
+  | "reset"
+  | "verify"
+  | "ringkasanorder"
+  | "nav"
+  | "avatarnav"
+  | "forgot"
+  | "addresseslist"
+  | "common";
 
 async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
   if (lang === "id") {
@@ -103,6 +113,15 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/id/forgot.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+
+    if (ns === "addresseslist") {
+      const m = await import("@/locales/id/addresseslist.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "common") {
+      const m = await import("@/locales/id/common.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   } else {
     if (ns === "login") {
       const m = await import("@/locales/en/login.json");
@@ -136,10 +155,18 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/en/forgot.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+
+    if (ns === "addresseslist") {
+      const m = await import("@/locales/en/addresseslist.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "common") {
+      const m = await import("@/locales/en/common.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   }
   return {};
 }
-
 
 export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
   if (dictionaries) return dictionaries;
@@ -153,8 +180,9 @@ export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
     "nav",
     "avatarnav",
     "forgot",
+    "addresseslist",
+    "common",
   ];
-
 
   const [idDicts, enDicts] = await Promise.all([
     Promise.all(namespaces.map((ns) => importDict("id", ns))),

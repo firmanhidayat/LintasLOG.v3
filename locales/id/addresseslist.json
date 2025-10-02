@@ -1,0 +1,64 @@
+{
+    "addresses": {
+        "create": "Tambah Alamat Baru",
+        "title": "Alamat",
+        "search": {
+            "placeholder": "cari..."
+        },
+        "columns": {
+            "name": "Nama",
+            "street": "Jalan",
+            "street2": "Jalan 2",
+            "district": "Wilayah",
+            "zip": "Kode pos",
+            "email": "Email",
+            "phone": "Nomor Telepon"
+        },
+        "pagination": {
+            "summary": "Halaman {page} dari {pages} • Total {total}"
+        },
+        "source": "Sumber",
+        "rowsPerPage": "Baris per halaman"
+    },
+    "addr": {
+        "name": {
+            "placeholder": "Mis. Gudang Kuta",
+            "aria": "Name"
+        },
+        "address": {
+            "label": "Alamat",
+            "placeholder": "Jalan"
+        },
+        "phone": {
+            "label": "HP",
+            "placeholder": "08xxxxxxxxxx"
+        },
+        "street2": {
+            "placeholder": "Alamat 2",
+            "aria": "Alamat 2"
+        },
+        "email": {
+            "label": "Email",
+            "placeholder": "user@example.com"
+        },
+        "district": {
+            "placeholder": "Ketik minimal 2 karakter…",
+            "aria": "Wilayah"
+        },
+        "zip": {
+            "placeholder": "Kode Pos",
+            "aria": "Kode Pos"
+        },
+        "validation": {
+            "nameRequired": "Name wajib diisi",
+            "streetRequired": "Alamat wajib diisi",
+            "districtRequired": "Wilayah wajib diisi"
+        },
+        "actions": {
+            "saving": "Simpan",
+            "update": "Pembaharuan Alamat",
+            "create": "Buat Alamat"
+        },
+        "selectedDistrict": "terpilih district_id"
+    }
+}
