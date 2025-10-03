@@ -170,7 +170,7 @@ function CityAutocomplete({
       }
       try {
         const url = new URL(API_BASE + "/locations/cities/search");
-        url.searchParams.set("q", debounced);
+        url.searchParams.set("query", debounced);
         const res = await fetch(url.toString(), { credentials: "include" });
         if (!res.ok) return;
         const arr = (await res.json()) as IdName[];
@@ -256,7 +256,7 @@ function AddressAutocomplete({
       try {
         const url = new URL(API_BASE + "/locations/address");
         url.searchParams.set("city_id", String(cityId));
-        url.searchParams.set("q", debounced);
+        url.searchParams.set("query", debounced);
         const res = await fetch(url.toString(), { credentials: "include" });
         if (!res.ok) return;
         const arr = (await res.json()) as AddressItem[];
@@ -318,11 +318,9 @@ function AddressAutocomplete({
   );
 }
 
-// ====== Main Page ======
 export default function OrdersCreatePage() {
   const router = useRouter();
 
-  // i18n reactive
   const [i18nReady, setI18nReady] = useState<boolean>(true); // assume dictionaries already loaded globally
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
   useEffect(() => {
@@ -330,11 +328,8 @@ export default function OrdersCreatePage() {
     return () => off?.();
   }, []);
 
-  // mock: profile timezone; replace with context once available
   const profileTimezone = "Asia/Jakarta"; // fallback if profile not mounted yet
 
-  // ===== Form States =====
-  // Info Order (No JO & Customer are readonly labels, simulate values or leave blank)
   const [noJO] = useState<string>("");
   const [customer] = useState<string>("");
   const [namaPenerima, setNamaPenerima] = useState<string>("");
@@ -343,14 +338,12 @@ export default function OrdersCreatePage() {
   const [jenisOrder, setJenisOrder] = useState<JenisOrder | "">("");
   const [armada, setArmada] = useState<string>("");
 
-  // Lokasi Muat/Bongkar
   const [tglMuat, setTglMuat] = useState<string>(""); // YYYY-MM-DD
   const [tglBongkar, setTglBongkar] = useState<string>("");
   const [multiPickDrop, setMultiPickDrop] = useState<boolean>(false);
   const [lokMuat, setLokMuat] = useState<AddressItem | null>(null);
   const [lokBongkar, setLokBongkar] = useState<AddressItem | null>(null);
 
-  // Layanan Khusus
   const layananPreset = [
     "Helm",
     "APAR",
@@ -371,22 +364,18 @@ export default function OrdersCreatePage() {
   );
   const [layananLainnya, setLayananLainnya] = useState<string>("");
 
-  // Informasi Muatan
   const [muatanNama, setMuatanNama] = useState<string>("");
   const [muatanJenis, setMuatanJenis] = useState<string>("");
   const [muatanDeskripsi, setMuatanDeskripsi] = useState<string>("");
 
-  // Dokumen (simple filenames)
   const [dokumenFiles, setDokumenFiles] = useState<File[]>([]);
   const [sjPodFiles, setSjPodFiles] = useState<File[]>([]);
 
-  // Detail Amount (labels only)
   const biayaKirimLabel = "-";
   const biayaLayananTambahanLabel = "-";
   const taxLabel = "-";
   const totalHargaLabel = "-";
 
-  // Errors
   const [errors, setErrors] = useState<Record<string, string>>({});
   const firstErrorRef = useRef<HTMLDivElement | null>(null);
 
@@ -410,7 +399,6 @@ export default function OrdersCreatePage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!validate()) {
-      // focus first error
       firstErrorRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "center",
@@ -469,18 +457,14 @@ export default function OrdersCreatePage() {
     router.back();
   }
 
-  // Derived
   const lokasiMuatDisabled = !kotaMuat;
   const lokasiBongkarDisabled = !kotaBongkar;
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-7xl space-y-4 p-4">
-      {/* Outter Card to wrap 2 columns */}
       <Card title={t("orders.create.title")}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* ===== Left Column ===== */}
           <div className="space-y-4">
-            {/* Informasi Order */}
             <Card title={t("orders.create.info_order")}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label={t("orders.no_jo")}>
@@ -555,7 +539,6 @@ export default function OrdersCreatePage() {
               </div>
             </Card>
 
-            {/* Informasi Lokasi Muat & Bongkar */}
             <Card title={t("orders.info_lokasi")}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div ref={errors.tglMuat ? firstErrorRef : undefined}>
