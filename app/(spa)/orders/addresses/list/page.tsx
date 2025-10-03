@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { goSignIn } from "@/lib/goSignIn";
+import { useRouter } from "next/navigation";
 
 import {
   loadDictionaries,
@@ -39,6 +41,7 @@ type SortKey =
 export default function AddressesListPage() {
   const [i18nReady, setI18nReady] = useState(false);
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
+  const router = useRouter();
 
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
@@ -97,6 +100,16 @@ export default function AddressesListPage() {
         method: "DELETE",
         credentials: "include",
       });
+      if (res.status === 401) {
+        goSignIn({
+          routerReplace: router.replace,
+          // clearAuth, // optional
+          // basePath: "/tms", // aktifkan kalau kamu pakai basePath
+          // signinPath: "/maccount/signin", // default sudah ini
+        });
+        return;
+      }
+
       if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
       setItems((prev) =>
         prev.filter((x) => String(x.id ?? "") !== String(targetId))
@@ -136,6 +149,14 @@ export default function AddressesListPage() {
           headers: { Accept: "application/json" },
           credentials: "include",
         });
+        if (res.status === 401) {
+          goSignIn({
+            routerReplace: router.replace,
+            // clearAuth, // optional
+            // basePath: "/tms", // kalau pakai
+          });
+          return;
+        }
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
 
         const data: unknown = await res.json();

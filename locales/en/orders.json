@@ -1,0 +1,8 @@
+{
+    "orders": {
+        "create": {
+            "title": "Create Order",
+            "info_order": "Order Information"
+        }
+    }
+}

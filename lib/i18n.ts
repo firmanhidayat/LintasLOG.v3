@@ -77,7 +77,8 @@ type Namespace =
   | "avatarnav"
   | "forgot"
   | "addresseslist"
-  | "common";
+  | "common"
+  | "orders";
 
 async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
   if (lang === "id") {
@@ -122,6 +123,10 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/id/common.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "orders") {
+      const m = await import("@/locales/id/orders.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   } else {
     if (ns === "login") {
       const m = await import("@/locales/en/login.json");
@@ -164,6 +169,10 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/en/common.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "orders") {
+      const m = await import("@/locales/en/orders.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   }
   return {};
 }
@@ -182,6 +191,7 @@ export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
     "forgot",
     "addresseslist",
     "common",
+    "orders",
   ];
 
   const [idDicts, enDicts] = await Promise.all([

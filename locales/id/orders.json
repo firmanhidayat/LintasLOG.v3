@@ -1,0 +1,8 @@
+{
+    "orders": {
+        "create": {
+            "title": "Order Baru",
+            "info_order": "Informasi Order"
+        }
+    }
+}
