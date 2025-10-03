@@ -254,7 +254,7 @@ function AddressAutocomplete({
         return;
       }
       try {
-        const url = new URL(API_BASE + "/locations/address");
+        const url = new URL(API_BASE + "/locations/addresses/search");
         url.searchParams.set("city_id", String(cityId));
         url.searchParams.set("query", debounced);
         const res = await fetch(url.toString(), { credentials: "include" });
