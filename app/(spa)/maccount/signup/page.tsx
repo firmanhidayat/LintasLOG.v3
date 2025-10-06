@@ -153,7 +153,7 @@ export default function SignUpPage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Accept-Language": getLang(), 
+          "Accept-Language": getLang(),
         },
         body: JSON.stringify(payload),
       });
@@ -400,12 +400,12 @@ export default function SignUpPage() {
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
                 {t("signup.form.terms.text")}{" "}
-                <a
+                <Link
                   href="/terms"
                   className="font-medium text-primary hover:underline"
                 >
                   {t("signup.form.terms.link")}
-                </a>
+                </Link>
               </label>
             </div>
 

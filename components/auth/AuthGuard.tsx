@@ -16,6 +16,7 @@ const AUTH_PUBLIC_PREFIXES = [
   "/maccount/signup",
   "/maccount/reset",
   "/maccount/verify-email",
+  "/terms",
 ];
 
 export default function AuthGuard({ children, nextPath }: Props) {

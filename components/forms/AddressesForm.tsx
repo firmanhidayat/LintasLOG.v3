@@ -1,14 +1,18 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  loadDictionaries,
-  t,
-  getLang,
-  onLangChange,
-  type Lang,
-} from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
+import { Form, FormActions, FormRow } from "@/components/form/Form";
+import { FieldText } from "@/components/form/FieldText";
+import {
+  FieldAutocomplete,
+  AutoItem,
+} from "@/components/form/FieldAutoComplete";
+import { Alert } from "@/components/feedback/Alert";
+import { Button } from "@/components/ui/Button";
+import { useDebounced } from "@/hooks/useDebounced";
+import { useI18nReady } from "@/hooks/useI18nReady"; // <-- pakai hook i18n ready
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
@@ -42,42 +46,14 @@ interface DistrictItem {
   name: string;
 }
 
-function useDebounced<T>(value: T, delay = 300) {
-  const [v, setV] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setV(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return v;
-}
-
 export default function AddressForm({
   addressId,
   initialValue,
   onSuccess,
   className,
 }: AddressFormProps) {
-  const [i18nReady, setI18nReady] = useState(false);
-  const [activeLang, setActiveLang] = useState<Lang>(getLang());
+  const { ready: i18nReady, lang: activeLang } = useI18nReady();
   const router = useRouter();
-  useEffect(() => {
-    const off = onLangChange((lang) => setActiveLang(lang));
-    return () => off?.();
-  }, []);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setI18nReady(false);
-        await loadDictionaries();
-      } finally {
-        if (!cancelled) setI18nReady(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const [name, setName] = useState(initialValue?.name ?? "");
   const [street, setStreet] = useState(initialValue?.street ?? "");
@@ -89,10 +65,10 @@ export default function AddressForm({
   const [districtQuery, setDistrictQuery] = useState(
     initialValue?.district?.name ?? ""
   );
-  const [districtSel, setDistrictSel] = useState<null | {
-    id: number;
-    name: string;
-  }>(initialValue?.district ?? null);
+
+  const [districtSel, setDistrictSel] = useState<AutoItem | null>(
+    initialValue?.district ?? null
+  );
 
   const [options, setOptions] = useState<DistrictItem[]>([]);
   const [optOpen, setOptOpen] = useState(false);
@@ -113,7 +89,6 @@ export default function AddressForm({
     district?: boolean;
   }>({});
 
-  // ⬇️ snapshot nilai awal untuk Discard
   const initialSnap = useRef({
     name: initialValue?.name ?? "",
     street: initialValue?.street ?? "",
@@ -122,15 +97,13 @@ export default function AddressForm({
     email: initialValue?.email ?? "",
     mobile: initialValue?.mobile ?? "",
     districtQuery: initialValue?.district?.name ?? "",
-    districtSel: initialValue?.district ?? null,
+    districtSel: (initialValue?.district ?? null) as AutoItem | null,
   });
 
   const debouncedQuery = useDebounced(districtQuery, 300);
-  const listRef = useRef<HTMLUListElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const streetRef = useRef<HTMLInputElement | null>(null);
-  const districtInputRef = inputRef; // alias untuk jelas
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const q = debouncedQuery.trim();
@@ -147,9 +120,7 @@ export default function AddressForm({
         )}`;
         const res = await fetch(url, {
           method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
+          headers: { Accept: "application/json" },
           credentials: "include",
         });
         if (!res.ok) throw new Error(`District search failed: ${res.status}`);
@@ -170,28 +141,11 @@ export default function AddressForm({
     };
   }, [debouncedQuery]);
 
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!optOpen) return;
-      const t = e.target as Node;
-      if (
-        listRef.current &&
-        !listRef.current.contains(t) &&
-        inputRef.current &&
-        !inputRef.current.contains(t)
-      ) {
-        setOptOpen(false);
-      }
-    }
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, [optOpen]);
-
-  const canSubmit = useMemo(() => {
-    return (
-      name.trim().length > 0 && street.trim().length > 0 && !!districtSel?.id
-    );
-  }, [name, street, districtSel]);
+  const canSubmit = useMemo(
+    () =>
+      name.trim().length > 0 && street.trim().length > 0 && !!districtSel?.id,
+    [name, street, districtSel]
+  );
 
   function validate() {
     const next: { name?: string; street?: string; district?: string } = {};
@@ -212,7 +166,7 @@ export default function AddressForm({
     if (v.name || v.street || v.district) {
       if (v.name) nameRef.current?.focus();
       else if (v.street) streetRef.current?.focus();
-      else districtInputRef.current?.focus();
+      else inputRef.current?.focus();
       return;
     }
 
@@ -257,7 +211,7 @@ export default function AddressForm({
             reason = j.detail;
           }
         } catch {
-          // ignore parse error
+          /* ignore */
         }
         throw new Error(reason);
       }
@@ -269,11 +223,10 @@ export default function AddressForm({
       console.error("[submit]", err);
       setErrMsg(err instanceof Error ? err.message : "Gagal menyimpan data");
       setSubmitStatus("error");
-    } finally {
     }
   }
 
-  function onPickDistrict(d: DistrictItem) {
+  function onPickDistrict(d: AutoItem) {
     setDistrictSel({ id: d.id, name: d.name });
     setDistrictQuery(d.name);
     setOptOpen(false);
@@ -286,7 +239,6 @@ export default function AddressForm({
     setOptOpen(true);
   }
 
-  // ⬇️ Handler Discard: reset ke nilai awal (initialValue)
   function handleDiscard() {
     const s = initialSnap.current;
     setName(s.name);
@@ -297,7 +249,6 @@ export default function AddressForm({
     setMobile(s.mobile);
     setDistrictQuery(s.districtQuery);
     setDistrictSel(s.districtSel);
-
     setOptions([]);
     setOptOpen(false);
     setErrors({});
@@ -307,245 +258,156 @@ export default function AddressForm({
     router.push("/orders/addresses/list");
   }
 
+  if (!i18nReady) {
+    return (
+      <div className="space-y-4">
+        <div className="h-10 w-64 animate-pulse rounded bg-slate-200" />
+        <div className="h-40 animate-pulse rounded bg-slate-100" />
+      </div>
+    );
+  }
+
   return (
-    <form
+    <Form
       onSubmit={handleSubmit}
-      className={"space-y-4 " + (className ?? "")}
+      className={className}
       aria-busy={submitStatus === "submitting"}
+      data-lang={activeLang}
     >
-      <div className="grid gap-1">
-        <input
-          ref={nameRef}
-          type="text"
-          className={`rounded-md border text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-primary/40 ${
-            touched.name && errors.name
-              ? "border-red-400 focus:ring-red-200"
-              : ""
-          }`}
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            if (touched.name)
+      {/* Name */}
+      <FieldText
+        inputRef={nameRef}
+        value={name}
+        onChange={(v) => {
+          setName(v);
+          if (touched.name)
+            setErrors((p) => ({
+              ...p,
+              name: v.trim() ? undefined : t("addr.validation.nameRequired"),
+            }));
+        }}
+        onBlur={() => markTouched("name")}
+        placeholder={t("addr.name.placeholder")}
+        ariaLabel={t("addr.name.aria")}
+        required
+        error={errors.name}
+        touched={touched.name}
+      />
+
+      <FormRow cols={2}>
+        <div className="grid gap-4">
+          {/* Street */}
+          <FieldText
+            inputRef={streetRef}
+            label={t("addr.address.label")}
+            value={street}
+            onChange={(v) => {
+              setStreet(v);
+              if (touched.street)
+                setErrors((p) => ({
+                  ...p,
+                  street: v.trim()
+                    ? undefined
+                    : t("addr.validation.streetRequired"),
+                }));
+            }}
+            onBlur={() => markTouched("street")}
+            placeholder={t("addr.address.placeholder")}
+            error={errors.street}
+            touched={touched.street}
+            required
+          />
+
+          {/* Street 2 */}
+          <FieldText
+            value={street2}
+            onChange={setStreet2}
+            placeholder={t("addr.street2.placeholder")}
+            ariaLabel={t("addr.street2.aria")}
+          />
+
+          {/* District Autocomplete */}
+          <FieldAutocomplete
+            value={districtQuery}
+            onChange={onDistrictInput}
+            placeholder={t("addr.district.placeholder")}
+            ariaLabel={t("addr.district.aria")}
+            options={options}
+            loading={loadingOpt}
+            open={optOpen}
+            setOpen={setOptOpen}
+            selected={districtSel}
+            onPick={(d) => onPickDistrict(d)}
+            error={errors.district}
+            touched={touched.district}
+            onBlurValidate={() => {
+              markTouched("district");
               setErrors((p) => ({
                 ...p,
-                name: e.target.value.trim()
+                district: districtSel?.id
                   ? undefined
-                  : t("addr.validation.nameRequired"),
+                  : t("addr.validation.districtRequired"),
               }));
-          }}
-          onBlur={() => markTouched("name")}
-          placeholder={t("addr.name.placeholder")}
-          aria-label={t("addr.name.aria")}
-          aria-invalid={Boolean(touched.name && errors.name)}
-          required
-        />
-        {touched.name && errors.name && (
-          <p className="text-xs text-red-600">{errors.name}</p>
-        )}
-      </div>
+            }}
+            inputRef={inputRef} // RefObject<HTMLInputElement>
+            listboxId="district-listbox"
+          />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="grid gap-4">
-          <div className="grid gap-1">
-            <label className="text-sm font-medium">
-              {t("addr.address.label")}
-            </label>
-            <input
-              ref={streetRef}
-              type="text"
-              className={`rounded-md border text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-primary/40 ${
-                touched.street && errors.street
-                  ? "border-red-400 focus:ring-red-200"
-                  : ""
-              }`}
-              value={street}
-              onChange={(e) => {
-                setStreet(e.target.value);
-                if (touched.street)
-                  setErrors((p) => ({
-                    ...p,
-                    street: e.target.value.trim()
-                      ? undefined
-                      : t("addr.validation.streetRequired"),
-                  }));
-              }}
-              onBlur={() => markTouched("street")}
-              placeholder={t("addr.address.placeholder")}
-              aria-invalid={Boolean(touched.street && errors.street)}
-              required
-            />
-            {touched.street && errors.street && (
-              <p className="text-xs text-red-600">{errors.street}</p>
-            )}
-          </div>
-
-          <div className="grid gap-1">
-            <input
-              type="text"
-              className="rounded-md border text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-primary/40"
-              value={street2}
-              onChange={(e) => setStreet2(e.target.value)}
-              placeholder={t("addr.street2.placeholder")}
-              aria-label={t("addr.street2.aria")}
-            />
-          </div>
-
-          <div className="grid gap-1">
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type="text"
-                className={`w-full rounded-md border text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-primary/40 ${
-                  touched.district && errors.district
-                    ? "border-red-400 focus:ring-red-200"
-                    : ""
-                }`}
-                value={districtQuery}
-                onChange={(e) => {
-                  onDistrictInput(e.target.value);
-                  if (touched.district) {
-                    setErrors((p) => ({
-                      ...p,
-                      district: undefined,
-                    }));
-                  }
-                }}
-                onBlur={() => {
-                  markTouched("district");
-                  setErrors((p) => ({
-                    ...p,
-                    district: districtSel?.id
-                      ? undefined
-                      : t("addr.validation.districtRequired"),
-                  }));
-                }}
-                onFocus={() => districtQuery.length >= 2 && setOptOpen(true)}
-                placeholder={t("addr.district.placeholder")}
-                aria-label={t("addr.district.aria")}
-                aria-autocomplete="list"
-                aria-expanded={optOpen}
-                aria-controls="district-listbox"
-                aria-invalid={Boolean(touched.district && errors.district)}
-                required
-              />
-              {optOpen && (
-                <ul
-                  id="district-listbox"
-                  ref={listRef}
-                  role="listbox"
-                  className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border bg-white shadow"
-                >
-                  {loadingOpt && (
-                    <li className="px-3 py-2 text-sm text-gray-500">
-                      {t("common.loading")}
-                    </li>
-                  )}
-                  {!loadingOpt &&
-                    options.length === 0 &&
-                    districtQuery.length >= 2 && (
-                      <li className="px-3 py-2 text-sm text-gray-500">
-                        {t("common.noResults")}
-                      </li>
-                    )}
-                  {options.map((d) => (
-                    <li
-                      key={d.id}
-                      role="option"
-                      aria-selected={districtSel?.id === d.id}
-                      className={
-                        "cursor-pointer px-3 py-2 text-sm hover:bg-gray-100 " +
-                        (districtSel?.id === d.id ? "bg-gray-50" : "")
-                      }
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => onPickDistrict(d)}
-                      title={d.name}
-                    >
-                      {d.name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            {touched.district && errors.district && (
-              <p className="text-xs text-red-600">{errors.district}</p>
-            )}
-          </div>
-
-          <div className="grid gap-1">
-            <input
-              type="text"
-              inputMode="numeric"
-              className="rounded-md border text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-primary/40"
-              value={zip}
-              onChange={(e) => setZip(e.target.value)}
-              placeholder={t("addr.zip.placeholder")}
-              aria-label={t("addr.zip.aria")}
-            />
-          </div>
+          {/* ZIP */}
+          <FieldText
+            value={zip}
+            onChange={setZip}
+            placeholder={t("addr.zip.placeholder")}
+            ariaLabel={t("addr.zip.aria")}
+          />
         </div>
 
         <div className="grid gap-4">
-          <div className="grid gap-1">
-            <label className="text-sm font-medium">
-              {t("addr.phone.label")}
-            </label>
-            <input
-              type="tel"
-              className="rounded-md border text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-primary/40"
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
-              placeholder={t("addr.phone.placeholder")}
-            />
-          </div>
-
-          <div className="grid gap-1">
-            <label className="text-sm font-medium">
-              {t("addr.email.label")}
-            </label>
-            <input
-              type="email"
-              className="rounded-md border text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-primary/40"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t("addr.email.placeholder")}
-            />
-          </div>
+          {/* Phone */}
+          <FieldText
+            label={t("addr.phone.label")}
+            value={mobile}
+            onChange={setMobile}
+            placeholder={t("addr.phone.placeholder")}
+            type="tel"
+          />
+          {/* Email */}
+          <FieldText
+            label={t("addr.email.label")}
+            value={email}
+            onChange={setEmail}
+            placeholder={t("addr.email.placeholder")}
+            type="email"
+          />
         </div>
-      </div>
+      </FormRow>
 
-      {errMsg && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {errMsg}
-        </div>
-      )}
+      {errMsg && <Alert kind="error">{errMsg}</Alert>}
 
-      <div className="flex items-center gap-3 pt-2">
-        <button
+      <FormActions>
+        <Button
           type="submit"
           disabled={!canSubmit || submitStatus === "submitting"}
-          className="inline-flex items-center text-sm gap-2 rounded-md bg-primary px-4 py-2 text-white disabled:opacity-50"
+          variant="solid"
         >
           {submitStatus === "submitting"
             ? t("addr.actions.saving")
             : addressId
             ? t("addr.actions.update")
             : t("addr.actions.create")}
-        </button>
+        </Button>
 
-        <button
-          type="button"
-          onClick={handleDiscard}
-          className="inline-flex items-center text-sm gap-2 rounded-md bg-primary/10 px-4 py-2 hover:bg-primary/20 text-gray-500"
-        >
+        <Button type="button" onClick={handleDiscard} variant="ghost">
           {t("common.discard")}
-        </button>
+        </Button>
 
+        {/* Debug text (hidden) */}
         {districtSel?.id ? (
           <span hidden className="text-xs text-gray-500">
             {t("addr.selectedDistrict")}: <b>{districtSel.id}</b>
           </span>
         ) : null}
-      </div>
-    </form>
+      </FormActions>
+    </Form>
   );
 }

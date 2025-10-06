@@ -28,7 +28,8 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const PROFILE_URL = process.env.NEXT_PUBLIC_TMS_PROFILE_URL ?? "";
+// const PROFILE_URL = process.env.NEXT_PUBLIC_TMS_PROFILE_URL ?? "";
+const PROFILE_URL = process.env.NEXT_PUBLIC_TMS_USER_PROFILE_URL!;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loggedIn, setLoggedIn] = useState(false);

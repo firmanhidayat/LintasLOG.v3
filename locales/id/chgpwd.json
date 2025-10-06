@@ -1,0 +1,29 @@
+{
+    "maccount": {
+        "password": {
+            "title": "Ubah Kata Sandi",
+            "subtitle": "Demi keamanan, gunakan kata sandi yang kuat dan unik.",
+            "form_title": "Perbarui kata sandi Anda",
+            "current": "Kata sandi saat ini",
+            "new": "Kata sandi baru",
+            "confirm": "Konfirmasi kata sandi baru",
+            "error_mismatch": "Konfirmasi kata sandi tidak sama.",
+            "error_current_required": "Kata sandi saat ini wajib diisi.",
+            "too_short": "Minimal 8 karakter.",
+            "need_letter": "Harus mengandung huruf.",
+            "need_digit": "Harus mengandung angka.",
+            "strength_weak": "Lemah",
+            "strength_fair": "Cukup",
+            "strength_strong": "Kuat",
+            "changed_success": "Kata sandi berhasil diperbarui."
+        }
+    },
+    "common": {
+        "show": "Tampilkan",
+        "hide": "Sembunyikan",
+        "saving": "Menyimpan…",
+        "save_changes": "Simpan perubahan",
+        "cancel": "Batal",
+        "unknown_error": "Terjadi kesalahan yang tidak diketahui."
+    }
+}

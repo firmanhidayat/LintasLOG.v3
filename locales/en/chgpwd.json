@@ -1,0 +1,29 @@
+{
+    "maccount": {
+        "password": {
+            "title": "Change Password",
+            "subtitle": "For security, use a strong and unique password.",
+            "form_title": "Update your password",
+            "current": "Current password",
+            "new": "New password",
+            "confirm": "Confirm new password",
+            "error_mismatch": "Password confirmation is not match.",
+            "error_current_required": "Current password is required.",
+            "too_short": "Minimum 8 characters.",
+            "need_letter": "Must contains letters.",
+            "need_digit": "Must contains numerics.",
+            "strength_weak": "Weak",
+            "strength_fair": "Fair",
+            "strength_strong": "Strong",
+            "changed_success": "Password updated successfully."
+        }
+    },
+    "common": {
+        "show": "Show",
+        "hide": "Hide",
+        "saving": "Saving...",
+        "save_changes": "Save changes",
+        "cancel": "Cancel",
+        "unknown_error": "An unknown error occurred."
+    }
+}

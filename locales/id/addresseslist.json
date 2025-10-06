@@ -60,7 +60,8 @@
             "create": "Buat Alamat"
         },
         "page": {
-            "editTitle": "Ubah Data Alamat"
+            "editTitle": "Ubah Data Alamat",
+            "createTitle": "Tambah Alamat Baru"
         },
         "selectedDistrict": "terpilih district_id"
     }

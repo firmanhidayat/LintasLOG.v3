@@ -5,13 +5,8 @@ import Link from "next/link";
 import { goSignIn } from "@/lib/goSignIn";
 import { useRouter } from "next/navigation";
 
-import {
-  loadDictionaries,
-  t,
-  getLang,
-  onLangChange,
-  type Lang,
-} from "@/lib/i18n";
+import { t } from "@/lib/i18n";
+import { useI18nReady } from "@/hooks/useI18nReady";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
@@ -39,31 +34,9 @@ type SortKey =
   | "mobile";
 
 export default function AddressesListPage() {
-  const [i18nReady, setI18nReady] = useState(false);
-  const [activeLang, setActiveLang] = useState<Lang>(getLang());
+  const { i18nReady, activeLang } = useI18nReady();
+
   const router = useRouter();
-
-  useEffect(() => {
-    const off = onLangChange((lang) => setActiveLang(lang));
-    return () => off?.();
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setI18nReady(false);
-        await loadDictionaries();
-      } catch (e) {
-        console.error("[i18n] loadDictionaries failed:", e);
-      } finally {
-        if (!cancelled) setI18nReady(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const [items, setItems] = useState<AddressItem[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -83,7 +56,7 @@ export default function AddressesListPage() {
   const [targetName, setTargetName] = useState<string>("");
 
   function askDelete(id?: number | string, name?: string) {
-    if (id == null) return; // jika tidak ada id, abaikan
+    if (id == null) return;
     setTargetId(id);
     setTargetName(name ?? "");
     setConfirmOpen(true);
@@ -101,12 +74,7 @@ export default function AddressesListPage() {
         credentials: "include",
       });
       if (res.status === 401) {
-        goSignIn({
-          routerReplace: router.replace,
-          // clearAuth, // optional
-          // basePath: "/tms", // aktifkan kalau kamu pakai basePath
-          // signinPath: "/maccount/signin", // default sudah ini
-        });
+        goSignIn({ routerReplace: router.replace });
         return;
       }
 
@@ -150,11 +118,7 @@ export default function AddressesListPage() {
           credentials: "include",
         });
         if (res.status === 401) {
-          goSignIn({
-            routerReplace: router.replace,
-            // clearAuth, // optional
-            // basePath: "/tms", // kalau pakai
-          });
+          goSignIn({ routerReplace: router.replace });
           return;
         }
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
@@ -163,7 +127,6 @@ export default function AddressesListPage() {
         if (aborted) return;
 
         const { list, totalCount } = normalizeListResponse<AddressItem>(data);
-
         const sorted = sortClient(list, sortBy, sortDir);
 
         setItems(sorted);
@@ -183,7 +146,7 @@ export default function AddressesListPage() {
     return () => {
       aborted = true;
     };
-  }, [page, pageSize, debouncedSearch, sortBy, sortDir]);
+  }, [page, pageSize, debouncedSearch, sortBy, sortDir, router.replace]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   useEffect(() => {
@@ -198,8 +161,20 @@ export default function AddressesListPage() {
     }
   }
 
+  if (!i18nReady) {
+    return (
+      <div className="space-y-4" data-lang={activeLang}>
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-40 animate-pulse rounded bg-slate-200" />
+          <div className="h-8 w-32 animate-pulse rounded bg-slate-200" />
+        </div>
+        <div className="h-64 animate-pulse rounded-lg border bg-slate-100" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="max-auto space-y-4" data-lang={activeLang}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link
@@ -246,7 +221,7 @@ export default function AddressesListPage() {
                 scope="col"
                 className="w-20 px-3 py-2 text-left font-medium text-gray-700"
               >
-                {/* kosong atau bisa pakai t("common.actions") */}
+                {/* actions */}
               </th>
 
               <Th

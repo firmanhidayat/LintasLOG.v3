@@ -1,0 +1,43 @@
+{
+    "pages": {
+        "maccount": {
+            "edit": {
+                "title": "Selamat Datang {{name}}",
+                "status": {
+                    "loading": "Memuat profil",
+                    "error": "Gagal memuat profil",
+                    "saving": "Menyimpan profil",
+                    "ready": "Profil siap"
+                },
+                "error": {
+                    "load": "Gagal memuat profil. Coba **Refresh**. Jika tetap gagal, kemungkinan sesi sudah kedaluwarsa."
+                },
+                "note": {
+                    "notLoggedIn": "Kamu belum login. Silakan login kembali."
+                },
+                "empty": {
+                    "profile": "Profil kosong. Klik **Refresh** untuk memuat ulang."
+                },
+                "label": {
+                    "name": "Nama",
+                    "email": "Email",
+                    "phone": "Telepon",
+                    "mobile": "Mobile",
+                    "vat": "NPWP/VAT",
+                    "tz": "Zona Waktu"
+                },
+                "btn": {
+                    "save": "Simpan perubahan",
+                    "saving": "Menyimpan…",
+                    "refresh": "Refresh",
+                    "refreshing": "Merefresh…",
+                    "cancel": "Batal"
+                },
+                "save": {
+                    "ok": "Profil berhasil disimpan.",
+                    "err": "Gagal menyimpan: {{message}}"
+                }
+            }
+        }
+    }
+}

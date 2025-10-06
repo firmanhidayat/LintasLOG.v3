@@ -1,0 +1,165 @@
+{
+    "common": {
+        "lastUpdated": "Terakhir diperbarui",
+        "rightsReserved": "Semua hak dilindungi undang-undang."
+    },
+    "tabs": {
+        "terms": "Syarat",
+        "privacy": "Privasi"
+    },
+    "terms": {
+        "title": "Syarat & Ketentuan Penggunaan",
+        "toc": {
+            "section": {
+                "about": "Tentang Dokumen",
+                "use": "Penggunaan Layanan",
+                "legal": "Hukum & Kepatuhan"
+            },
+            "intro": "Pendahuluan",
+            "defs": "Definisi",
+            "usage": "Ketentuan Penggunaan",
+            "account": "Akun & Keamanan",
+            "usercontent": "Konten Pengguna",
+            "prohibited": "Larangan",
+            "ip": "Hak Kekayaan Intelektual",
+            "fees": "Biaya & Pembayaran",
+            "liability": "Pembatasan Tanggung Jawab",
+            "law": "Hukum yang Berlaku",
+            "changes": "Perubahan",
+            "contact": "Kontak"
+        },
+        "h": {
+            "intro": "Pendahuluan",
+            "defs": "Definisi",
+            "usage": "Ketentuan Penggunaan",
+            "account": "Akun & Keamanan",
+            "usercontent": "Konten Pengguna",
+            "prohibited": "Larangan",
+            "ip": "Hak Kekayaan Intelektual",
+            "fees": "Biaya & Pembayaran",
+            "liability": "Pembatasan Tanggung Jawab",
+            "law": "Hukum yang Berlaku",
+            "changes": "Perubahan",
+            "contact": "Kontak"
+        },
+        "p": {
+            "intro": "Selamat datang di {{app}}. Dengan mengakses atau menggunakan platform ini, Anda setuju untuk terikat pada Syarat & Ketentuan berikut.",
+            "usage1": "Gunakan layanan hanya untuk tujuan yang sah dan mematuhi peraturan perundang-undangan. Anda bertanggung jawab atas aktivitas pada akun Anda.",
+            "account1": "Anda wajib menjaga kerahasiaan kredensial. Beri tahu kami segera jika terjadi pelanggaran keamanan.",
+            "usercontent1": "Anda menjamin bahwa data, dokumen, dan konten yang dikirimkan adalah akurat, tidak melanggar hukum, dan Anda memiliki hak untuk menggunakannya.",
+            "ip1": "Seluruh merek, logo, antarmuka, dan materi milik {{app}} atau pemberi lisensi. Dilarang menyalin, memodifikasi, atau mendistribusikan tanpa izin tertulis.",
+            "fees1": "Jika layanan berbayar diterapkan, detail biaya, pajak, dan ketentuan penagihan akan diinformasikan sebelum transaksi.",
+            "liability1": "{{app}} tidak bertanggung jawab atas kerugian tidak langsung, kehilangan data, atau gangguan layanan yang di luar kendali wajar kami.",
+            "law1": "Dokumen ini diatur oleh hukum Republik Indonesia. Sengketa diselesaikan terlebih dahulu melalui musyawarah; bila gagal, melalui peradilan/arbiter yang berwenang.",
+            "changes1": "Kami dapat memperbarui syarat dari waktu ke waktu. Versi terbaru berlaku saat dipublikasikan.",
+            "contact1": "Pertanyaan terkait syarat & ketentuan? Hubungi"
+        },
+        "def": {
+            "user": {
+                "h": "Pengguna",
+                "p": "Setiap individu atau entitas yang mengakses atau menggunakan {{app}}."
+            },
+            "shipper": {
+                "h": "Shipper",
+                "p": "Pengguna yang membuat permintaan pengiriman barang."
+            },
+            "transporter": {
+                "h": "Transporter",
+                "p": "Pengguna yang menyediakan layanan armada/logistik."
+            },
+            "platform": {
+                "h": "Platform",
+                "p": "Aplikasi, situs, dan layanan terkait yang dioperasikan oleh {{app}}."
+            }
+        },
+        "usage": {
+            "i1": "Tidak melakukan penipuan, penyalahgunaan, atau manipulasi transaksi.",
+            "i2": "Tidak mengganggu integritas sistem, jaringan, atau keamanan data.",
+            "i3": "Mematuhi ketentuan operasional, kebijakan, dan pedoman teknis yang diumumkan."
+        },
+        "account": {
+            "i1": "Jangan membagikan kata sandi kepada pihak lain.",
+            "i2": "Pastikan perangkat Anda aman dan terkini.",
+            "i3": "Anda bertanggung jawab atas semua aktivitas yang menggunakan akun Anda."
+        },
+        "prohibited": {
+            "i1": "Kegiatan yang melanggar hukum, termasuk pencucian uang atau penipuan.",
+            "i2": "Pengambilan data tanpa izin (scraping) atau reverse engineering.",
+            "i3": "Pengunggahan konten berbahaya (malware, virus).",
+            "i4": "Pelanggaran privasi atau hak kekayaan intelektual pihak lain."
+        }
+    },
+    "privacy": {
+        "title": "Kebijakan Privasi",
+        "toc": {
+            "section": {
+                "about": "Rangkuman",
+                "process": "Pemrosesan",
+                "safeguard": "Keamanan & Hak"
+            },
+            "intro": "Pendahuluan",
+            "legalbasis": "Dasar Hukum",
+            "collect": "Data yang Dikumpulkan",
+            "use": "Tujuan Penggunaan",
+            "retention": "Masa Simpan",
+            "sharing": "Berbagi Data",
+            "transfer": "Transfer Internasional",
+            "security": "Keamanan Data",
+            "cookies": "Cookie",
+            "rights": "Hak Anda",
+            "children": "Data Anak",
+            "changes": "Perubahan",
+            "contact": "Kontak"
+        },
+        "h": {
+            "intro": "Pendahuluan",
+            "legalbasis": "Dasar Hukum Pemrosesan",
+            "collect": "Data yang Kami Kumpulkan",
+            "use": "Cara Kami Menggunakan Data",
+            "retention": "Masa Simpan Data",
+            "sharing": "Berbagi Data",
+            "transfer": "Transfer Internasional",
+            "security": "Keamanan Data",
+            "cookies": "Cookie & Teknologi Serupa",
+            "rights": "Hak Anda",
+            "children": "Data Anak",
+            "changes": "Perubahan Kebijakan",
+            "contact": "Kontak"
+        },
+        "p": {
+            "intro": "Kebijakan ini menjelaskan bagaimana {{app}} mengumpulkan, menggunakan, dan melindungi data pribadi Anda.",
+            "retention1": "Kami menyimpan data selama diperlukan untuk tujuan yang dijelaskan atau sesuai ketentuan hukum yang berlaku.",
+            "sharing1": "Kami tidak menjual data pribadi. Data dapat dibagikan ke mitra tepercaya (mis. pembayaran, notifikasi, pelacakan) di bawah perjanjian kerahasiaan.",
+            "transfer1": "Jika data diproses di luar wilayah hukum Anda, kami memastikan adanya perlindungan setara sesuai standar yang berlaku.",
+            "security1": "Kami menerapkan kontrol teknis & organisasi untuk mencegah akses tidak sah, kehilangan, atau penyalahgunaan.",
+            "cookies1": "Kami dapat menggunakan cookie untuk autentikasi, preferensi, dan analitik. Anda dapat mengatur preferensi melalui pengaturan browser.",
+            "children1": "Layanan tidak ditujukan untuk anak di bawah usia yang diatur hukum setempat. Kami tidak dengan sengaja mengumpulkan data anak.",
+            "changes1": "Kebijakan dapat diperbarui dan akan diumumkan melalui aplikasi atau situs.",
+            "contact1": "Pertanyaan terkait privasi? Email"
+        },
+        "legalbasis": {
+            "i1": "Persetujuan Anda (consent) untuk tujuan tertentu.",
+            "i2": "Pelaksanaan kontrak/layanan yang Anda minta.",
+            "i3": "Kepentingan sah (legitimate interest) dan/atau kewajiban hukum."
+        },
+        "collect": {
+            "i1": "Identitas & kontak (nama, email, telepon, perusahaan).",
+            "i2": "Data transaksi & operasional logistik (lokasi muat/bongkar, detail barang, jadwal).",
+            "i3": "Data teknis (alamat IP, tipe perangkat, log akses)."
+        },
+        "use": {
+            "i1": "Menyediakan dan mengoperasikan layanan.",
+            "i2": "Verifikasi, pencegahan penipuan, dan keamanan.",
+            "i3": "Peningkatan kualitas produk dan pengalaman.",
+            "i4": "Komunikasi terkait layanan, pemberitahuan, dan dukungan."
+        },
+        "rights": {
+            "i1": "Akses dan salinan data pribadi.",
+            "i2": "Perbaikan atau penghapusan data.",
+            "i3": "Menarik persetujuan dan mengajukan keberatan.",
+            "i4": "Menyampaikan keluhan ke otoritas perlindungan data setempat."
+        },
+        "seeAlso": "Lihat juga",
+        "seeAlsoLink": "Syarat & Ketentuan"
+    }
+}

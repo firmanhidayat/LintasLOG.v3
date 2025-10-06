@@ -3,6 +3,37 @@
         "create": {
             "title": "Create Order",
             "info_order": "Order Information"
-        }
+        },
+        "no_jo": "Job Order No.",
+        "customer": "Customer",
+        "nama_penerima": "Recipient Name",
+        "kota_muat": "Pickup City",
+        "kota_bongkar": "Drop-off City",
+        "jenis_order": "Order Type",
+        "armada": "Fleet",
+        "info_lokasi": "Location Info",
+        "tgl_muat": "Pickup Date",
+        "tgl_bongkar": "Drop-off Date",
+        "multi_pickdrop": "Multi Pick/Drop",
+        "lokasi_muat": "Pickup Address",
+        "lokasi_bongkar": "Drop-off Address",
+        "layanan_khusus": "Special Requirements",
+        "layanan_lainnya": "Other Requirements",
+        "info_muatan": "Cargo Info",
+        "muatan_nama": "Cargo Name",
+        "muatan_jenis": "Cargo Type",
+        "muatan_deskripsi": "Cargo Description",
+        "upload_dokumen": "Upload Documents",
+        "detail_amount": "Amount Details",
+        "biaya_kirim": "Shipping Cost",
+        "biaya_layanan_tambahan": "Additional Services",
+        "tax": "Tax",
+        "biaya_na": "N/A Costs",
+        "biaya_na_note": "Costs are not yet available and will be provided after route & capacity confirmation.",
+        "total_harga": "Total Price",
+        "dok_pengiriman": "Shipping Documents",
+        "lampiran_dokumen": "Document Attachments",
+        "sj_pod": "SJ / POD",
+        "lampiran_sj_pod": "SJ/POD Attachments"
     }
 }

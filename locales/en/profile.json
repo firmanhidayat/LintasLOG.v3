@@ -1,0 +1,43 @@
+{
+    "pages": {
+        "maccount": {
+            "edit": {
+                "title": "Welcome {{name}}",
+                "status": {
+                    "loading": "Loading profile",
+                    "error": "Failed to load profile",
+                    "saving": "Saving profile",
+                    "ready": "Profile ready"
+                },
+                "error": {
+                    "load": "Failed to load profile. Try **Refresh**. If it still fails, your session may have expired."
+                },
+                "note": {
+                    "notLoggedIn": "You're not logged in. Please sign in again."
+                },
+                "empty": {
+                    "profile": "Profile is empty. Click **Refresh** to reload."
+                },
+                "label": {
+                    "name": "Name",
+                    "email": "Email",
+                    "phone": "Phone",
+                    "mobile": "Mobile",
+                    "vat": "VAT",
+                    "tz": "Timezone"
+                },
+                "btn": {
+                    "save": "Save changes",
+                    "saving": "Saving…",
+                    "refresh": "Refresh",
+                    "refreshing": "Refreshing…",
+                    "cancel": "Cancel"
+                },
+                "save": {
+                    "ok": "Profile saved successfully.",
+                    "err": "Failed to save: {{message}}"
+                }
+            }
+        }
+    }
+}

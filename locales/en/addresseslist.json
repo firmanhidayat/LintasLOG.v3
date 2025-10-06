@@ -60,7 +60,8 @@
             "create": "Create Address"
         },
         "page": {
-            "editTitle": "Address Detail"
+            "editTitle": "Update Address Detail",
+            "createTitle": "Create New Address"
         },
         "selectedDistrict": "Selected district_id"
     }

@@ -1,8 +1,39 @@
 {
     "orders": {
         "create": {
-            "title": "Order Baru",
+            "title": "Buat Order",
             "info_order": "Informasi Order"
-        }
+        },
+        "no_jo": "No. JO",
+        "customer": "Pelanggan",
+        "nama_penerima": "Nama Penerima",
+        "kota_muat": "Kota Muat",
+        "kota_bongkar": "Kota Bongkar",
+        "jenis_order": "Jenis Order",
+        "armada": "Armada",
+        "info_lokasi": "Informasi Lokasi",
+        "tgl_muat": "Tanggal Muat",
+        "tgl_bongkar": "Tanggal Bongkar",
+        "multi_pickdrop": "Multi Pick/Drop",
+        "lokasi_muat": "Lokasi Muat",
+        "lokasi_bongkar": "Lokasi Bongkar",
+        "layanan_khusus": "Layanan Khusus",
+        "layanan_lainnya": "Lainnya",
+        "info_muatan": "Informasi Muatan",
+        "muatan_nama": "Nama Muatan",
+        "muatan_jenis": "Jenis Muatan",
+        "muatan_deskripsi": "Deskripsi Muatan",
+        "upload_dokumen": "Unggah Dokumen",
+        "detail_amount": "Rincian Biaya",
+        "biaya_kirim": "Biaya Kirim",
+        "biaya_layanan_tambahan": "Biaya Layanan Tambahan",
+        "tax": "Pajak",
+        "biaya_na": "Biaya N/A",
+        "biaya_na_note": "Biaya belum tersedia dan akan diberikan setelah konfirmasi rute & kapasitas.",
+        "total_harga": "Total Harga",
+        "dok_pengiriman": "Dokumen Pengiriman",
+        "lampiran_dokumen": "Lampiran Dokumen",
+        "sj_pod": "SJ / POD",
+        "lampiran_sj_pod": "Lampiran SJ/POD"
     }
 }

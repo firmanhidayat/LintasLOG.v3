@@ -1,0 +1,165 @@
+{
+    "common": {
+        "lastUpdated": "Last updated",
+        "rightsReserved": "All rights reserved."
+    },
+    "tabs": {
+        "terms": "Terms",
+        "privacy": "Privacy"
+    },
+    "terms": {
+        "title": "Terms of Service",
+        "toc": {
+            "section": {
+                "about": "About",
+                "use": "Use of Service",
+                "legal": "Legal"
+            },
+            "intro": "Introduction",
+            "defs": "Definitions",
+            "usage": "Acceptable Use",
+            "account": "Account & Security",
+            "usercontent": "User Content",
+            "prohibited": "Prohibited Activities",
+            "ip": "Intellectual Property",
+            "fees": "Fees & Payments",
+            "liability": "Limitation of Liability",
+            "law": "Governing Law",
+            "changes": "Changes",
+            "contact": "Contact"
+        },
+        "h": {
+            "intro": "Introduction",
+            "defs": "Definitions",
+            "usage": "Acceptable Use",
+            "account": "Account & Security",
+            "usercontent": "User Content",
+            "prohibited": "Prohibited Activities",
+            "ip": "Intellectual Property",
+            "fees": "Fees & Payments",
+            "liability": "Limitation of Liability",
+            "law": "Governing Law",
+            "changes": "Changes",
+            "contact": "Contact"
+        },
+        "p": {
+            "intro": "Welcome to {{app}}. By accessing or using this platform, you agree to be bound by the following Terms of Service.",
+            "usage1": "Use the service only for lawful purposes and in compliance with applicable laws. You are responsible for all activities under your account.",
+            "account1": "You must keep your credentials confidential. Notify us immediately of any security breach.",
+            "usercontent1": "You warrant that data, documents, and content you submit are accurate, lawful, and that you have the rights to use them.",
+            "ip1": "All marks, logos, UI, and materials are owned by {{app}} or licensors. Copying, modifying, or distributing without written permission is prohibited.",
+            "fees1": "If paid services apply, details of fees, taxes, and billing terms will be provided prior to any transaction.",
+            "liability1": "{{app}} is not liable for indirect damages, data loss, or service interruptions beyond our reasonable control.",
+            "law1": "These terms are governed by the laws of the Republic of Indonesia. Disputes shall be resolved amicably first; failing which, through competent courts/arbitration.",
+            "changes1": "We may update these terms from time to time. The latest version applies upon publication.",
+            "contact1": "Questions about the terms? Contact"
+        },
+        "def": {
+            "user": {
+                "h": "User",
+                "p": "Any individual or entity that accesses or uses {{app}}."
+            },
+            "shipper": {
+                "h": "Shipper",
+                "p": "A user who creates shipment requests."
+            },
+            "transporter": {
+                "h": "Transporter",
+                "p": "A user who provides fleet/logistics services."
+            },
+            "platform": {
+                "h": "Platform",
+                "p": "The applications, site, and related services operated by {{app}}."
+            }
+        },
+        "usage": {
+            "i1": "Do not engage in fraud, abuse, or transaction manipulation.",
+            "i2": "Do not compromise system integrity, networks, or data security.",
+            "i3": "Follow operational terms, policies, and published technical guidelines."
+        },
+        "account": {
+            "i1": "Do not share your password with others.",
+            "i2": "Keep your devices secure and up to date.",
+            "i3": "You are responsible for all activities performed through your account."
+        },
+        "prohibited": {
+            "i1": "Illegal activities, including money laundering or fraud.",
+            "i2": "Unauthorized data extraction (scraping) or reverse engineering.",
+            "i3": "Uploading harmful content (malware, viruses).",
+            "i4": "Violating privacy or intellectual property rights of others."
+        }
+    },
+    "privacy": {
+        "title": "Privacy Policy",
+        "toc": {
+            "section": {
+                "about": "Overview",
+                "process": "Processing",
+                "safeguard": "Security & Rights"
+            },
+            "intro": "Introduction",
+            "legalbasis": "Legal Basis",
+            "collect": "Data We Collect",
+            "use": "How We Use Data",
+            "retention": "Retention",
+            "sharing": "Sharing",
+            "transfer": "International Transfers",
+            "security": "Data Security",
+            "cookies": "Cookies",
+            "rights": "Your Rights",
+            "children": "Children’s Data",
+            "changes": "Changes",
+            "contact": "Contact"
+        },
+        "h": {
+            "intro": "Introduction",
+            "legalbasis": "Legal Basis for Processing",
+            "collect": "Data We Collect",
+            "use": "How We Use Data",
+            "retention": "Data Retention",
+            "sharing": "Data Sharing",
+            "transfer": "International Transfers",
+            "security": "Data Security",
+            "cookies": "Cookies & Similar Technologies",
+            "rights": "Your Rights",
+            "children": "Children’s Data",
+            "changes": "Policy Changes",
+            "contact": "Contact"
+        },
+        "p": {
+            "intro": "This policy explains how {{app}} collects, uses, and protects your personal data.",
+            "retention1": "We retain data as long as necessary for the purposes stated or as required by applicable laws.",
+            "sharing1": "We do not sell personal data. We may share data with trusted partners (e.g., payments, notifications, tracking) under confidentiality agreements.",
+            "transfer1": "Where data is processed outside your jurisdiction, we ensure safeguards aligned with applicable standards.",
+            "security1": "We apply technical and organizational controls to prevent unauthorized access, loss, or misuse.",
+            "cookies1": "We may use cookies for authentication, preferences, and analytics. You can manage preferences via your browser settings.",
+            "children1": "The service is not intended for children below the age defined by local law. We do not knowingly collect children’s data.",
+            "changes1": "We may update this policy and will announce updates via the app or site.",
+            "contact1": "Privacy questions? Email"
+        },
+        "legalbasis": {
+            "i1": "Your consent for specific purposes.",
+            "i2": "Performance of a contract/service you request.",
+            "i3": "Legitimate interests and/or legal obligations."
+        },
+        "collect": {
+            "i1": "Identity & contact (name, email, phone, company).",
+            "i2": "Logistics operations & transaction data (origin/destination, cargo details, schedules).",
+            "i3": "Technical data (IP address, device type, access logs)."
+        },
+        "use": {
+            "i1": "To provide and operate the service.",
+            "i2": "Verification, fraud prevention, and security.",
+            "i3": "Product quality and experience improvements.",
+            "i4": "Service communications, notifications, and support."
+        },
+        "rights": {
+            "i1": "Access and obtain a copy of your personal data.",
+            "i2": "Rectify or erase your data.",
+            "i3": "Withdraw consent and object to processing.",
+            "i4": "Lodge a complaint with your local data protection authority."
+        },
+        "seeAlso": "See also",
+        "seeAlsoLink": "Terms of Service"
+    }
+}

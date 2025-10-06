@@ -78,7 +78,10 @@ type Namespace =
   | "forgot"
   | "addresseslist"
   | "common"
-  | "orders";
+  | "orders"
+  | "chgpwd"
+  | "termsprivacy"
+  | "profile";
 
 async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
   if (lang === "id") {
@@ -127,6 +130,18 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/id/orders.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "chgpwd") {
+      const m = await import("@/locales/id/chgpwd.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "termsprivacy") {
+      const m = await import("@/locales/id/termsprivacy.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "profile") {
+      const m = await import("@/locales/id/profile.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   } else {
     if (ns === "login") {
       const m = await import("@/locales/en/login.json");
@@ -173,6 +188,18 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/en/orders.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "chgpwd") {
+      const m = await import("@/locales/en/chgpwd.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "termsprivacy") {
+      const m = await import("@/locales/en/termsprivacy.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "profile") {
+      const m = await import("@/locales/en/profile.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   }
   return {};
 }
@@ -192,6 +219,9 @@ export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
     "addresseslist",
     "common",
     "orders",
+    "chgpwd",
+    "termsprivacy",
+    "profile",
   ];
 
   const [idDicts, enDicts] = await Promise.all([

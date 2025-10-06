@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import AddressForm, { type AddressFormProps } from "@/forms/AddressesForm";
 import { t } from "@/lib/i18n";
+import { goSignIn } from "@/lib/goSignIn";
+import { useI18nReady } from "@/hooks/useI18nReady";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
@@ -26,18 +28,21 @@ export default function AddressDetailsPage() {
   const addressId = sp.get("id") ?? "";
   const router = useRouter();
 
+  const { i18nReady, activeLang } = useI18nReady();
+
   const [initial, setInitial] = useState<AddressFormProps["initialValue"]>();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(Boolean(addressId));
   const [err, setErr] = useState<string>("");
 
   useEffect(() => {
     if (!addressId) {
-      setErr(t("common.idNotFound"));
       setLoading(false);
+      setErr("");
+      setInitial(undefined);
       return;
     }
-    let aborted = false;
 
+    let aborted = false;
     (async () => {
       setLoading(true);
       setErr("");
@@ -48,14 +53,19 @@ export default function AddressDetailsPage() {
           headers: { Accept: "application/json" },
           credentials: "include",
         });
+        if (res.status === 401) {
+          goSignIn({ routerReplace: router.replace });
+          return;
+        }
         if (!res.ok) throw new Error(`Failed to load: ${res.status}`);
+
         const data: AddressDetailResponse = await res.json();
-        if (aborted) return;
-        setInitial(toInitialValue(data));
+        if (!aborted) setInitial(toInitialValue(data));
       } catch (e) {
-        if (aborted) return;
-        console.error("[address detail]", e);
-        setErr(e instanceof Error ? e.message : "Gagal memuat data");
+        if (!aborted) {
+          console.error("[address detail]", e);
+          setErr(e instanceof Error ? e.message : "Gagal memuat data");
+        }
       } finally {
         if (!aborted) setLoading(false);
       }
@@ -64,21 +74,35 @@ export default function AddressDetailsPage() {
     return () => {
       aborted = true;
     };
-  }, [addressId]);
+  }, [addressId, router.replace]);
 
-  const title = useMemo(() => t("addr.page.editTitle"), []);
+  const title = addressId
+    ? t("addr.page.editTitle")
+    : t("addr.page.createTitle");
+
+  // ⏳ show lightweight skeleton while dictionaries load (prevents flicker)
+  if (!i18nReady) {
+    return (
+      <div className="max-w-2xl" data-lang={activeLang}>
+        <div className="mb-4 h-6 w-48 animate-pulse rounded bg-slate-200" />
+        <div className="rounded-md border p-4 text-sm text-gray-600">
+          {t("common.loading")}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl" data-lang={activeLang}>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{title}</h1>
-        <button
+        {/* <button
           type="button"
           onClick={() => router.back()}
           className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
         >
           {t("common.back")}
-        </button>
+        </button> */}
       </div>
 
       {loading ? (
@@ -91,7 +115,7 @@ export default function AddressDetailsPage() {
         </div>
       ) : (
         <AddressForm
-          addressId={addressId}
+          {...(addressId ? { addressId } : {})}
           initialValue={initial}
           onSuccess={() => router.push("/orders/addresses/list")}
         />

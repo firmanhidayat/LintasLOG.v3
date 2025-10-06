@@ -11,6 +11,16 @@
         "confirm": "Confirmation",
         "discard": "Discard",
         "idNotFound": "ID Not Found",
-        "back": "Back"
+        "back": "Back",
+        "save": "Save",
+        "upload": "Upload",
+        "download": "Download",
+        "select": "Select",
+        "search_city": "Search city…",
+        "search_address": "Search address…",
+        "select_city_first": "Select city first",
+        "saved": "Saved",
+        "failed_save": "Failed to save:",
+        "network_error": "Network error"
     }
 }

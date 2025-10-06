@@ -8,7 +8,7 @@ import { getInitials, nameFromLogin } from "@/lib/identity";
 
 export default function AvatarMenu() {
   const { profile, loggedIn } = useAuth();
-  const profileName = profile?.full_name;
+  const profileName = profile?.name;
   const profileImage = profile?.avatar_url;
   const loginId = profile?.login;
 
