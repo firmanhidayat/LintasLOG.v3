@@ -14,6 +14,39 @@
         },
         "search": {
             "placeholder": "cari.."
+        },
+        "form": {
+            "title": "Buat Klaim",
+            "btn": {
+                "save": "Simpan",
+                "saving": "Menyimpan…",
+                "discard": "Batal"
+            },
+            "fields": {
+                "claimNo": "No. Claim",
+                "joNo": "No. JO",
+                "claimDate": "Tanggal Klaim",
+                "description": "Deskripsi",
+                "reason": "Alasan",
+                "amount": "Jumlah",
+                "document": "Dokumen (Unggah)"
+            },
+            "placeholders": {
+                "claimNo": "contoh: CLM-0001",
+                "joNo": "contoh: JO-12345",
+                "reason": "Mengapa klaim diajukan?",
+                "description": "Tambahkan rincian atau catatan…"
+            },
+            "hints": {
+                "document": "Diterima: PDF, gambar, dan file Office."
+            },
+            "validations": {
+                "required": "Wajib diisi.",
+                "amountInvalid": "Jumlah harus angka lebih dari 0."
+            },
+            "errors": {
+                "submitFailed": "Gagal menyimpan klaim"
+            }
         }
     }
 }

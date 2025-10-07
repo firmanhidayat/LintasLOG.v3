@@ -18,6 +18,7 @@ export function Button({
 }: ButtonProps) {
   const sizeCls = size === "sm" ? "px-3 py-1.5 text-sm" : "px-4 py-2 text-sm";
 
+  // mapping varian (primary === solid)
   const variantCls =
     variant === "outline"
       ? "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 disabled:opacity-50"

@@ -21,6 +21,7 @@
         "select_city_first": "Pilih kota terlebih dahulu",
         "saved": "Tersimpan",
         "failed_save": "Gagal menyimpan:",
-        "network_error": "Kesalahan jaringan"
+        "network_error": "Kesalahan jaringan",
+        "submit": "Kirim"
     }
 }

@@ -21,6 +21,7 @@
         "select_city_first": "Select city first",
         "saved": "Saved",
         "failed_save": "Failed to save:",
-        "network_error": "Network error"
+        "network_error": "Network error",
+        "submit": "Submit"
     }
 }

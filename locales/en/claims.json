@@ -14,6 +14,39 @@
         },
         "search": {
             "placeholder": "search.."
+        },
+        "form": {
+            "title": "Create Claim",
+            "btn": {
+                "save": "Save",
+                "saving": "Saving…",
+                "discard": "Discard"
+            },
+            "fields": {
+                "claimNo": "No. Claim",
+                "joNo": "No. JO",
+                "claimDate": "Claim Date",
+                "description": "Description",
+                "reason": "Reason",
+                "amount": "Amount",
+                "document": "Document (Upload)"
+            },
+            "placeholders": {
+                "claimNo": "e.g. CLM-0001",
+                "joNo": "e.g. JO-12345",
+                "reason": "Why is this claim filed?",
+                "description": "Add details or notes…"
+            },
+            "hints": {
+                "document": "Accepted: PDF, images, and Office files."
+            },
+            "validations": {
+                "required": "This field is required.",
+                "amountInvalid": "Amount must be a number greater than 0."
+            },
+            "errors": {
+                "submitFailed": "Failed to save claim"
+            }
         }
     }
 }

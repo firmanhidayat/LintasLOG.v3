@@ -1,0 +1,31 @@
+{
+    "statustracking": {
+        "title": "Shipment List",
+        "searchPlaceholder": "search…",
+        "rowsPerPage": "Rows per page",
+        "columns": {
+            "lokasiBongkar": "Unloading Location",
+            "armada": "Fleet",
+            "jenisMuatan": "Cargo Type",
+            "status": "Status"
+        },
+        "detail": {
+            "lokasiMuat": "Loading Location",
+            "nomorDO": "DO Number",
+            "nomorDOInternal": "Internal DO Number",
+            "driverNomor": "Driver & Phone"
+        },
+        "menu": {
+            "viewOrder": "View Order",
+            "viewDO": "View Delivery Note",
+            "viewInvoice": "View Invoice",
+            "duplicateOrder": "Duplicate Order"
+        },
+        "actions": {
+            "toggleDetail": "Toggle detail",
+            "showDetail": "Show detail",
+            "hideDetail": "Hide detail",
+            "actionMenu": "Actions"
+        }
+    }
+}

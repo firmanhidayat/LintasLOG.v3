@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useGoogleMaps } from "./useGoogleMaps";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 
 const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -34,9 +34,10 @@ export default function RouteMap({
     [origin, destination]
   );
 
-  // init map
+  // Inisialisasi Map + Renderer + Service (sekali saat ready)
   useEffect(() => {
     if (!ready || !mapRef.current) return;
+
     if (!mapObj.current) {
       mapObj.current = new google.maps.Map(mapRef.current, {
         center: { lat: -2.5, lng: 118 }, // tengah Indonesia
@@ -45,26 +46,34 @@ export default function RouteMap({
         streetViewControl: false,
         fullscreenControl: true,
       });
+
       renderer.current = new google.maps.DirectionsRenderer({
         suppressMarkers: false,
         preserveViewport: false,
         map: mapObj.current,
       });
+
       service.current = new google.maps.DirectionsService();
     } else {
       renderer.current?.setMap(mapObj.current);
     }
   }, [ready]);
 
-  useEffect(() => {
-    if (!ready || !hasRoute || !renderer.current || !service.current) {
-      setSummary(null);
-      return;
-    }
+  // ==== Stabilkan request & cegah spam calls ====
 
-    const req: google.maps.DirectionsRequest = {
-      origin: origin!,
-      destination: destination!,
+  // NOTE: gunakan join untuk menstabilkan dependensi array
+  const waypointsKey = useMemo(
+    () =>
+      waypoints && waypoints.length ? waypoints.filter(Boolean).join("|") : "",
+    [waypoints]
+  );
+
+  const request = useMemo<google.maps.DirectionsRequest | null>(() => {
+    if (!hasRoute || !origin || !destination) return null;
+
+    return {
+      origin,
+      destination,
       travelMode: google.maps.TravelMode.DRIVING,
       optimizeWaypoints: true,
       waypoints: waypoints
@@ -72,37 +81,70 @@ export default function RouteMap({
         .map((w) => ({ location: w, stopover: true })),
       provideRouteAlternatives: false,
     };
+    // penting: pakai waypointsKey, bukan objek array
+  }, [hasRoute, origin, destination, waypointsKey]);
 
-    service.current.route(req, (res, status) => {
-      if (status !== google.maps.DirectionsStatus.OK || !res) {
-        setSummary(null);
-        return;
-      }
-      renderer.current!.setDirections(res);
+  const requestKey = useMemo(
+    () => (request ? JSON.stringify(request) : ""),
+    [request]
+  );
+  const lastKeyRef = useRef<string>("");
+  const timerRef = useRef<number | null>(null);
 
-      // ringkas jarak & durasi (pakai rute index 0)
-      const route = res.routes[0];
-      const legs = route.legs || [];
-      const totalMeters = legs.reduce(
-        (acc, l) => acc + (l.distance?.value ?? 0),
-        0
-      );
-      const totalSecs = legs.reduce(
-        (acc, l) => acc + (l.duration?.value ?? 0),
-        0
-      );
+  useEffect(() => {
+    if (!ready || !renderer.current || !service.current) {
+      setSummary(null);
+      return;
+    }
+    if (!request) return;
 
-      setSummary({
-        distanceText: metersToKmText(totalMeters),
-        durationText: secsToHms(totalSecs),
+    // Skip jika request identik dengan terakhir
+    if (lastKeyRef.current === requestKey) return;
+
+    // Debounce supaya input (autocomplete/ketik) tidak spam
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => {
+      lastKeyRef.current = requestKey;
+
+      service.current!.route(request, (res, status) => {
+        if (status !== google.maps.DirectionsStatus.OK || !res) {
+          setSummary(null);
+          return;
+        }
+
+        renderer.current!.setDirections(res);
+
+        // Ringkas jarak & durasi (pakai route[0])
+        const route = res.routes[0];
+        const legs = route.legs || [];
+        const totalMeters = legs.reduce(
+          (acc, l) => acc + (l.distance?.value ?? 0),
+          0
+        );
+        const totalSecs = legs.reduce(
+          (acc, l) => acc + (l.duration?.value ?? 0),
+          0
+        );
+
+        setSummary({
+          distanceText: metersToKmText(totalMeters),
+          durationText: secsToHms(totalSecs),
+        });
+
+        // Fit bounds
+        const bounds = new google.maps.LatLngBounds();
+        (route.overview_path || []).forEach((p) => bounds.extend(p));
+        mapObj.current?.fitBounds(bounds);
       });
+    }, 400); // 300–500 ms enak
 
-      // fit bounds
-      const bounds = new google.maps.LatLngBounds();
-      route.overview_path?.forEach((p) => bounds.extend(p));
-      mapObj.current?.fitBounds(bounds);
-    });
-  }, [ready, hasRoute, origin, destination, waypoints]);
+    return () => {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [ready, request, requestKey]);
 
   if (error) {
     return (

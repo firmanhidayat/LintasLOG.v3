@@ -4,7 +4,7 @@ import { t } from "./i18n";
 type FastapiErrorItem = {
   loc: (string | number)[];
   msg: string;
-  type: string;  
+  type: string;
 };
 
 export function mapFastapi422(

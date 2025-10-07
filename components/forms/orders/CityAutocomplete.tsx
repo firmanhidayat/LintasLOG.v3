@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FieldText } from "@/components/form/FieldText";
 import { t } from "@/lib/i18n";
@@ -27,49 +27,74 @@ export default function CityAutocomplete({
   const [query, setQuery] = useState<string>(value?.name ?? "");
   const [options, setOptions] = useState<IdName[]>([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const debounced = useDebounced(query, 250);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const popRef = useRef<HTMLDivElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useClickOutside([inputRef, popRef], () => setOpen(false), open);
 
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    const onF = () => setOpen(true);
-    el.addEventListener("focus", onF);
-    return () => el.removeEventListener("focus", onF);
-  }, []);
+  const fetchOptions = useCallback(
+    async (q: string) => {
+      // Batalkan request sebelumnya jika masih in-flight
+      if (abortRef.current) abortRef.current.abort();
+      const ac = new AbortController();
+      abortRef.current = ac;
 
-  useEffect(() => {
-    let ignore = false;
-    async function run() {
-      if (!debounced) {
-        setOptions([]);
-        return;
-      }
       try {
+        setLoading(true);
         const url = new URL(API_BASE + "/locations/cities/search");
-        url.searchParams.set("query", debounced);
-        const res = await fetch(url.toString(), { credentials: "include" });
+        // Tetap kirim query meskipun empty string — biar backend bisa kirim daftar default/top N
+        url.searchParams.set("query", q);
+        const res = await fetch(url.toString(), {
+          credentials: "include",
+          signal: ac.signal,
+        });
         if (res.status === 401) {
           goSignIn({ routerReplace: router.replace });
           return;
         }
-        if (!res.ok) return;
+        if (!res.ok) {
+          setOptions([]);
+          return;
+        }
         const arr = (await res.json()) as IdName[];
-        if (!ignore) setOptions(arr);
+        setOptions(arr ?? []);
       } catch (err) {
-        console.error("[CityAutocomplete] search failed", err);
+        if ((err as Error)?.name !== "AbortError") {
+          console.error("[CityAutocomplete] search failed", err);
+          setOptions([]);
+        }
+      } finally {
+        setLoading(false);
       }
-    }
-    run();
-    return () => {
-      ignore = true;
-    };
-  }, [debounced, router]);
+    },
+    [router.replace]
+  );
 
+  // Buka dan load data saat fokus (sesuai requirement)
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const onFocus = () => {
+      setOpen(true);
+      // Load dengan query terkini (bisa kosong) supaya dropdown langsung muncul
+      void fetchOptions(query.trim());
+    };
+    el.addEventListener("focus", onFocus);
+    return () => el.removeEventListener("focus", onFocus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchOptions]);
+
+  // Pencarian saat user mengetik (debounced)
+  useEffect(() => {
+    // Selalu fetch, termasuk saat debounced === "" (untuk initial list)
+    void fetchOptions(debounced.trim());
+  }, [debounced, fetchOptions]);
+
+  // Sinkronkan tampilan input jika value berubah dari luar
   useEffect(() => {
     setQuery(value?.name ?? "");
   }, [value?.id, value?.name]);
@@ -89,24 +114,42 @@ export default function CityAutocomplete({
         }}
         placeholder={t("common.search_city")}
         inputRef={inputRef}
+        onBlur={() => {
+          // Jangan tutup di onBlur — sudah di-handle useClickOutside
+        }}
       />
-      {open && options.length > 0 && (
+
+      {open && (
         <div ref={popRef} className="relative">
           <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-md">
-            {options.map((opt) => (
-              <li
-                key={String(opt.id)}
-                className="cursor-pointer px-3 py-2 text-sm hover:bg-gray-50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  onChange(opt);
-                  setQuery(opt.name);
-                  setOpen(false);
-                }}
-              >
-                {opt.name}
+            {loading && (
+              <li className="px-3 py-2 text-sm text-gray-500">
+                {t("common.loading")}…
               </li>
-            ))}
+            )}
+
+            {!loading && options.length === 0 && (
+              <li className="px-3 py-2 text-sm text-gray-500">
+                {t("common.no_results")}
+              </li>
+            )}
+
+            {!loading &&
+              options.length > 0 &&
+              options.map((opt) => (
+                <li
+                  key={String(opt.id)}
+                  className="cursor-pointer px-3 py-2 text-sm hover:bg-gray-50"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onChange(opt);
+                    setQuery(opt.name);
+                    setOpen(false);
+                  }}
+                >
+                  {opt.name}
+                </li>
+              ))}
           </ul>
         </div>
       )}

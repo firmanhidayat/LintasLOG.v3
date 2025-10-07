@@ -8,6 +8,7 @@ import {
   type ColumnDef,
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link";
+import { Icon } from "@/components/icons/Icon";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
@@ -97,6 +98,70 @@ export default function InvoicesListPage() {
       i18nReady && activeLang ? t(key) || fallback : fallback;
 
     return [
+      {
+        id: "actions",
+        label: "",
+        isAction: true,
+        className: "w-20",
+        cell: (it) => (
+          <div className="flex items-center gap-2">
+            {it.id != null ? (
+              <Link
+                href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+                aria-label="Edit address"
+                title="Edit"
+              >
+                <Icon name="pencil" className="h-3 w-3" />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+                title="Edit (unavailable)"
+                disabled
+              >
+                <Icon name="pencil" className="h-3 w-3" />
+              </button>
+            )}
+
+            {it.id != null ? (
+              <button
+                type="button"
+                onClick={() => {
+                  // ListTemplate kini menangani event ini & membuka modal konfirmasi
+                  const evt = new CustomEvent("llog.openDeleteConfirm", {
+                    detail: { id: it.id, name: it.invoice_no },
+                  });
+                  window.dispatchEvent(evt);
+                }}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+                aria-label="Delete address"
+                title="Delete"
+              >
+                <Icon
+                  name="trash"
+                  className="h-3 w-3 text-red-600"
+                  strokeWidth={1.5}
+                />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+                title="Delete (unavailable)"
+                disabled
+              >
+                <Icon
+                  name="trash"
+                  className="h-3 w-3 text-red-600"
+                  strokeWidth={1.5}
+                />
+              </button>
+            )}
+          </div>
+        ),
+      },
       {
         id: "invoice_no",
         label: L("invoices.columns.invoiceNo", "No. Invoice"),

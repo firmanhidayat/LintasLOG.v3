@@ -85,7 +85,8 @@ type Namespace =
   | "claims"
   | "invoices"
   | "downpayment"
-  | "vendorbill";
+  | "vendorbill"
+  | "statustracking";
 
 async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
   if (lang === "id") {
@@ -162,6 +163,10 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/id/vendorbill.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "statustracking") {
+      const m = await import("@/locales/id/statustracking.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   } else {
     if (ns === "login") {
       const m = await import("@/locales/en/login.json");
@@ -236,6 +241,10 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/en/vendorbill.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "statustracking") {
+      const m = await import("@/locales/en/statustracking.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   }
   return {};
 }
@@ -262,6 +271,7 @@ export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
     "invoices",
     "downpayment",
     "vendorbill",
+    "statustracking",
   ];
 
   const [idDicts, enDicts] = await Promise.all([

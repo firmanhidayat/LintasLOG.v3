@@ -1,0 +1,31 @@
+{
+    "statustracking": {
+        "title": "Daftar Pengiriman",
+        "searchPlaceholder": "cari…",
+        "rowsPerPage": "Baris per halaman",
+        "columns": {
+            "lokasiBongkar": "Lokasi Bongkar",
+            "armada": "Armada",
+            "jenisMuatan": "Jenis Muatan",
+            "status": "Status"
+        },
+        "detail": {
+            "lokasiMuat": "Lokasi Muat",
+            "nomorDO": "Nomor DO",
+            "nomorDOInternal": "Nomor DO Internal",
+            "driverNomor": "Driver & Nomor"
+        },
+        "menu": {
+            "viewOrder": "Lihat Order",
+            "viewDO": "Lihat Surat Jalan",
+            "viewInvoice": "Lihat Invoice",
+            "duplicateOrder": "Buat Order Serupa"
+        },
+        "actions": {
+            "toggleDetail": "Toggle detail",
+            "showDetail": "Tampilkan detail",
+            "hideDetail": "Sembunyikan detail",
+            "actionMenu": "Aksi"
+        }
+    }
+}

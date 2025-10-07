@@ -7,7 +7,7 @@
             "title": "Create Vendor Bill"
         },
         "search": {
-            "placeholder": "Search vendor bills..."
+            "placeholder": "search..."
         },
         "rowsPerPage": "Rows per page",
         "columns": {

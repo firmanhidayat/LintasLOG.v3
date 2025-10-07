@@ -15,6 +15,17 @@
             "dpPercent": "Down Payment %",
             "amountTotal": "Amount Total",
             "status": "Status"
+        },
+        "form": {
+            "joNo": "No. JO",
+            "dpPercent": "Down Payment %",
+            "amount": "Amount"
+        },
+        "status": {
+            "Pending": "Pending",
+            "Approved": "Approved",
+            "Paid": "Paid",
+            "Rejected": "Rejected"
         }
     }
 }

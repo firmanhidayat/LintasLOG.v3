@@ -5,7 +5,7 @@ import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import { ListTemplate, ColumnDef } from "@/components/datagrid/ListTemplate";
-
+import { Icon } from "@/components/icons/Icon";
 const USER_ADDRESS_URL = process.env.NEXT_PUBLIC_TMS_USER_ADDRESS_URL!;
 
 // ============ Types (tetap sama) ============
@@ -29,31 +29,6 @@ function renderDistrict(it: AddressItem) {
   if (!d) return it.district_name ?? "-";
   if (typeof d === "string") return d;
   return d?.name ?? it.district_name ?? "-";
-}
-
-function PencilIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
-      <path
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L7.5 18.79l-4 1 1-4 12.362-12.303z"
-      />
-    </svg>
-  );
-}
-function TrashIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
-      <path
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m4 4v8m6-8v8"
-      />
-    </svg>
-  );
 }
 
 export default function AddressesListPage() {
@@ -89,7 +64,7 @@ export default function AddressesListPage() {
               aria-label="Edit address"
               title="Edit"
             >
-              <PencilIcon className="h-3 w-3" />
+              <Icon name="pencil" className="h-3 w-3" />
             </Link>
           ) : (
             <button
@@ -98,7 +73,7 @@ export default function AddressesListPage() {
               title="Edit (unavailable)"
               disabled
             >
-              <PencilIcon className="h-3 w-3" />
+              <Icon name="pencil" className="h-3 w-3" />
             </button>
           )}
 
@@ -116,7 +91,11 @@ export default function AddressesListPage() {
               aria-label="Delete address"
               title="Delete"
             >
-              <TrashIcon className="h-3 w-3" />
+              <Icon
+                name="trash"
+                className="h-3 w-3 text-red-600"
+                strokeWidth={1.5}
+              />
             </button>
           ) : (
             <button
@@ -125,7 +104,11 @@ export default function AddressesListPage() {
               title="Delete (unavailable)"
               disabled
             >
-              <TrashIcon className="h-3 w-3" />
+              <Icon
+                name="trash"
+                className="h-3 w-3 text-red-600"
+                strokeWidth={1.5}
+              />
             </button>
           )}
         </div>

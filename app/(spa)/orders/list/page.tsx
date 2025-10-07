@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useMemo } from "react";
+// import { useRouter } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import {
@@ -9,6 +9,7 @@ import {
   type ColumnDef,
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link";
+import { Icon } from "@/components/icons/Icon";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 const USE_STATIC = true;
@@ -122,12 +123,76 @@ const DEMO_ORDERS: OrderRow[] = [
 ];
 
 export default function OrdersListPage() {
-  const router = useRouter();
+  //  const router = useRouter();
   const { i18nReady, activeLang } = useI18nReady();
 
   // kolom mengikuti ColumnDef<T> dari ListTemplate (bukan key/header/render versi lain)
   const columns = useMemo<ColumnDef<OrderRow>[]>(
     () => [
+      {
+        id: "actions",
+        label: "",
+        isAction: true,
+        className: "w-20",
+        cell: (it) => (
+          <div className="flex items-center gap-2">
+            {it.id != null ? (
+              <Link
+                href={`/orders/details?id=${encodeURIComponent(String(it.id))}`}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+                aria-label="Edit address"
+                title="Edit"
+              >
+                <Icon name="pencil" className="h-3 w-3" />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+                title="Edit (unavailable)"
+                disabled
+              >
+                <Icon name="pencil" className="h-3 w-3" />
+              </button>
+            )}
+
+            {it.id != null ? (
+              <button
+                type="button"
+                onClick={() => {
+                  // ListTemplate kini menangani event ini & membuka modal konfirmasi
+                  const evt = new CustomEvent("llog.openDeleteConfirm", {
+                    detail: { id: it.id, name: it.jo_no },
+                  });
+                  window.dispatchEvent(evt);
+                }}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+                aria-label="Delete address"
+                title="Delete"
+              >
+                <Icon
+                  name="trash"
+                  className="h-3 w-3 text-red-600"
+                  strokeWidth={1.5}
+                />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+                title="Delete (unavailable)"
+                disabled
+              >
+                <Icon
+                  name="trash"
+                  className="h-3 w-3 text-red-600"
+                  strokeWidth={1.5}
+                />
+              </button>
+            )}
+          </div>
+        ),
+      },
       {
         id: "jo_no",
         label: t("orders.columns.joNo") || "No. JO",
