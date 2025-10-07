@@ -11,6 +11,9 @@
             "orderType": "Jenis Order",
             "amountTotal": "Jumlah",
             "status": "Status"
+        },
+        "search": {
+            "placeholder": "cari.."
         }
     }
 }

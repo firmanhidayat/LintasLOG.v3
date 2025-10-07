@@ -11,6 +11,9 @@
             "orderType": "Order Type",
             "amountTotal": "Amount Total",
             "status": "Status"
+        },
+        "search": {
+            "placeholder": "search.."
         }
     }
 }

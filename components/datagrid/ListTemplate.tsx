@@ -408,7 +408,7 @@ export function ListTemplate<
                   <th
                     key={c.id}
                     scope="col"
-                    className={`px-3 py-2 text-left font-medium text-gray-700 ${
+                    className={`px-3 py-2 text-left font-medium text-xs text-gray-700 ${
                       c.className ?? ""
                     }`}
                   >
@@ -437,7 +437,7 @@ export function ListTemplate<
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="p-4 text-center text-gray-500"
+                  className="p-4 text-center text-xs text-gray-500"
                 >
                   {t("common.loading")}
                 </td>
@@ -446,7 +446,7 @@ export function ListTemplate<
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="p-4 text-center text-red-600"
+                  className="p-4 text-center text-xs text-red-600"
                 >
                   {error}
                 </td>
@@ -455,7 +455,7 @@ export function ListTemplate<
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="p-4 text-center text-gray-500"
+                  className="p-4 text-center text-xs text-gray-500"
                 >
                   {t("common.noData")}
                 </td>
@@ -472,7 +472,7 @@ export function ListTemplate<
                   {columns.map((c) => (
                     <td
                       key={c.id}
-                      className={`px-3 py-2 align-top text-gray-700 ${
+                      className={`px-2 py-1 align-top font-light text-xs text-gray-700 ${
                         c.className ?? ""
                       }`}
                     >
@@ -488,7 +488,7 @@ export function ListTemplate<
 
       {/* Pagination */}
       <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-        <div className="text-sm text-gray-600">
+        <div className="text-xs text-gray-600">
           {t("addresses.pagination.summary")
             .replace("{page}", String(page))
             .replace("{pages}", String(totalPages))
@@ -496,7 +496,7 @@ export function ListTemplate<
         </div>
         <div className="flex items-center gap-1">
           <button
-            className="rounded-md border px-2 py-1 text-sm disabled:opacity-50"
+            className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1 || loading}
             aria-label={t("common.prev")}
@@ -512,7 +512,7 @@ export function ListTemplate<
                 onClick={() => setPage(1)}
                 disabled={loading}
               />
-              <span className="px-1 text-sm text-gray-500">…</span>
+              <span className="px-1 text-xs text-gray-500">…</span>
             </>
           )}
 
@@ -528,7 +528,7 @@ export function ListTemplate<
 
           {pagesToShow[pagesToShow.length - 1] < totalPages && (
             <>
-              <span className="px-1 text-sm text-gray-500">…</span>
+              <span className="px-1 text-xs text-gray-500">…</span>
               <PageBtn
                 n={totalPages}
                 active={page === totalPages}
@@ -539,7 +539,7 @@ export function ListTemplate<
           )}
 
           <button
-            className="rounded-md border px-2 py-1 text-sm disabled:opacity-50"
+            className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages || loading}
             aria-label={t("common.next")}
@@ -574,7 +574,7 @@ export function ListTemplate<
   }) {
     return (
       <button
-        className={`rounded-md border px-2 py-1 text-sm ${
+        className={`rounded-md border px-2 py-1 text-xs ${
           active ? "bg-primary text-white" : ""
         } disabled:opacity-50`}
         onClick={onClick}
