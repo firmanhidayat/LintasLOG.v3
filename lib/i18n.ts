@@ -81,7 +81,11 @@ type Namespace =
   | "orders"
   | "chgpwd"
   | "termsprivacy"
-  | "profile";
+  | "profile"
+  | "claims"
+  | "invoices"
+  | "downpayment"
+  | "vendorbill";
 
 async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
   if (lang === "id") {
@@ -142,6 +146,22 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/id/profile.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "claims") {
+      const m = await import("@/locales/id/claims.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "invoices") {
+      const m = await import("@/locales/id/invoices.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "downpayment") {
+      const m = await import("@/locales/id/downpayment.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "vendorbill") {
+      const m = await import("@/locales/id/vendorbill.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   } else {
     if (ns === "login") {
       const m = await import("@/locales/en/login.json");
@@ -200,6 +220,22 @@ async function importDict(lang: Lang, ns: Namespace): Promise<Dict> {
       const m = await import("@/locales/en/profile.json");
       return (m.default ?? {}) as unknown as Dict;
     }
+    if (ns === "claims") {
+      const m = await import("@/locales/en/claims.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "invoices") {
+      const m = await import("@/locales/en/invoices.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "downpayment") {
+      const m = await import("@/locales/en/downpayment.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
+    if (ns === "vendorbill") {
+      const m = await import("@/locales/en/vendorbill.json");
+      return (m.default ?? {}) as unknown as Dict;
+    }
   }
   return {};
 }
@@ -222,6 +258,10 @@ export async function loadDictionaries(): Promise<Record<Lang, Dict>> {
     "chgpwd",
     "termsprivacy",
     "profile",
+    "claims",
+    "invoices",
+    "downpayment",
+    "vendorbill",
   ];
 
   const [idDicts, enDicts] = await Promise.all([

@@ -1,59 +1,151 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// Pastikan dev dep: npm i -D @types/google.maps
-declare global {
-  interface Window {
-    google?: typeof google;
-    __googleMapsOnLoad__?: () => void;
-  }
-}
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useGoogleMaps } from "./useGoogleMaps";
 
-import { useEffect, useState } from "react";
+const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-export function useGoogleMaps(
-  apiKey: string | undefined,
-  libraries: Array<"places"> = ["places"]
-) {
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+type Summary = { distanceText: string; durationText: string };
+
+export default function RouteMap({
+  origin,
+  destination,
+  waypoints = [],
+  showSummary = true,
+  height = 340,
+}: {
+  origin: string | null;
+  destination: string | null;
+  waypoints?: string[];
+  showSummary?: boolean;
+  height?: number;
+}) {
+  const { ready, error } = useGoogleMaps(GOOGLE_KEY, ["places"]);
+  const mapRef = useRef<HTMLDivElement | null>(null);
+
+  const mapObj = useRef<google.maps.Map | null>(null);
+  const renderer = useRef<google.maps.DirectionsRenderer | null>(null);
+  const service = useRef<google.maps.DirectionsService | null>(null);
+
+  const [summary, setSummary] = useState<Summary | null>(null);
+
+  const hasRoute = useMemo(
+    () => Boolean(origin && destination),
+    [origin, destination]
+  );
+
+  // init map
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
+    if (!mapObj.current) {
+      mapObj.current = new google.maps.Map(mapRef.current, {
+        center: { lat: -2.5, lng: 118 }, // tengah Indonesia
+        zoom: 5,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true,
+      });
+      renderer.current = new google.maps.DirectionsRenderer({
+        suppressMarkers: false,
+        preserveViewport: false,
+        map: mapObj.current,
+      });
+      service.current = new google.maps.DirectionsService();
+    } else {
+      renderer.current?.setMap(mapObj.current);
+    }
+  }, [ready]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!apiKey) {
-      setError("Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
+    if (!ready || !hasRoute || !renderer.current || !service.current) {
+      setSummary(null);
       return;
     }
-    // already loaded?
-    if (window.google?.maps) {
-      setReady(true);
-      return;
-    }
-    // if already loading: poll
-    if (window.__googleMapsOnLoad__) {
-      const id = window.setInterval(() => {
-        if (window.google?.maps) {
-          window.clearInterval(id);
-          setReady(true);
-        }
-      }, 60);
-      return () => window.clearInterval(id);
-    }
 
-    // inject script
-    window.__googleMapsOnLoad__ = () => setReady(true);
-    const script = document.createElement("script");
-    const libs = libraries.length ? `&libraries=${libraries.join(",")}` : "";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}${libs}&callback=__googleMapsOnLoad__`;
-    script.async = true;
-    script.defer = true;
-    script.onerror = () => setError("Failed to load Google Maps script");
-    document.head.appendChild(script);
-
-    return () => {
-      // no cleanup for script tag (keep cached across pages)
+    const req: google.maps.DirectionsRequest = {
+      origin: origin!,
+      destination: destination!,
+      travelMode: google.maps.TravelMode.DRIVING,
+      optimizeWaypoints: true,
+      waypoints: waypoints
+        .filter(Boolean)
+        .map((w) => ({ location: w, stopover: true })),
+      provideRouteAlternatives: false,
     };
-  }, [apiKey, libraries]);
 
-  return { ready, error };
+    service.current.route(req, (res, status) => {
+      if (status !== google.maps.DirectionsStatus.OK || !res) {
+        setSummary(null);
+        return;
+      }
+      renderer.current!.setDirections(res);
+
+      // ringkas jarak & durasi (pakai rute index 0)
+      const route = res.routes[0];
+      const legs = route.legs || [];
+      const totalMeters = legs.reduce(
+        (acc, l) => acc + (l.distance?.value ?? 0),
+        0
+      );
+      const totalSecs = legs.reduce(
+        (acc, l) => acc + (l.duration?.value ?? 0),
+        0
+      );
+
+      setSummary({
+        distanceText: metersToKmText(totalMeters),
+        durationText: secsToHms(totalSecs),
+      });
+
+      // fit bounds
+      const bounds = new google.maps.LatLngBounds();
+      route.overview_path?.forEach((p) => bounds.extend(p));
+      mapObj.current?.fitBounds(bounds);
+    });
+  }, [ready, hasRoute, origin, destination, waypoints]);
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div
+        ref={mapRef}
+        style={{ height }}
+        className="w-full overflow-hidden rounded-xl border border-gray-200"
+      />
+      {showSummary && summary && (
+        <div className="text-xs text-gray-600">
+          <strong>Ringkasan Rute:</strong>{" "}
+          <span>Jarak {summary.distanceText}</span>{" "}
+          <span className="mx-2">•</span>
+          <span>Estimasi {summary.durationText}</span>
+        </div>
+      )}
+      {!hasRoute && (
+        <div className="text-xs text-gray-500">
+          Pilih <em>Lokasi Muat</em> dan <em>Lokasi Bongkar</em> untuk melihat
+          rute di peta.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function metersToKmText(m: number): string {
+  if (m < 1000) return `${m} m`;
+  const km = m / 1000;
+  return `${km.toFixed(km >= 100 ? 0 : km >= 10 ? 1 : 2)} km`;
+}
+
+function secsToHms(s: number): string {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h} jam ${m} mnt`;
+  return `${m} mnt`;
 }

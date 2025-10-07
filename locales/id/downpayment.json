@@ -1,0 +1,20 @@
+{
+    "downpayment": {
+        "list": {
+            "title": "Down Payment"
+        },
+        "create": {
+            "title": "Buat Downpayment"
+        },
+        "search": {
+            "placeholder": "cari..."
+        },
+        "rowsPerPage": "Baris per halaman",
+        "columns": {
+            "joNo": "No. JO",
+            "dpPercent": "Down Payment %",
+            "amountTotal": "Amount Total",
+            "status": "Status"
+        }
+    }
+}

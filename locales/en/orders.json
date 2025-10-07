@@ -34,6 +34,19 @@
         "dok_pengiriman": "Shipping Documents",
         "lampiran_dokumen": "Document Attachments",
         "sj_pod": "SJ / POD",
-        "lampiran_sj_pod": "SJ/POD Attachments"
+        "lampiran_sj_pod": "SJ/POD Attachments",
+        "search": {
+            "placeholder": "search..."
+        },
+        "columns": {
+            "joNo": "Job Order No.",
+            "pickupDate": "Pickup Date",
+            "pickupTo": "Pickup To",
+            "dropDate": "Drop Date",
+            "dropTo": "Drop To",
+            "specialRequest": "Special Request",
+            "price": "Price",
+            "status": "Status"
+        }
     }
 }

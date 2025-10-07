@@ -1,0 +1,16 @@
+{
+    "claims": {
+        "create": {
+            "title": "Buat Klaim"
+        },
+        "columns": {
+            "claimNo": "No. Claim",
+            "joNo": "No. JO",
+            "claimDate": "Tanggal Klaim",
+            "description": "Deskripsi",
+            "orderType": "Jenis Order",
+            "amountTotal": "Jumlah",
+            "status": "Status"
+        }
+    }
+}

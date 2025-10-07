@@ -205,7 +205,7 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <main className="mx-auto max-w-xl px-4 py-6">
+    <main className="mx-auto px-4 py-6">
       <header className="mb-6">
         <h1 className="text-xl font-semibold">
           {t("maccount.password.title") ?? "Change Password"}

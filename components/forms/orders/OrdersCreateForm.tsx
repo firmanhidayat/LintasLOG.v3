@@ -11,6 +11,7 @@ import { FieldTextarea } from "@/components/form/FieldTextarea";
 import { FieldSelect } from "@/components/form/FieldSelect";
 import CityAutocomplete from "@/components/forms/orders/CityAutocomplete";
 import AddressAutocomplete from "@/components/forms/orders/AddressAutocomplete";
+import RouteMap from "@/components/maps/RouteMap";
 import { tzDateToUtcISO } from "@/lib/tz";
 import { useAuth } from "@/components/providers/AuthProvider";
 import type {
@@ -28,14 +29,18 @@ export default function OrdersCreateForm() {
 
   // i18n
   const { ready: i18nReady } = useI18nReady();
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
     return () => off?.();
   }, []);
 
-  const profileTimezone = profile?.tz || "Asia/Jakarta";
+  const profileTimezone =
+    (profile as { tz?: string } | undefined)?.tz || "Asia/Jakarta";
 
+  // ===== Local states (tanpa multi-drop) =====
   const [noJO] = useState<string>("");
   const [customer] = useState<string>("");
   const [namaPenerima, setNamaPenerima] = useState<string>("");
@@ -46,7 +51,6 @@ export default function OrdersCreateForm() {
 
   const [tglMuat, setTglMuat] = useState<string>("");
   const [tglBongkar, setTglBongkar] = useState<string>("");
-  const [multiPickDrop, setMultiPickDrop] = useState<boolean>(false);
   const [lokMuat, setLokMuat] = useState<AddressItem | null>(null);
   const [lokBongkar, setLokBongkar] = useState<AddressItem | null>(null);
 
@@ -106,7 +110,7 @@ export default function OrdersCreateForm() {
   ] as const;
   const firstErrorKey = useMemo(
     () => errorOrder.find((k) => errors[k]),
-    [errors]
+    [errors, errorOrder]
   );
 
   function validate(): boolean {
@@ -122,6 +126,7 @@ export default function OrdersCreateForm() {
     if (!muatanJenis) e.muatanJenis = t("form.required");
     if (!muatanDeskripsi) e.muatanDeskripsi = t("form.required");
 
+    // Bongkar >= Muat
     if (tglMuat && tglBongkar) {
       const d1 = new Date(tzDateToUtcISO(tglMuat, profileTimezone)).getTime();
       const d2 = new Date(
@@ -160,7 +165,10 @@ export default function OrdersCreateForm() {
       armada,
       tgl_muat_utc: tzDateToUtcISO(tglMuat, profileTimezone),
       tgl_bongkar_utc: tzDateToUtcISO(tglBongkar, profileTimezone),
-      multi_pickdrop: multiPickDrop,
+
+      // >>> multi-drop diabaikan, tetap kirim false agar kompatibel API
+      multi_pickdrop: false,
+
       lokasi_muat_id: lokMuat?.id,
       lokasi_bongkar_id: lokBongkar?.id,
       layanan_khusus: selectedLayanan,
@@ -211,13 +219,25 @@ export default function OrdersCreateForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-auto space-y-2 p-2">
+    <form onSubmit={handleSubmit} className="max-auto space-y-1 p-1">
+      <Card bordered={false} shadow={false}>
+        <CardBody>
+          {/* Google Maps Route Preview (hanya muat -> bongkar) */}
+          <div className="mt-4">
+            <RouteMap
+              origin={lokMuat?.name ?? null}
+              destination={lokBongkar?.name ?? null}
+              showSummary
+            />
+          </div>
+        </CardBody>
+      </Card>
       <Card className="border-0!">
-        <CardHeader className="border-0!">
+        {/* <CardHeader className="border-0!">
           <h3 className="text-lg font-semibold text-gray-800">
             {t("orders.create.title")}
           </h3>
-        </CardHeader>
+        </CardHeader> */}
         <CardBody>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* ===== Left Column ===== */}
@@ -373,18 +393,7 @@ export default function OrdersCreateForm() {
                     </div>
                   </div>
 
-                  <div className="mt-3">
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300"
-                        checked={multiPickDrop}
-                        onChange={(e) => setMultiPickDrop(e.target.checked)}
-                      />
-                      {t("orders.multi_pickdrop")}
-                    </label>
-                  </div>
-
+                  {/* Autocomplete lokasi */}
                   <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <AddressAutocomplete
                       label={t("orders.lokasi_muat")}

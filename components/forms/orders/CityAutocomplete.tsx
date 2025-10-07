@@ -1,6 +1,3 @@
-// =====================================================
-// File: components/orders/CityAutocomplete.tsx
-// =====================================================
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -75,7 +72,7 @@ export default function CityAutocomplete({
 
   useEffect(() => {
     setQuery(value?.name ?? "");
-  }, [value?.id]);
+  }, [value?.id, value?.name]);
 
   return (
     <div className="space-y-1">

@@ -73,7 +73,7 @@ export default function AddressAutocomplete({
 
   useEffect(() => {
     setQuery(value?.name ?? "");
-  }, [value?.id, cityId]);
+  }, [value?.id, value?.name, cityId]);
 
   return (
     <div className="space-y-1">

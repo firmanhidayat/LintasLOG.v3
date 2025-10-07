@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// Pastikan dev dep: npm i -D @types/google.maps
 declare global {
   interface Window {
     google?: typeof google;
@@ -24,12 +22,10 @@ export function useGoogleMaps(
       setError("Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
       return;
     }
-    // already loaded?
     if (window.google?.maps) {
       setReady(true);
       return;
     }
-    // if already loading: poll
     if (window.__googleMapsOnLoad__) {
       const id = window.setInterval(() => {
         if (window.google?.maps) {
@@ -40,7 +36,6 @@ export function useGoogleMaps(
       return () => window.clearInterval(id);
     }
 
-    // inject script
     window.__googleMapsOnLoad__ = () => setReady(true);
     const script = document.createElement("script");
     const libs = libraries.length ? `&libraries=${libraries.join(",")}` : "";
@@ -50,9 +45,7 @@ export function useGoogleMaps(
     script.onerror = () => setError("Failed to load Google Maps script");
     document.head.appendChild(script);
 
-    return () => {
-      // no cleanup for script tag (keep cached across pages)
-    };
+    return () => {};
   }, [apiKey, libraries]);
 
   return { ready, error };

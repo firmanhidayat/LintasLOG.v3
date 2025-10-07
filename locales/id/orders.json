@@ -34,6 +34,19 @@
         "dok_pengiriman": "Dokumen Pengiriman",
         "lampiran_dokumen": "Lampiran Dokumen",
         "sj_pod": "SJ / POD",
-        "lampiran_sj_pod": "Lampiran SJ/POD"
+        "lampiran_sj_pod": "Lampiran SJ/POD",
+        "search": {
+            "placeholder": "cari..."
+        },
+        "columns": {
+            "joNo": "No. JO",
+            "pickupDate": "Tanggal Pickup",
+            "pickupTo": "Tujuan Pickup",
+            "dropDate": "Tanggal Drop",
+            "dropTo": "Tujuan Drop",
+            "specialRequest": "Pelayanan Khusus",
+            "price": "Harga",
+            "status": "Status"
+        }
     }
 }

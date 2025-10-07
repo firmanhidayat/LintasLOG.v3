@@ -1,0 +1,19 @@
+{
+    "invoices": {
+        "create": {
+            "title": "Create Invoice"
+        },
+        "columns": {
+            "invoiceNo": "No. Claim",
+            "joNo": "No. JO",
+            "customer": "Customer",
+            "orderType": "Order Type",
+            "amountTotal": "Amount Total",
+            "paymentStatus": "Payment Status",
+            "invoiceStatus": "Invoice Status"
+        },
+        "search": {
+            "placeholder": "search..."
+        }
+    }
+}

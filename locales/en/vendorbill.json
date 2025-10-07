@@ -1,0 +1,21 @@
+{
+    "vendorbill": {
+        "list": {
+            "title": "Vendor Bill"
+        },
+        "create": {
+            "title": "Create Vendor Bill"
+        },
+        "search": {
+            "placeholder": "Search vendor bills..."
+        },
+        "rowsPerPage": "Rows per page",
+        "columns": {
+            "billNo": "Bill No.",
+            "joNo": "JO No.",
+            "date": "Date",
+            "amountTotal": "Amount Total",
+            "status": "Status"
+        }
+    }
+}

@@ -2,11 +2,11 @@
  * CONTOH IMPLEMENTASI di tsx
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * import { getInitials, nameFromLogin } from "@/lib/identity";
-
+ *
  * const initials = getInitials(profile?.name ?? profile?.email, { max: 2, locale: "id-ID" });
  * const displayName = (profile?.name && profile.name.trim().length > 0)
-   ? profile.name
-   : nameFromLogin(profile?.login ?? profile?.email, { titleCase: true, locale: "id-ID" });
+ *   ? profile.name
+ *   : nameFromLogin(profile?.login ?? profile?.email, { titleCase: true, locale: "id-ID" });
  */
 
 export type InitialsOptions = {
@@ -63,7 +63,8 @@ export function getInitials(
   opts?: InitialsOptions
 ): string {
   if (!name || !name.trim()) return "";
-  const { max = 2, locale } = opts ?? {};
+  // gunakan isObject agar aman di runtime & hilangkan warning unused
+  const { max = 2, locale } = (isObject(opts) ? opts : {}) as InitialsOptions;
 
   const words = splitWords(name);
   const initials: string[] = [];
@@ -95,7 +96,10 @@ export function nameFromLogin(
   opts?: NameFromLoginOptions
 ): string {
   if (!login) return "";
-  const { titleCase = false, locale } = opts ?? {};
+  // gunakan isObject agar aman di runtime & hilangkan warning unused
+  const { titleCase = false, locale } = (
+    isObject(opts) ? opts : {}
+  ) as NameFromLoginOptions;
 
   const at = login.indexOf("@");
   const localPart = at >= 0 ? login.slice(0, at) : login;
@@ -109,7 +113,6 @@ export function nameFromLogin(
 
   if (!titleCase || cleaned.length === 0) return cleaned;
 
-  // Title Case per kata (aware grapheme)
   const words = splitWords(cleaned).map((w) => {
     const gs = toGraphemes(w, locale);
     if (gs.length === 0) return w;

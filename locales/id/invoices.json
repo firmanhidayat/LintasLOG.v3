@@ -1,0 +1,19 @@
+{
+    "invoices": {
+        "create": {
+            "title": "Buat Invoice"
+        },
+        "columns": {
+            "invoiceNo": "No. Klaim",
+            "joNo": "No. JO",
+            "customer": "Pelanggan",
+            "orderType": "Tipe Order",
+            "amountTotal": "Total",
+            "paymentStatus": "Status Pembayaran",
+            "invoiceStatus": "Status Invoice"
+        },
+        "search": {
+            "placeholder": "cari..."
+        }
+    }
+}
