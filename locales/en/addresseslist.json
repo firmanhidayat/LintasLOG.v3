@@ -57,11 +57,16 @@
         "actions": {
             "saving": "Saving…",
             "update": "Update Address",
-            "create": "Create Address"
+            "create": "Create Address",
+            "confirm": "Continue ?"
         },
         "page": {
             "editTitle": "Update Address Detail",
             "createTitle": "Create New Address"
+        },
+        "map": {
+            "title": "Map Title",
+            "desc": "Map Description"
         },
         "selectedDistrict": "Selected district_id"
     }

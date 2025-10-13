@@ -19,7 +19,7 @@ export default function CreateAddressesPage() {
   }
 
   return (
-    <div className="max-w-xl" data-lang={activeLang}>
+    <div className="max-auto" data-lang={activeLang}>
       <h1 className="mb-4 text-xl font-semibold">
         {t("addr.page.createTitle")}
       </h1>

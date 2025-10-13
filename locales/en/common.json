@@ -7,12 +7,14 @@
         "noResults": "No results",
         "toDelete": "want to delete",
         "areYouSure": "Are you sure",
-        "cancel": "Discard",
+        "cancel": "Cancel",
         "confirm": "Confirmation",
         "discard": "Discard",
         "idNotFound": "ID Not Found",
         "back": "Back",
         "save": "Save",
+        "update": "Update",
+        "success": "Success",
         "upload": "Upload",
         "download": "Download",
         "select": "Select",
@@ -22,6 +24,20 @@
         "saved": "Saved",
         "failed_save": "Failed to save:",
         "network_error": "Network error",
-        "submit": "Submit"
+        "submit": "Submit",
+        "name": "Name",
+        "phone": "Phone",
+        "no_results": "No results",
+        "send": "Send Message",
+        "sending": "Submitting...",
+        "no": "No",
+        "yes": "Yes",
+        "error": "Error"
+    },
+    "form": {
+        "required": "required",
+        "time_required": "time is required",
+        "must_after_or_equal_pickup": "must after or equal pickup",
+        "address_pair_required": "Fill both pickup and drop-off addresses."
     }
 }

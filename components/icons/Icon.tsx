@@ -47,3 +47,18 @@ export const Icon = React.forwardRef<SVGSVGElement, IconProps>(function Icon(
     </svg>
   );
 });
+
+export function TruckIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <path
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 7h10v7H3zM13 10h4l3 3v1h-7z"
+      />
+      <circle cx="7.5" cy="17.5" r="1.5" strokeWidth="2" />
+      <circle cx="17.5" cy="17.5" r="1.5" strokeWidth="2" />
+    </svg>
+  );
+}

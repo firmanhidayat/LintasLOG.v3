@@ -4,6 +4,9 @@
             "title": "Buat Order",
             "info_order": "Informasi Order"
         },
+        "edit": {
+            "info_order": "Edit - Info Order"
+        },
         "no_jo": "No. JO",
         "customer": "Pelanggan",
         "nama_penerima": "Nama Penerima",
@@ -35,9 +38,22 @@
         "lampiran_dokumen": "Lampiran Dokumen",
         "sj_pod": "SJ / POD",
         "lampiran_sj_pod": "Lampiran SJ/POD",
+        "set_ke": "Set ke",
+        "chat_broadcast": "Obrolan",
+        "message": "Pesan",
+        "type_message": "Ketik pesan disini...",
+        "upload_hint_10mb": "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap",
         "search": {
             "placeholder": "cari..."
         },
+        "pic_muat_name": "PIC Muat",
+        "pic_muat_phone": "PIC Muat Telepon",
+        "pic_bongkar_name": "PIC Bongkar",
+        "pic_bongkar_phone": "PIC Bongkar Telepon",
+        "confirm_submit_text": "Pastikan semua informasi sudah benar sebelum submit. Lanjutkan?",
+        "confirm_update_text": "Perbarui data order sesuai perubahan yang sudah Anda buat. Lanjutkan?",
+        "create_success": "Order berhasil dibuat.",
+        "update_success": "Order berhasil diperbarui.",
         "columns": {
             "joNo": "No. JO",
             "pickupDate": "Tanggal Pickup",
@@ -47,6 +63,18 @@
             "specialRequest": "Pelayanan Khusus",
             "price": "Harga",
             "status": "Status"
+        },
+        "status": {
+            "pending": "Pending",
+            "accepted": "Accepted",
+            "on_preparation": "On Preparation",
+            "pickup": "Pickup",
+            "on_delivery": "On Delivery",
+            "received": "Received",
+            "on_review": "On Review",
+            "done": "Done",
+            "arrive": "Arrived",
+            "depart": "Departed"
         }
     }
 }

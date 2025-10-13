@@ -5,7 +5,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { getString } from "@/lib/safe-get";
 import type { TmsProfile } from "@/types/tms-profile";
 import { getInitials, nameFromLogin } from "@/lib/identity";
-import { t } from "@/lib/i18n";
+import { getLang, t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import { Card, CardBody } from "@/components/ui/Card";
 import { AvatarCircle } from "@/components/shared/AvatarCircle";
@@ -133,7 +133,11 @@ export default function ManageAccountEditPage() {
 
       const resp = await fetch(UPDATE_PROFILE_URL, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "Accept-Language": getLang(),
+        },
         credentials: "include",
         body: JSON.stringify(payload),
       });

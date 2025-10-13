@@ -12,6 +12,8 @@
         "idNotFound": "ID Tidak Ditemukan",
         "back": "Kembali",
         "save": "Simpan",
+        "update": "Perbarui",
+        "success": "Berhasil",
         "discard": "Batalkan",
         "upload": "Unggah",
         "download": "Unduh",
@@ -22,6 +24,20 @@
         "saved": "Tersimpan",
         "failed_save": "Gagal menyimpan:",
         "network_error": "Kesalahan jaringan",
-        "submit": "Kirim"
+        "submit": "Kirim",
+        "name": "Nama",
+        "phone": "Nomor Telepon",
+        "no_results": "Tidak ada hasil",
+        "send": "Kirim Pesan",
+        "sending": "Mengirimkan...",
+        "no": "Tidak",
+        "yes": "Ya",
+        "error": "Kesalahan"
+    },
+    "form": {
+        "required": "wajib diisi",
+        "time_required": "jam wajib diisi",
+        "must_after_or_equal_pickup": "harus setelah atau sama dengan tanggal pickup",
+        "address_pair_required": "Isi lengkap pasangan lokasi muat dan bongkar."
     }
 }

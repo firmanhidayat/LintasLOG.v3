@@ -1,8 +1,23 @@
 {
     "ringkasanorder": {
         "title": "Ringkasan Order",
-        "subtitle": "Tahun 2025",
-        "statsToday": "Statistik Hari Ini",
-        "orders": "IDR"
+        "subtitle": "Ringkasan performa bisnis dan KPI terbaru.",
+        "kpi": {
+            "customer": "Pelanggan",
+            "revenue": "Pendapatan",
+            "growth": "Pertumbuhan",
+            "returns": "Retur",
+            "downloads": "Unduhan",
+            "order": "Rasio Pesanan"
+        },
+        "stats": {
+            "totalProfit": "Total Laba",
+            "totalOrders": "Total Pesanan",
+            "averagePrice": "Harga Rata-rata",
+            "quantity": "Kuantitas"
+        },
+        "departmentMonthlyTitle": "Laporan penjualan bulanan per departemen",
+        "totalSales": "Total Penjualan",
+        "average": "Rata-rata"
     }
 }

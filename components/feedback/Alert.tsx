@@ -7,7 +7,7 @@ export function Alert({
   children,
   className,
 }: React.PropsWithChildren<{
-  kind?: "error" | "success" | "info";
+  kind?: "error" | "success" | "info" | "warning";
   className?: string;
 }>) {
   const cn =

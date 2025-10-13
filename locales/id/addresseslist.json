@@ -57,11 +57,16 @@
         "actions": {
             "saving": "Simpan",
             "update": "Pembaharuan Alamat",
-            "create": "Buat Alamat"
+            "create": "Buat Alamat",
+            "confirm": "Lanjut ?"
         },
         "page": {
             "editTitle": "Ubah Data Alamat",
             "createTitle": "Tambah Alamat Baru"
+        },
+        "map": {
+            "title": "Judul Peta",
+            "desc": "Deskripsi Peta"
         },
         "selectedDistrict": "terpilih district_id"
     }

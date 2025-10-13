@@ -2,13 +2,13 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FieldText } from "@/components/form/FieldText";
-import { t } from "@/lib/i18n";
+import { getLang, t } from "@/lib/i18n";
 import { goSignIn } from "@/lib/goSignIn";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import type { AddressItem } from "@/types/orders";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+const ADDRESSES_URL = process.env.NEXT_PUBLIC_TMS_LOCATIONS_ADDRESSES_URL ?? "";
 
 export default function AddressAutocomplete({
   label,
@@ -51,11 +51,16 @@ export default function AddressAutocomplete({
 
       try {
         setLoading(true);
-        const url = new URL(API_BASE + "/locations/addresses/search");
+        const url = new URL(ADDRESSES_URL);
         url.searchParams.set("city_id", String(cityId));
-        // Kirim query meski kosong → biar backend boleh return default/top list
         url.searchParams.set("query", q);
         const res = await fetch(url.toString(), {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "Accept-Language": getLang(),
+          },
           credentials: "include",
           signal: ac.signal,
         });
@@ -87,19 +92,16 @@ export default function AddressAutocomplete({
     const onF = () => {
       if (disabled) return;
       setOpen(true);
-      // Load saat fokus, dengan query terkini (bisa kosong)
       void fetchOptions(query.trim());
     };
     el.addEventListener("focus", onF);
     return () => el.removeEventListener("focus", onF);
   }, [disabled, fetchOptions, query]);
 
-  // Pencarian saat user mengetik (debounced). Tetap fetch walau q === "".
   useEffect(() => {
     void fetchOptions(debounced.trim());
   }, [debounced, fetchOptions]);
 
-  // Sinkronisasi tampilan ketika value/city berubah
   useEffect(() => {
     setQuery(value?.name ?? "");
   }, [value?.id, value?.name, cityId]);

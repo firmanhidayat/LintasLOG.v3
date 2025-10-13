@@ -49,6 +49,60 @@ export default function AddressesListPage() {
   // ----- Kolom dinamis utk Address -----
   const columns: ColumnDef<AddressItem>[] = [
     {
+      id: "name",
+      label: t("addresses.columns.name"),
+      sortable: true,
+      sortValue: (r) => (r.name ?? "").toLowerCase(),
+      cell: (r) => r.name ?? "-",
+    },
+    {
+      id: "street",
+      label: t("addresses.columns.street"),
+      sortable: true,
+      sortValue: (r) => (r.street ?? "").toLowerCase(),
+      cell: (r) => r.street ?? "-",
+    },
+    {
+      id: "street2",
+      label: t("addresses.columns.street2"),
+      sortable: true,
+      sortValue: (r) => (r.street2 ?? "").toLowerCase(),
+      cell: (r) => r.street2 ?? "-",
+    },
+    {
+      id: "district",
+      label: t("addresses.columns.district"),
+      sortable: true,
+      sortValue: (r) => {
+        const d = r.district;
+        if (!d) return (r.district_name ?? "").toLowerCase();
+        if (typeof d === "string") return d.toLowerCase();
+        return String(d.name ?? r.district_name ?? "").toLowerCase();
+      },
+      cell: (r) => renderDistrict(r),
+    },
+    {
+      id: "zip",
+      label: t("addresses.columns.zip"),
+      sortable: true,
+      sortValue: (r) => (r.zip ?? "").toLowerCase(),
+      cell: (r) => r.zip ?? "-",
+    },
+    {
+      id: "email",
+      label: t("addresses.columns.email"),
+      sortable: true,
+      sortValue: (r) => (r.email ?? "").toLowerCase(),
+      cell: (r) => r.email ?? "-",
+    },
+    {
+      id: "mobile",
+      label: t("addresses.columns.phone"),
+      sortable: true,
+      sortValue: (r) => (r.mobile ?? r.phone ?? "").toLowerCase(),
+      cell: (r) => r.mobile ?? r.phone ?? "-",
+    },
+    {
       id: "actions",
       label: "",
       isAction: true,
@@ -114,60 +168,6 @@ export default function AddressesListPage() {
         </div>
       ),
     },
-    {
-      id: "name",
-      label: t("addresses.columns.name"),
-      sortable: true,
-      sortValue: (r) => (r.name ?? "").toLowerCase(),
-      cell: (r) => r.name ?? "-",
-    },
-    {
-      id: "street",
-      label: t("addresses.columns.street"),
-      sortable: true,
-      sortValue: (r) => (r.street ?? "").toLowerCase(),
-      cell: (r) => r.street ?? "-",
-    },
-    {
-      id: "street2",
-      label: t("addresses.columns.street2"),
-      sortable: true,
-      sortValue: (r) => (r.street2 ?? "").toLowerCase(),
-      cell: (r) => r.street2 ?? "-",
-    },
-    {
-      id: "district",
-      label: t("addresses.columns.district"),
-      sortable: true,
-      sortValue: (r) => {
-        const d = r.district;
-        if (!d) return (r.district_name ?? "").toLowerCase();
-        if (typeof d === "string") return d.toLowerCase();
-        return String(d.name ?? r.district_name ?? "").toLowerCase();
-      },
-      cell: (r) => renderDistrict(r),
-    },
-    {
-      id: "zip",
-      label: t("addresses.columns.zip"),
-      sortable: true,
-      sortValue: (r) => (r.zip ?? "").toLowerCase(),
-      cell: (r) => r.zip ?? "-",
-    },
-    {
-      id: "email",
-      label: t("addresses.columns.email"),
-      sortable: true,
-      sortValue: (r) => (r.email ?? "").toLowerCase(),
-      cell: (r) => r.email ?? "-",
-    },
-    {
-      id: "mobile",
-      label: t("addresses.columns.phone"),
-      sortable: true,
-      sortValue: (r) => (r.mobile ?? r.phone ?? "").toLowerCase(),
-      cell: (r) => r.mobile ?? r.phone ?? "-",
-    },
   ];
 
   const leftHeader = (
@@ -188,7 +188,7 @@ export default function AddressesListPage() {
         searchPlaceholder={t("addresses.search.placeholder")}
         rowsPerPageLabel={t("addresses.rowsPerPage")}
         leftHeader={leftHeader}
-        initialPageSize={10}
+        initialPageSize={80}
         initialSort={{ by: "name", dir: "asc" }}
         postFetchTransform={(list) => list}
       />

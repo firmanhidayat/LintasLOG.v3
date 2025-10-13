@@ -1,11 +1,13 @@
+// app/maccount/signup/page.tsx
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import lintaslogo from "@/images/lintaslog-logo.png";
 import bglintas from "@/images/bg-1.png";
-import { useRouter } from "next/navigation";
 
 import {
   loadDictionaries,
@@ -15,6 +17,9 @@ import {
   type Lang,
 } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
+import { FieldText } from "@/components/form/FieldText";
+import { Button } from "@/components/ui/Button";
+import FieldPassword from "@/components/form/FieldPassword";
 
 const REGISTER_URL = process.env.NEXT_PUBLIC_TMS_REGISTER_URL!;
 
@@ -37,7 +42,6 @@ type RegisterPayload = {
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
-
 function isFastapiErrorItem(v: unknown): v is FastapiErrorItem {
   if (!isRecord(v)) return false;
   const loc = (v as Record<string, unknown>)["loc"];
@@ -47,11 +51,153 @@ function isFastapiErrorItem(v: unknown): v is FastapiErrorItem {
     Array.isArray(loc) && typeof msg === "string" && typeof type === "string"
   );
 }
-
 function isFastapiErrorItems(v: unknown): v is FastapiErrorItem[] {
   return Array.isArray(v) && v.every(isFastapiErrorItem);
 }
-// --------------------------------------------
+
+/** ---------- Small UI helpers ----------
+ * RadioGroup & PasswordField built on top of your FieldText.
+ */
+function RadioGroup({
+  name,
+  options,
+  value,
+  onChange,
+  disabled,
+  ariaLabel,
+}: {
+  name: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  ariaLabel?: string;
+}) {
+  return (
+    <div role="radiogroup" aria-label={ariaLabel}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        {options.map((opt) => (
+          <label
+            key={opt.value}
+            className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={opt.value}
+              checked={value === opt.value}
+              onChange={(e) => onChange(e.target.value)}
+              disabled={disabled}
+              className="h-4 w-4 text-primary focus:ring-primary"
+            />
+            <span>{opt.label}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
+//   return (
+//     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+//       <path
+//         strokeWidth="2"
+//         strokeLinecap="round"
+//         strokeLinejoin="round"
+//         d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12z"
+//       />
+//       <circle cx="12" cy="12" r="3" strokeWidth="2" />
+//     </svg>
+//   );
+// }
+// function EyeOffIcon(props: React.SVGProps<SVGSVGElement>) {
+//   return (
+//     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+//       <path
+//         strokeWidth="2"
+//         strokeLinecap="round"
+//         strokeLinejoin="round"
+//         d="M3 3l18 18M10.584 10.59A3 3 0 0012 15c1.657 0 3-1.343 3-3 0-.418-.084-.816-.236-1.177M9.88 4.245A10.93 10.93 0 0112 4.5C18 4.5 21.75 12 21.75 12c-.428.771-1.004 1.653-1.715 2.52m-2.473 2.26C15.604 17.64 13.95 18.75 12 18.75c-6 0-9.75-6.75-9.75-6.75a18.796 18.796 0 013.29-3.84"
+//       />
+//     </svg>
+//   );
+// }
+
+// function PasswordField({
+//   label,
+//   value,
+//   onChange,
+//   name,
+//   placeholder,
+//   required,
+//   disabled,
+//   a11yShow,
+//   a11yHide,
+// }: {
+//   label: string;
+//   value: string;
+//   onChange: (v: string) => void;
+//   name: string;
+//   placeholder?: string;
+//   required?: boolean;
+//   disabled?: boolean;
+//   a11yShow: string;
+//   a11yHide: string;
+// }) {
+//   const [show, setShow] = useState(false);
+
+//   return (
+//     <div className="grid gap-1">
+//       <label className="text-sm font-medium text-gray-600">{label}</label>
+
+//       {/* Input group (menyatu) */}
+//       <div className="flex">
+//         {/* input: kiri, tanpa radius kanan */}
+//         <input
+//           name={name}
+//           value={value}
+//           onChange={(e) => onChange(e.target.value)}
+//           type={show ? "text" : "password"}
+//           placeholder={placeholder}
+//           autoComplete="new-password"
+//           required={required}
+//           disabled={disabled}
+//           className={[
+//             // samakan dengan gaya FieldText input
+//             "w-full rounded-l-md border border-gray-300 px-3 py-2",
+//             "focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary",
+//             "disabled:opacity-50",
+//           ].join(" ")}
+//         />
+
+//         {/* tombol: kanan, berbagi border & radius kanan */}
+//         <button
+//           type="button"
+//           onClick={() => setShow((s) => !s)}
+//           className={[
+//             "inline-flex items-center justify-center",
+//             "rounded-r-md border border-l-0 border-gray-300",
+//             "px-3", // lebar proporsional
+//             "hover:bg-gray-50",
+//             "disabled:opacity-50",
+//           ].join(" ")}
+//           aria-label={show ? a11yHide : a11yShow}
+//           title={show ? a11yHide : a11yShow}
+//           disabled={disabled}
+//         >
+//           {show ? (
+//             <EyeOffIcon className="h-5 w-5" />
+//           ) : (
+//             <EyeIcon className="h-5 w-5" />
+//           )}
+//         </button>
+//       </div>
+//     </div>
+//   );
+// }
+
+/** -------------------------------------------- */
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -59,26 +205,30 @@ export default function SignUpPage() {
   const [i18nReady, setI18nReady] = useState(false);
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
 
-  const [showPwd, setShowPwd] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  // Controlled fields (pakai FieldText)
+  const [accName, setAccName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [userType, setUserType] = useState<TmsUserType | "">("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [terms, setTerms] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
-
     loadDictionaries().then(() => {
       if (!mounted) return;
       setI18nReady(true);
       setActiveLang(getLang());
     });
-
     const off = onLangChange((lang) => {
       if (!mounted) return;
       setActiveLang(lang);
     });
-
     return () => {
       mounted = false;
       off();
@@ -93,57 +243,58 @@ export default function SignUpPage() {
         return first?.msg ?? t("signup.alerts.validation");
       }
       if (typeof detail === "string") return detail;
-
       const message = (payload as Record<string, unknown>)["message"];
       if (typeof message === "string") return message;
     }
     return t("signup.alerts.failed");
   }
 
-  async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> {
+  // Simple client-side checks (UX saja)
+  const emailLooksOk = useMemo(
+    () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+    [email]
+  );
+  const passwordsMatch = useMemo(
+    () => password === confirm,
+    [password, confirm]
+  );
+  const pwdLongEnough = useMemo(() => password.length >= 8, [password]);
+  const formValid = useMemo(
+    () =>
+      accName.trim().length > 0 &&
+      emailLooksOk &&
+      (userType === "shipper" || userType === "transporter") &&
+      passwordsMatch &&
+      pwdLongEnough &&
+      terms,
+    [accName, emailLooksOk, userType, passwordsMatch, pwdLongEnough, terms]
+  );
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErrMsg(null);
     setOkMsg(null);
 
-    const form = new FormData(e.currentTarget);
-    const accName = String(form.get("accountName") || "").trim();
-    const email = String(form.get("email") || "").trim();
-    const phone = String(form.get("phone") || "").trim();
-    const userType = String(
-      form.get("tms_user_type") || ""
-    ).trim() as TmsUserType;
-    const password = String(form.get("password") || "");
-    const confirmPassword = String(form.get("confirmPassword") || "");
-
-    if (!accName) {
-      setErrMsg(t("signup.errors.accountNameRequired"));
-      return;
-    }
-    if (!email) {
-      setErrMsg(t("signup.errors.emailRequired"));
-      return;
-    }
-    if (!userType || (userType !== "shipper" && userType !== "transporter")) {
-      setErrMsg(t("signup.errors.userTypeRequired"));
-      return;
-    }
-    if (password !== confirmPassword) {
-      setErrMsg(t("signup.errors.passwordMismatch"));
-      return;
-    }
-    if (password.length < 8) {
-      setErrMsg(t("signup.errors.passwordMin"));
+    // Server tetap sumber kebenaran; client-side guard buat UX
+    if (!formValid) {
+      if (!accName.trim())
+        return setErrMsg(t("signup.errors.accountNameRequired"));
+      if (!emailLooksOk) return setErrMsg(t("signup.errors.emailRequired"));
+      if (userType !== "shipper" && userType !== "transporter")
+        return setErrMsg(t("signup.errors.userTypeRequired"));
+      if (!pwdLongEnough) return setErrMsg(t("signup.errors.passwordMin"));
+      if (!passwordsMatch)
+        return setErrMsg(t("signup.errors.passwordMismatch"));
+      if (!terms) return setErrMsg(t("signup.errors.termsRequired"));
       return;
     }
 
     const payload: RegisterPayload = {
-      login: email,
-      name: accName,
-      mobile: phone,
+      login: email.trim(),
+      name: accName.trim(),
+      mobile: phone.trim(),
       password,
-      tms_user_type: userType,
+      tms_user_type: userType as TmsUserType,
     };
 
     try {
@@ -171,13 +322,14 @@ export default function SignUpPage() {
         return;
       }
 
-      sessionStorage.setItem("llog.emailcurrent", email);
+      sessionStorage.setItem("llog.emailcurrent", email.trim());
       sessionStorage.setItem(
         "llog.signup_gate",
         JSON.stringify({ ok: true, ts: Date.now() })
       );
 
       setOkMsg(t("signup.alerts.success"));
+      // beri sedikit jeda agar user sempat melihat pesan
       setTimeout(() => {
         router.push("/maccount/signup/success");
       }, 200);
@@ -236,166 +388,125 @@ export default function SignUpPage() {
 
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             {errMsg && (
-              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div
+                className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                role="alert"
+                aria-live="assertive"
+              >
                 {errMsg}
               </div>
             )}
             {okMsg && (
-              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              <div
+                className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+                role="status"
+                aria-live="polite"
+              >
                 {okMsg}
               </div>
             )}
 
-            <div>
-              <label
-                htmlFor="accountName"
-                className="block text-sm font-medium text-gray-700"
-              >
-                {t("signup.form.accountName.label")}
-              </label>
-              <input
-                id="accountName"
-                name="accountName"
-                type="text"
-                required
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                placeholder={t("signup.form.accountName.placeholder")}
-                autoComplete="name"
-              />
-            </div>
+            {/* Account Name */}
+            <FieldText
+              label={t("signup.form.accountName.label")}
+              name="accountName"
+              value={accName}
+              onChange={setAccName}
+              placeholder={t("signup.form.accountName.placeholder")}
+              autoComplete="name"
+              required
+              disabled={submitting}
+            />
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                {t("signup.form.email.label")}
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                placeholder={t("signup.form.email.placeholder")}
-                autoComplete="email"
-              />
-            </div>
+            {/* Email */}
+            <FieldText
+              label={t("signup.form.email.label")}
+              name="email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              placeholder={t("signup.form.email.placeholder")}
+              autoComplete="email"
+              required
+              disabled={submitting}
+            />
 
-            <div>
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-gray-700"
-              >
-                {t("signup.form.phone.label")}
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                placeholder={t("signup.form.phone.placeholder")}
-                autoComplete="tel"
-              />
-            </div>
+            {/* Phone (optional) */}
+            <FieldText
+              label={t("signup.form.phone.label")}
+              name="phone"
+              type="tel"
+              value={phone}
+              onChange={setPhone}
+              placeholder={t("signup.form.phone.placeholder")}
+              autoComplete="tel"
+              inputMode="tel"
+              disabled={submitting}
+            />
 
-            <div>
-              <label
-                htmlFor="tms_user_type"
-                className="block text-sm font-medium text-gray-700"
-              >
+            {/* User Type as Radio */}
+            <div className="grid gap-1">
+              <label className="text-sm font-medium text-gray-600">
                 {t("signup.form.userType.label")}
               </label>
-              <select
-                id="tms_user_type"
+              <RadioGroup
                 name="tms_user_type"
+                ariaLabel={t("signup.form.userType.label")}
+                value={userType}
+                onChange={(v) => setUserType(v as TmsUserType)}
+                disabled={submitting}
+                options={[
+                  { value: "shipper", label: t("roles.shipper") },
+                  { value: "transporter", label: t("roles.transporter") },
+                ]}
+              />
+              <input
+                // hidden input to satisfy HTML5 `required` semantics if needed
+                tabIndex={-1}
+                className="sr-only"
+                aria-hidden="true"
                 required
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  {t("signup.form.userType.placeholder")}
-                </option>
-                <option value="shipper">{t("roles.shipper")}</option>
-                <option value="transporter">{t("roles.transporter")}</option>
-              </select>
+                value={userType}
+                onChange={() => {}}
+              />
             </div>
 
+            {/* Passwords */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  {t("signup.form.password.label")}
-                </label>
-                <div className="mt-1 flex">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPwd ? "text" : "password"}
-                    required
-                    minLength={8}
-                    className="w-full rounded-l-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                    placeholder={t("signup.form.password.placeholder")}
-                    autoComplete="new-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPwd(!showPwd)}
-                    className="rounded-r-md border border-l-0 border-gray-300 px-3 text-sm text-gray-600 hover:bg-gray-50"
-                    aria-label={
-                      showPwd
-                        ? t("signup.a11y.hidePassword")
-                        : t("signup.a11y.showPassword")
-                    }
-                  >
-                    {showPwd ? t("signup.ui.hide") : t("signup.ui.show")}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  {t("signup.form.confirm.label")}
-                </label>
-                <div className="mt-1 flex">
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirm ? "text" : "password"}
-                    required
-                    minLength={8}
-                    className="w-full rounded-l-md border border-gray-300 px-3 py-2 focus:border-primary focus:ring-primary"
-                    placeholder={t("signup.form.confirm.placeholder")}
-                    autoComplete="new-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(!showConfirm)}
-                    className="rounded-r-md border border-l-0 border-gray-300 px-3 text-sm text-gray-600 hover:bg-gray-50"
-                    aria-label={
-                      showConfirm
-                        ? t("signup.a11y.hideConfirm")
-                        : t("signup.a11y.showConfirm")
-                    }
-                  >
-                    {showConfirm ? t("signup.ui.hide") : t("signup.ui.show")}
-                  </button>
-                </div>
-              </div>
+              <FieldPassword
+                label={t("signup.form.password.label")}
+                name="password"
+                value={password}
+                onChange={setPassword}
+                placeholder={t("signup.form.password.placeholder")}
+                required
+                disabled={submitting}
+                a11yShow={t("signup.a11y.showPassword")}
+                a11yHide={t("signup.a11y.hidePassword")}
+              />
+              <FieldPassword
+                label={t("signup.form.confirm.label")}
+                name="confirmPassword"
+                value={confirm}
+                onChange={setConfirm}
+                placeholder={t("signup.form.confirm.placeholder")}
+                required
+                disabled={submitting}
+                a11yShow={t("signup.a11y.showConfirm")}
+                a11yHide={t("signup.a11y.hideConfirm")}
+              />
             </div>
 
+            {/* Terms */}
             <div className="flex items-start gap-2">
               <input
                 id="terms"
                 name="terms"
                 type="checkbox"
+                checked={terms}
+                onChange={(e) => setTerms(e.target.checked)}
                 required
+                disabled={submitting}
                 className="mt-1 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
@@ -409,14 +520,15 @@ export default function SignUpPage() {
               </label>
             </div>
 
+            {/* Submit */}
             <div className="text-center">
-              <button
+              <Button
                 type="submit"
-                disabled={submitting}
-                className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2 text-base font-medium text-white hover:bg-primary/90 disabled:opacity-60"
+                disabled={submitting || !formValid}
+                className="inline-flex items-center justify-center"
               >
                 {submitting ? t("signup.ui.submitting") : t("signup.ui.submit")}
-              </button>
+              </Button>
             </div>
 
             <p className="mt-4 text-center text-sm text-gray-500">

@@ -7,25 +7,27 @@ import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FieldText } from "@/components/form/FieldText";
 import { FieldTextarea } from "@/components/form/FieldTextarea";
+import MultiFileUpload from "@/components/form/MultiFileUpload";
+import DateTimePickerTW from "@/components/form/DateTimePickerTW";
 
 import { t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
 
 import { goSignIn } from "@/lib/goSignIn";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
-const CLAIM_CREATE_URL = `${API_BASE}/api-tms/claims`;
+const CLAIM_CREATE_URL = process.env.NEXT_PUBLIC_TMS_CLAIMS_FORM_URL!;
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
 type ClaimFormState = {
   claimNo: string;
   joNo: string;
-  claimDate: string; // yyyy-mm-dd
+  /** simpan gabungan "YYYY-MM-DDTHH:mm" */
+  claimDate: string;
   reason: string;
   amount: string; // string input; validasi numerik saat submit
   description: string; // optional
-  document: File | null; // optional
+  documents: File[]; // optional
 };
 
 export default function ClaimCreatePage() {
@@ -35,11 +37,11 @@ export default function ClaimCreatePage() {
   const [form, setForm] = useState<ClaimFormState>({
     claimNo: "",
     joNo: "",
-    claimDate: "",
+    claimDate: "", // ex: "2025-10-08T13:30"
     reason: "",
     amount: "",
     description: "",
-    document: null,
+    documents: [],
   });
 
   const [touched, setTouched] = useState<Record<keyof ClaimFormState, boolean>>(
@@ -50,7 +52,7 @@ export default function ClaimCreatePage() {
       reason: false,
       amount: false,
       description: false,
-      document: false,
+      documents: false,
     }
   );
 
@@ -71,7 +73,7 @@ export default function ClaimCreatePage() {
     } else if (Number.isNaN(Number(form.amount)) || Number(form.amount) <= 0) {
       next.amount = t("claims.form.validations.amountInvalid");
     }
-    // description & document optional
+    // description & documents optional
     return next;
   }, [form]);
 
@@ -98,12 +100,6 @@ export default function ClaimCreatePage() {
     () =>
       setTouched((prev) => ({ ...prev, [key]: true }));
 
-  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const file = e.currentTarget.files?.[0] ?? null;
-    setForm((prev) => ({ ...prev, document: file }));
-    setTouched((prev) => ({ ...prev, document: true }));
-  };
-
   const handleDiscard = () => {
     router.replace("/claims");
   };
@@ -117,7 +113,7 @@ export default function ClaimCreatePage() {
       reason: true,
       amount: true,
       description: true,
-      document: true,
+      documents: true,
     });
     if (!canSubmit) return;
 
@@ -125,15 +121,25 @@ export default function ClaimCreatePage() {
       setStatus("submitting");
       setErrMsg("");
 
-      // Pakai FormData untuk upload dokumen
+      // Pakai FormData untuk upload multiple dokumen
       const fd = new FormData();
       fd.append("claim_no", form.claimNo.trim());
       fd.append("jo_no", form.joNo.trim());
-      fd.append("claim_date", form.claimDate);
+
+      // API sebelumnya menerima date; ambil bagian tanggal saja.
+      const dateOnly = form.claimDate.split("T")[0] || "";
+      fd.append("claim_date", dateOnly);
+
       fd.append("reason", form.reason.trim());
       fd.append("amount", String(Number(form.amount)));
       fd.append("description", form.description.trim());
-      if (form.document) fd.append("document", form.document);
+
+      // Kirim banyak file. Field "document" berulang.
+      for (const f of form.documents) {
+        fd.append("document", f);
+        // jika backend mengharapkan array-style:
+        // fd.append("documents[]", f);
+      }
 
       const resp = await fetch(CLAIM_CREATE_URL, {
         method: "POST",
@@ -218,16 +224,16 @@ export default function ClaimCreatePage() {
               touched={touched.joNo}
             />
 
-            <FieldText
+            {/* Ganti input date -> DateTimePickerTW */}
+            <DateTimePickerTW
               label={t("claims.form.fields.claimDate")}
-              name="claimDate"
-              type="date"
+              required
               value={form.claimDate}
               onChange={onChange("claimDate")}
-              onBlur={onBlur("claimDate")}
-              required
               error={errors.claimDate}
               touched={touched.claimDate}
+              className=""
+              showTime={false}
             />
 
             <FieldText
@@ -256,23 +262,25 @@ export default function ClaimCreatePage() {
               touched={touched.amount}
             />
 
-            {/* Upload Document */}
-            <div className="flex flex-col">
-              <label className="mb-1 text-sm font-medium text-gray-600">
-                {t("claims.form.fields.document")}
-              </label>
-              <input
-                name="document"
-                type="file"
+            {/* Upload Document (MultiFileUpload) */}
+            <div className="md:col-span-2">
+              <MultiFileUpload
+                label={t("claims.form.fields.document")}
+                value={form.documents}
+                onChange={(files) => {
+                  setForm((prev) => ({ ...prev, documents: files }));
+                  setTouched((prev) => ({ ...prev, documents: true }));
+                }}
+                onReject={() =>
+                  setTouched((prev) => ({ ...prev, documents: true }))
+                }
+                hint={t("claims.form.hints.document")}
                 accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx"
-                onChange={handleFileChange}
-                onBlur={onBlur("document")}
-                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm file:mr-3 file:rounded file:border-0 file:bg-gray-100 file:px-3 file:py-1"
-                aria-label={t("claims.form.fields.document")}
+                maxFileSizeMB={10}
+                // maxFiles={5} // aktifkan jika mau batasi jumlah file
+                droppable
+                showImagePreview
               />
-              <p className="mt-1 text-xs text-gray-500">
-                {t("claims.form.hints.document")}
-              </p>
             </div>
 
             <div className="md:col-span-2">

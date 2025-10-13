@@ -1,5 +1,29 @@
 @import "tailwindcss";
 /* @plugin "@tailwindcss/forms"; */
+/* @source "../node_modules/react-tailwindcss-datepicker/dist/index.esm.js"; */
+
+@source inline("grid");
+@source inline("grid-cols-7");
+@source inline("gap-1");
+@source inline("gap-2");
+@source inline("p-2");
+@source inline("rounded-md");
+@source inline("shadow-lg");
+@source inline("bg-white");
+@source inline("dark:bg-gray-800");
+@source inline("absolute");
+@source inline("left-0");
+@source inline("z-50");
+@source inline("ring-1");
+@source inline("ring-black/5");
+@source inline("transition");
+@source inline("duration-100");
+@source inline("opacity-0");
+@source inline("opacity-100");
+@source inline("scale-95");
+@source inline("scale-100");
+@source inline("pointer-events-auto");
+
 
 :root { color-scheme: light dark; }
 @theme inline {

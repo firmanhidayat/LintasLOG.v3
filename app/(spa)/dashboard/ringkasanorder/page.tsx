@@ -3,8 +3,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { IconProp } from "@fortawesome/fontawesome-svg-core";
 import { faCircleQuestion, faUser } from "@fortawesome/free-regular-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   loadDictionaries,
   t,
@@ -12,7 +11,6 @@ import {
   onLangChange,
   type Lang,
 } from "@/lib/i18n";
-import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import {
   faCartShopping,
   faChartLine,
@@ -35,9 +33,9 @@ export default function RingkasanOrderPage() {
     (async () => {
       try {
         await loadDictionaries();
-        if (!cancelled) setI18nReady(true);
       } catch (err) {
         console.error("[i18n] loadDictionaries failed:", err);
+      } finally {
         if (!cancelled) setI18nReady(true);
       }
     })();
@@ -46,148 +44,219 @@ export default function RingkasanOrderPage() {
     };
   }, []);
 
+  const locale = activeLang === "id" ? "id-ID" : "en-US";
+  const currency = activeLang === "id" ? "IDR" : "USD";
+
+  const nf = useMemo(
+    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }),
+    [locale]
+  );
+  const cf = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 2,
+      }),
+    [locale, currency]
+  );
+  const pf = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "percent",
+        maximumFractionDigits: 2,
+      }),
+    [locale]
+  );
+
   if (!i18nReady) {
-    return <section className="p-4 text-sm text-gray-500">Memuat…</section>;
+    return (
+      <section className="p-4 text-sm text-gray-500">
+        {t("common.loading")}
+      </section>
+    );
   }
 
   const title = t("ringkasanorder.title");
   const subtitle = t("ringkasanorder.subtitle");
-  const statsToday = t("ringkasanorder.statsToday");
-  const orders = t("ringkasanorder.orders");
+
+  // Dummy numbers (ganti dengan data API)
+  const customers = 9999;
+  const revenue = 9999;
+  const growth = 9999;
+  const returns = 9999;
+  const downloads = 9999;
+  const orderRate = 0.9999;
+
+  const totalProfit = 1248;
+  const totalOrders = 1100;
+  const averagePrice = 16.07;
+  const quantity = 114;
+
+  const deptTotalSales = 21000;
+  const deptAverage = 1953;
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-2">
-        <div className="col-span-12 lg:col-span-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0">
-            <StatKPIBusiness label="Customer" icon={faUser} value="9,999" />
-            <StatKPIBusiness
-              label="Revenue"
+      <header className="mb-3">
+        <h1 className="text-base md:text-lg font-semibold text-gray-900">
+          {title}
+        </h1>
+        <p className="text-sm text-gray-500">{subtitle}</p>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
+        {/* KPI Business — diperlebar di desktop */}
+        <div className="col-span-12 lg:col-span-6">
+          {/* 2 kolom di laptop (lg), 3 kolom di layar besar (xl) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            <KPIItem
+              label={t("ringkasanorder.kpi.customer")}
+              icon={faUser}
+              value={nf.format(customers)}
+            />
+            <KPIItem
+              label={t("ringkasanorder.kpi.revenue")}
               icon={faChartSimple}
-              value="9,999"
+              value={nf.format(revenue)}
             />
-            <StatKPIBusiness label="Growth" icon={faChartLine} value="9,999" />
-            <StatKPIBusiness
-              label="Returns"
+            <KPIItem
+              label={t("ringkasanorder.kpi.growth")}
+              icon={faChartLine}
+              value={nf.format(growth)}
+            />
+            <KPIItem
+              label={t("ringkasanorder.kpi.returns")}
               icon={faPercentage}
-              value="9,999"
+              value={nf.format(returns)}
             />
-            <StatKPIBusiness
-              label="Downloads"
+            <KPIItem
+              label={t("ringkasanorder.kpi.downloads")}
               icon={faDownload}
-              value="9,999"
+              value={nf.format(downloads)}
             />
-            <StatKPIBusiness
-              label="Order"
+            <KPIItem
+              label={t("ringkasanorder.kpi.order")}
               icon={faCartShopping}
-              value="99,99%"
+              value={pf.format(orderRate)}
             />
           </div>
         </div>
+
+        {/* Small stats */}
         <div className="col-span-12 lg:col-span-3">
-          <div className="grid grid-cols-2 gap-1 text-gray-900">
+          <div className="grid grid-cols-2 gap-4 text-gray-900">
             <Stat
-              label="Total Profit"
-              value="$1,248"
+              label={t("ringkasanorder.stats.totalProfit")}
+              value={cf.format(totalProfit)}
               trend={{ pct: 12, up: true }}
-              isbgcolor={false}
+              highlight={false}
             />
             <Stat
-              label="Total Orders"
-              value="1,100"
+              label={t("ringkasanorder.stats.totalOrders")}
+              value={nf.format(totalOrders)}
               trend={{ pct: 8, up: true }}
-              isbgcolor={true}
+              highlight={true}
             />
             <Stat
-              label="Average Price"
-              value="$34"
-              trend={{ pct: 5, up: false }}
-              isbgcolor={true}
-            />
-            <Stat
-              label="Product Sold"
-              value="114"
+              label={t("ringkasanorder.stats.averagePrice")}
+              value={cf.format(averagePrice)}
               trend={{ pct: 2, up: false }}
-              isbgcolor={false}
+              highlight={false}
+            />
+            <Stat
+              label={t("ringkasanorder.stats.quantity")}
+              value={nf.format(quantity)}
+              trend={{ pct: 2, up: false }}
+              highlight={false}
             />
           </div>
         </div>
-        <div className="col-span-12 lg:col-span-5">
-          <div className="rounded-sm bg-gray-50 shadow-soft border-0 p-5 mb-1 lg:m-1 lg:mb-1">
+
+        {/* Right card */}
+        <div className="col-span-12 lg:col-span-3">
+          <div className="rounded-md bg-gray-50 shadow-sm border border-gray-100 p-5">
             <div className="text-black text-xs">
-              Department wise monthly sales report
+              {t("ringkasanorder.departmentMonthlyTitle")}
             </div>
             <div className="grid grid-cols-2 text-black mt-3">
               <div>
-                $21,000.00
+                {cf.format(deptTotalSales)}
                 <br />
-                <span className="text-xs">Total Sales</span>
+                <span className="text-xs">
+                  {t("ringkasanorder.totalSales")}
+                </span>
               </div>
               <div>
-                $1953.0
+                {cf.format(deptAverage)}
                 <br />
-                <span className="text-xs">Average</span>
+                <span className="text-xs">{t("ringkasanorder.average")}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-      {/* <Card>
-        <CardHeader>
-          Monthly Activity<span>Requests by status (last 12 months)</span>
-        </CardHeader>
-        <CardBody>
-          <div className="h-64 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 grid place-content-center text-gray-500">
-            <span>Chart Placeholder</span>
-          </div>
-        </CardBody>
-      </Card> */}
     </>
   );
 }
 
-type StatKPIBusinessProps = {
-  label: string;
-  value: React.ReactNode;
-  trend?: React.ReactNode;
-  /** Kirim object ikon hasil import, bukan string */
-  icon?: IconDefinition;
-};
-
-export function Stat({
+/** KPI card: ikon kiri, angka+label kanan; proporsional & responsif */
+function KPIItem({
   label,
   value,
-  trend,
-  isbgcolor,
+  icon,
 }: {
   label: string;
-  value: string;
-  trend?: { pct: number; up?: boolean };
-  isbgcolor: boolean;
+  value: React.ReactNode;
+  icon?: IconProp;
 }) {
   return (
-    <div className={isbgcolor ? "card card-pad card-bg" : "card card-pad"}>
-      <div className={isbgcolor ? "text-white" : "card-label"}>{label}</div>
-      <div className="card-content">
-        <div className="card-sub-content">{value}</div>
+    <div className="flex items-center gap-3 rounded-md bg-white shadow-sm border border-gray-100 p-3">
+      {/* Ikon proporsional; membesar di breakpoint */}
+      <div className="flex-none rounded-md bg-green-700 text-white grid place-items-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16">
+        <FontAwesomeIcon
+          className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
+          icon={icon ?? faCircleQuestion}
+        />
+      </div>
+
+      {/* Angka + Label (tanpa truncate di desktop) */}
+      <div className="flex-1">
+        <div className="text-sm sm:text-base md:text-lg font-semibold leading-tight">
+          {value}
+        </div>
+        <div className="text-[11px] sm:text-xs text-gray-500 leading-tight">
+          {label}
+        </div>
       </div>
     </div>
   );
 }
 
-function StatKPIBusiness({ label, value, trend, icon }: StatKPIBusinessProps) {
+type StatProps = {
+  label: string;
+  value: string;
+  trend?: { pct: number; up?: boolean };
+  highlight: boolean;
+};
+
+export function Stat({ label, value, trend, highlight }: StatProps) {
   return (
-    <div className="lg:bg-gray-400 bg-white text-black mr-1">
-      <div className="kpi-business-card">
-        <div className="kpi-business-icon-card">
-          <FontAwesomeIcon
-            icon={icon ?? faCircleQuestion}
-            className="text-3xl lg:text-sm w-6 h-6"
-          />
-        </div>
-        <div className="kpi-business-content-card">
-          <span className="kpi-business-content-value">{value}</span>
-          <span className="kpi-business-content-label">{label}</span>
+    <div className={highlight ? "card card-pad card-bg" : "card card-pad"}>
+      <div className={highlight ? "text-white" : "card-label"}>{label}</div>
+      <div className="card-content">
+        <div className="card-sub-content flex items-baseline gap-2">
+          <span>{value}</span>
+          {trend && (
+            <span
+              className={
+                trend.up ? "text-green-600 text-xs" : "text-red-600 text-xs"
+              }
+            >
+              {trend.up ? "+" : "-"}
+              {trend.pct}%
+            </span>
+          )}
         </div>
       </div>
     </div>

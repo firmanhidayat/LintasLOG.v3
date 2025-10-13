@@ -2,13 +2,13 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FieldText } from "@/components/form/FieldText";
-import { t } from "@/lib/i18n";
+import { getLang, t } from "@/lib/i18n";
 import { goSignIn } from "@/lib/goSignIn";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useClickOutside } from "@/hooks/useClickOutside";
-import type { IdName } from "@/types/orders";
+import type { CityItem } from "@/types/orders";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+const CITIES_URL = process.env.NEXT_PUBLIC_TMS_LOCATIONS_CITIES_URL ?? "";
 
 export default function CityAutocomplete({
   label,
@@ -18,14 +18,14 @@ export default function CityAutocomplete({
   error,
 }: {
   label: string;
-  value: IdName | null;
-  onChange: (val: IdName | null) => void;
+  value: CityItem | null;
+  onChange: (val: CityItem | null) => void;
   required?: boolean;
   error?: string;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState<string>(value?.name ?? "");
-  const [options, setOptions] = useState<IdName[]>([]);
+  const [options, setOptions] = useState<CityItem[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const debounced = useDebounced(query, 250);
@@ -45,10 +45,15 @@ export default function CityAutocomplete({
 
       try {
         setLoading(true);
-        const url = new URL(API_BASE + "/locations/cities/search");
-        // Tetap kirim query meskipun empty string — biar backend bisa kirim daftar default/top N
+        const url = new URL(CITIES_URL);
         url.searchParams.set("query", q);
         const res = await fetch(url.toString(), {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "Accept-Language": getLang(),
+          },
           credentials: "include",
           signal: ac.signal,
         });
@@ -60,7 +65,7 @@ export default function CityAutocomplete({
           setOptions([]);
           return;
         }
-        const arr = (await res.json()) as IdName[];
+        const arr = (await res.json()) as CityItem[];
         setOptions(arr ?? []);
       } catch (err) {
         if ((err as Error)?.name !== "AbortError") {

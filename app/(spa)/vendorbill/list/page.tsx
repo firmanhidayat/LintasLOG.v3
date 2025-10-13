@@ -97,6 +97,50 @@ export default function VendorBillListPage() {
 
     return [
       {
+        id: "bill_no",
+        label: L("vendorbill.columns.billNo", "No. Bill"),
+        sortable: true,
+        sortValue: (r) => r.bill_no.toLowerCase(),
+        className: "w-44",
+        cell: (r) => (
+          <div className="font-medium text-gray-900">{r.bill_no}</div>
+        ),
+      },
+      {
+        id: "jo_no",
+        label: L("vendorbill.columns.joNo", "No. JO"),
+        sortable: true,
+        sortValue: (r) => (r.jo_no ?? "").toLowerCase(),
+        className: "w-36",
+        cell: (r) => r.jo_no ?? "-",
+      },
+      {
+        id: "bill_date",
+        label: L("vendorbill.columns.date", "Tanggal"),
+        sortable: true,
+        sortValue: (r) => r.bill_date ?? "",
+        className: "w-36",
+        cell: (r) => fmtDate(r.bill_date),
+      },
+      {
+        id: "amount_total",
+        label: L("vendorbill.columns.amountTotal", "Amount Total"),
+        sortable: true,
+        sortValue: (r) => String(r.amount_total ?? ""),
+        className: "w-44 text-right",
+        cell: (r) => (
+          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
+        ),
+      },
+      {
+        id: "status",
+        label: L("vendorbill.columns.status", "Status"),
+        sortable: true,
+        sortValue: (r) => r.status,
+        className: "w-36",
+        cell: (r) => <Pill value={r.status} />,
+      },
+      {
         id: "actions",
         label: "",
         isAction: true,
@@ -105,7 +149,8 @@ export default function VendorBillListPage() {
           <div className="flex items-center gap-2">
             {it.id != null ? (
               <Link
-                href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
+                // href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
+                href="#"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
                 aria-label="Edit address"
                 title="Edit"
@@ -159,50 +204,6 @@ export default function VendorBillListPage() {
             )}
           </div>
         ),
-      },
-      {
-        id: "bill_no",
-        label: L("vendorbill.columns.billNo", "No. Bill"),
-        sortable: true,
-        sortValue: (r) => r.bill_no.toLowerCase(),
-        className: "w-44",
-        cell: (r) => (
-          <div className="font-medium text-gray-900">{r.bill_no}</div>
-        ),
-      },
-      {
-        id: "jo_no",
-        label: L("vendorbill.columns.joNo", "No. JO"),
-        sortable: true,
-        sortValue: (r) => (r.jo_no ?? "").toLowerCase(),
-        className: "w-36",
-        cell: (r) => r.jo_no ?? "-",
-      },
-      {
-        id: "bill_date",
-        label: L("vendorbill.columns.date", "Tanggal"),
-        sortable: true,
-        sortValue: (r) => r.bill_date ?? "",
-        className: "w-36",
-        cell: (r) => fmtDate(r.bill_date),
-      },
-      {
-        id: "amount_total",
-        label: L("vendorbill.columns.amountTotal", "Amount Total"),
-        sortable: true,
-        sortValue: (r) => String(r.amount_total ?? ""),
-        className: "w-44 text-right",
-        cell: (r) => (
-          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
-        ),
-      },
-      {
-        id: "status",
-        label: L("vendorbill.columns.status", "Status"),
-        sortable: true,
-        sortValue: (r) => r.status,
-        className: "w-36",
-        cell: (r) => <Pill value={r.status} />,
       },
     ];
   }, [i18nReady, activeLang]);

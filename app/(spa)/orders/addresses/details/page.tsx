@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import AddressForm, { type AddressFormProps } from "@/forms/AddressesForm";
-import { t } from "@/lib/i18n";
+import { getLang, t } from "@/lib/i18n";
 import { goSignIn } from "@/lib/goSignIn";
 import { useI18nReady } from "@/hooks/useI18nReady";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+const ADDRESSES_URL = process.env.NEXT_PUBLIC_TMS_USER_ADDRESS_URL ?? "";
 
 type AddressDetailResponse = {
   id?: number | string;
@@ -47,10 +47,14 @@ export default function AddressDetailsPage() {
       setLoading(true);
       setErr("");
       try {
-        const url = `${API_BASE}/users/me/addresses/${addressId}`;
+        const url = `${ADDRESSES_URL}/${addressId}`;
         const res = await fetch(url, {
           method: "GET",
-          headers: { Accept: "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "Accept-Language": getLang(),
+          },
           credentials: "include",
         });
         if (res.status === 401) {
@@ -83,7 +87,7 @@ export default function AddressDetailsPage() {
   // ⏳ show lightweight skeleton while dictionaries load (prevents flicker)
   if (!i18nReady) {
     return (
-      <div className="max-w-2xl" data-lang={activeLang}>
+      <div className="max-auto" data-lang={activeLang}>
         <div className="mb-4 h-6 w-48 animate-pulse rounded bg-slate-200" />
         <div className="rounded-md border p-4 text-sm text-gray-600">
           {t("common.loading")}
@@ -93,7 +97,7 @@ export default function AddressDetailsPage() {
   }
 
   return (
-    <div className="max-w-2xl" data-lang={activeLang}>
+    <div className="max-auto" data-lang={activeLang}>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{title}</h1>
         {/* <button

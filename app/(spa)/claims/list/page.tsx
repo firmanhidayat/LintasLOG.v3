@@ -124,6 +124,66 @@ export default function ClaimsListPage() {
 
     return [
       {
+        id: "claim_no",
+        label: L("claims.columns.claimNo", "No. Claim"),
+        sortable: true,
+        sortValue: (r) => r.claim_no.toLowerCase(),
+        className: "w-40",
+        cell: (r) => (
+          <div className="font-medium text-gray-900">{r.claim_no}</div>
+        ),
+      },
+      {
+        id: "jo_no",
+        label: L("claims.columns.joNo", "No. JO"),
+        sortable: true,
+        sortValue: (r) => r.jo_no.toLowerCase(),
+        className: "w-36",
+        cell: (r) => r.jo_no,
+      },
+      {
+        id: "claim_date",
+        label: L("claims.columns.claimDate", "Claim Date"),
+        sortable: true,
+        sortValue: (r) => r.claim_date ?? "",
+        className: "w-36",
+        cell: (r) => fmtDate(r.claim_date),
+      },
+      {
+        id: "description",
+        label: L("claims.columns.description", "Description"),
+        sortable: true,
+        sortValue: (r) => (r.description ?? "").toLowerCase(),
+        className: "min-w-60",
+        cell: (r) => r.description?.trim() || "-",
+      },
+      {
+        id: "order_type",
+        label: L("claims.columns.orderType", "Jenis Order"),
+        sortable: true,
+        sortValue: (r) => (r.order_type ?? "").toLowerCase(),
+        className: "w-36",
+        cell: (r) => r.order_type ?? "-",
+      },
+      {
+        id: "amount_total",
+        label: L("claims.columns.amountTotal", "Amount Total"),
+        sortable: true,
+        sortValue: (r) => String(r.amount_total ?? ""),
+        className: "w-40 text-right",
+        cell: (r) => (
+          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
+        ),
+      },
+      {
+        id: "status",
+        label: L("claims.columns.status", "Status"),
+        sortable: true,
+        sortValue: (r) => String(r.status),
+        className: "w-40",
+        cell: (r) => <StatusPill value={String(r.status)} />,
+      },
+      {
         id: "actions",
         label: "",
         isAction: true,
@@ -187,68 +247,8 @@ export default function ClaimsListPage() {
           </div>
         ),
       },
-      {
-        id: "claim_no",
-        label: L("claims.columns.claimNo", "No. Claim"),
-        sortable: true,
-        sortValue: (r) => r.claim_no.toLowerCase(),
-        className: "w-40",
-        cell: (r) => (
-          <div className="font-medium text-gray-900">{r.claim_no}</div>
-        ),
-      },
-      {
-        id: "jo_no",
-        label: L("claims.columns.joNo", "No. JO"),
-        sortable: true,
-        sortValue: (r) => r.jo_no.toLowerCase(),
-        className: "w-36",
-        cell: (r) => r.jo_no,
-      },
-      {
-        id: "claim_date",
-        label: L("claims.columns.claimDate", "Claim Date"),
-        sortable: true,
-        sortValue: (r) => r.claim_date ?? "",
-        className: "w-36",
-        cell: (r) => fmtDate(r.claim_date),
-      },
-      {
-        id: "description",
-        label: L("claims.columns.description", "Description"),
-        sortable: true,
-        sortValue: (r) => (r.description ?? "").toLowerCase(),
-        className: "min-w-60",
-        cell: (r) => r.description?.trim() || "-",
-      },
-      {
-        id: "order_type",
-        label: L("claims.columns.orderType", "Jenis Order"),
-        sortable: true,
-        sortValue: (r) => (r.order_type ?? "").toLowerCase(),
-        className: "w-36",
-        cell: (r) => r.order_type ?? "-",
-      },
-      {
-        id: "amount_total",
-        label: L("claims.columns.amountTotal", "Amount Total"),
-        sortable: true,
-        sortValue: (r) => String(r.amount_total ?? ""),
-        className: "w-40 text-right",
-        cell: (r) => (
-          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
-        ),
-      },
-      {
-        id: "status",
-        label: L("claims.columns.status", "Status"),
-        sortable: true,
-        sortValue: (r) => String(r.status),
-        className: "w-40",
-        cell: (r) => <StatusPill value={String(r.status)} />,
-      },
     ];
-  }, [i18nReady, activeLang]); // <— dependency sekarang benar2 dipakai
+  }, [i18nReady, activeLang]);
 
   // Setelah semua hook dipanggil, baru boleh guard render
   if (!i18nReady) return null;

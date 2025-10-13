@@ -13,69 +13,58 @@ import {
   type Lang,
 } from "@/lib/i18n";
 
-export type StatusStep = {
-  label: string; // "Done" | "On Review" | "Received" | ...
-  timeISO: string; // ISO, contoh: "2025-09-13T09:30:00+07:00"
-};
-
+/** ===== Types ===== */
+export type StatusStep = { label: string; timeISO: string };
 export type RowData = {
-  id?: string | number;
+  id: string | number;
   lokasiBongkar: string;
   armada: string;
   jenisMuatan: string;
-  status: string; // "Pending" | "On Route" | "Unloading" | "Selesai" | ...
-  // Detail:
+  status: string;
   lokasiMuat: string;
   nomorDO: string;
   nomorDOInternal: string;
   driver: { name: string; phone: string };
-  statusPath: StatusStep[]; // urutan status dgn tanggal & jam
+  statusPath: StatusStep[];
 };
 
-/** ===== Data Dummy (fallback jika props.rows tidak diberikan) ===== */
-const demoRows: RowData[] = Array.from({ length: 18 }).map((_, i) => ({
-  id: i + 1,
-  lokasiBongkar: [
-    "Gudang A - Jakarta",
-    "Pelabuhan Tj. Priok",
-    "DC Cikarang",
-    "Bandara Soetta",
-  ][i % 4],
-  armada: ["Tronton", "Fuso", "CDD", "Wingbox"][i % 4],
-  jenisMuatan: ["Besi", "Kontainer 20ft", "Elektronik", "Dokumen"][i % 4],
-  status: ["Pending", "On Route", "Unloading", "Selesai"][i % 4],
-  lokasiMuat: [
-    "Gudang B - Bekasi",
-    "Gudang C - Karawang",
-    "Pelabuhan Tj. Perak",
-    "Bandara Juanda",
-  ][i % 4],
-  nomorDO: `DO-${String(i + 101).padStart(4, "0")}`,
-  nomorDOInternal: `INT-${String(i + 501).padStart(5, "0")}`,
-  driver: {
-    name: `Driver ${i + 1}`,
-    phone: `08${(Math.random() * 1e10).toFixed(0).slice(0, 10)}`,
-  },
-  statusPath: [
-    { label: "Received", timeISO: "2025-09-12T08:30:00+07:00" },
-    { label: "On Review", timeISO: "2025-09-12T10:15:00+07:00" },
-    {
-      label: ["On Route", "Unloading", "Done", "Pending"][i % 4],
-      timeISO: "2025-09-13T09:45:00+07:00",
-    },
-  ],
-}));
+/** ===== Dummy data (deterministik) ===== */
+const demoRowsBase: RowData[] = Array.from({ length: 12 }).map((_, i) => {
+  const phone = String(81234560000 + i).slice(0, 11);
+  return {
+    id: i + 1,
+    lokasiBongkar: ["Bandara Soetta", "DC Cikarang", "Tj. Priok"][i % 3],
+    armada: ["Wingbox", "Tronton", "Fuso"][i % 3],
+    jenisMuatan: ["Dokumen", "Elektronik", "Kontainer 20ft"][i % 3],
+    status: ["Selesai", "On Route", "Pending"][i % 3],
+    lokasiMuat: ["Gudang B - Bekasi", "Gudang C - Karawang", "Pelabuhan Perak"][
+      i % 3
+    ],
+    nomorDO: `DO-${String(100 + i).padStart(4, "0")}`,
+    nomorDOInternal: `INT-${String(500 + i).padStart(5, "0")}`,
+    driver: { name: `Driver ${i + 1}`, phone: `0${phone}` },
+    statusPath: [
+      { label: "Received", timeISO: "2025-09-12T08:30:00+07:00" },
+      { label: "On Review", timeISO: "2025-09-12T10:15:00+07:00" },
+      {
+        label: ["On Route", "Unloading", "Done"][i % 3],
+        timeISO: "2025-09-13T09:45:00+07:00",
+      },
+    ],
+  };
+});
 
+/** ===== Page ===== */
 export default function StatusTrackingPage({
   rows,
   pageSize = 10,
   title,
 }: {
-  rows?: RowData[];
+  rows?: Partial<RowData>[];
   pageSize?: number;
   title?: string;
 }) {
-  // i18n bootstrap + live language switch
+  // i18n
   const [i18nReady, setI18nReady] = useState(false);
   const [lang, setLang] = useState<Lang>(getLang());
   useEffect(() => {
@@ -94,41 +83,114 @@ export default function StatusTrackingPage({
     };
   }, []);
 
+  // local UI states
   const [openId, setOpenId] = useState<string | number | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | number | null>(null);
 
+  // close menu on outside/Escape
   useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-row-menu]")) setMenuOpenId(null);
-    }
+    const onDocClick = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest("[data-row-menu]"))
+        setMenuOpenId(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpenId(null);
+    };
     document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
   }, []);
 
-  const getRowId = (r: RowData, idx: number) => r.id ?? `row-${idx}`;
+  // normalize rows to ensure id exists
+  const rowsNormalized: RowData[] = useMemo(() => {
+    const base = rows && rows.length ? rows : demoRowsBase;
+    return base.map((r, i) => ({ ...r, id: r.id ?? `row-${i}` })) as RowData[];
+  }, [rows]);
 
-  // locale-aware datetime (pakai lang aktif)
+  // datetime formatter
   const fmt = (iso: string) =>
     new Intl.DateTimeFormat(lang === "en" ? "en-US" : "id-ID", {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(new Date(iso));
 
+  // badge status (kolom utama)
   const badgeCls = (s: string) => {
     const base =
       "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset";
-    if (/^selesai$/i.test(s))
+    const val = s.trim().toLowerCase();
+    if (val === "selesai" || val === "done")
       return `${base} bg-green-50 text-green-700 ring-green-600/20`;
-    if (/^unloading$/i.test(s))
-      return `${base} bg-blue-50 text-blue-700 ring-blue-600/20`;
-    if (/^on route$/i.test(s))
+    if (val === "unloading")
+      return `${base} bg-violet-50 text-violet-700 ring-violet-600/20`;
+    if (val === "on route")
       return `${base} bg-amber-50 text-amber-700 ring-amber-600/20`;
-    if (/^pending$/i.test(s))
+    if (val === "pending")
       return `${base} bg-gray-100 text-gray-700 ring-gray-500/20`;
+    if (val === "received")
+      return `${base} bg-slate-50 text-slate-700 ring-slate-600/20`;
+    if (val === "on review")
+      return `${base} bg-blue-50 text-blue-700 ring-blue-600/20`;
     return `${base} bg-slate-100 text-slate-700 ring-slate-500/20`;
   };
 
+  // step styles (timeline)
+  function stepStyles(label: string) {
+    const baseChip =
+      "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset";
+    const val = label.trim().toLowerCase();
+    const Icon = ({ d }: { d: string }) => (
+      <svg
+        viewBox="0 0 24 24"
+        className="h-3 w-3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d={d} />
+      </svg>
+    );
+    if (val === "done" || val === "selesai")
+      return {
+        chip: `${baseChip} bg-green-50 text-green-700 ring-green-600/20`,
+        dot: "bg-green-500",
+        icon: <Icon d="M5 13l4 4L19 7" />,
+      };
+    if (val === "on review")
+      return {
+        chip: `${baseChip} bg-blue-50 text-blue-700 ring-blue-600/20`,
+        dot: "bg-blue-500",
+        icon: <Icon d="M11 11a7 7 0 109.9 9.9L20 20M11 18a7 7 0 110-14" />,
+      };
+    if (val === "on route")
+      return {
+        chip: `${baseChip} bg-amber-50 text-amber-700 ring-amber-600/20`,
+        dot: "bg-amber-500",
+        icon: <Icon d="M5 12h14M13 5l7 7-7 7" />,
+      };
+    if (val === "unloading")
+      return {
+        chip: `${baseChip} bg-violet-50 text-violet-700 ring-violet-600/20`,
+        dot: "bg-violet-500",
+        icon: <Icon d="M12 5v14M5 12l7 7 7-7" />,
+      };
+    if (val === "received")
+      return {
+        chip: `${baseChip} bg-slate-50 text-slate-700 ring-slate-600/20`,
+        dot: "bg-slate-500",
+        icon: <Icon d="M4 4h16l-2 10H6L4 4z" />,
+      };
+    return {
+      chip: `${baseChip} bg-gray-100 text-gray-700 ring-gray-500/20`,
+      dot: "bg-gray-500",
+      icon: <Icon d="M12 7v5l3 3" />,
+    };
+  }
+
+  /** ===== Columns ===== */
   const columns: ColumnDef<RowData>[] = useMemo(
     () => [
       {
@@ -137,16 +199,14 @@ export default function StatusTrackingPage({
         sortable: false,
         className: "w-12",
         cell: (row) => {
-          const id = String(row.id ?? "");
+          const id = String(row.id);
           const open = openId != null && String(openId) === id;
           return (
             <button
               type="button"
               aria-expanded={open}
               aria-controls={`row-detail-${id}`}
-              onClick={() =>
-                setOpenId(open ? null : (row.id as string | number))
-              }
+              onClick={() => setOpenId(open ? null : row.id)}
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
               title={
                 open
@@ -175,7 +235,7 @@ export default function StatusTrackingPage({
         label: t("statustracking.columns.lokasiBongkar"),
         sortable: true,
         sortValue: (r) => r.lokasiBongkar ?? "",
-        className: "min-w-[260px]",
+        className: "min-w-[240px]",
         cell: (r) => r.lokasiBongkar,
       },
       {
@@ -183,7 +243,7 @@ export default function StatusTrackingPage({
         label: t("statustracking.columns.armada"),
         sortable: true,
         sortValue: (r) => r.armada ?? "",
-        className: "min-w-[180px]",
+        className: "min-w-[160px]",
         cell: (r) => r.armada,
       },
       {
@@ -191,7 +251,7 @@ export default function StatusTrackingPage({
         label: t("statustracking.columns.jenisMuatan"),
         sortable: true,
         sortValue: (r) => r.jenisMuatan ?? "",
-        className: "min-w-[200px]",
+        className: "min-w-[180px]",
         cell: (r) => r.jenisMuatan,
       },
       {
@@ -199,20 +259,19 @@ export default function StatusTrackingPage({
         label: t("statustracking.columns.status"),
         sortable: true,
         sortValue: (r) => r.status ?? "",
-        className: "min-w-[280px]",
+        className: "min-w-[220px]",
         cell: (row) => {
-          const id = getRowId(row, 0);
-          const menuOpen = menuOpenId === id;
+          const id = String(row.id);
+          const menuOpen = menuOpenId === row.id;
           return (
             <div className="flex items-center gap-2" data-row-menu>
               <span className={badgeCls(row.status)}>{row.status}</span>
-
               <div className="relative ml-auto">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setMenuOpenId(menuOpen ? null : id);
+                    setMenuOpenId(menuOpen ? null : row.id);
                   }}
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
@@ -230,7 +289,6 @@ export default function StatusTrackingPage({
                     <circle cx="12" cy="19" r="2" />
                   </svg>
                 </button>
-
                 {menuOpen && (
                   <div
                     role="menu"
@@ -257,25 +315,22 @@ export default function StatusTrackingPage({
         },
       },
     ],
-    [openId, menuOpenId, lang] // ← recompute label saat bahasa berubah
+    [openId, menuOpenId, lang]
   );
 
-  function renderExpanded(row: RowData, meta: { index: number }) {
-    const id = getRowId(row, meta.index);
+  /** ========= EXPANDED ROW (rapi) =========
+   * 1 <td colSpan={columns.length}> lalu grid 3 kolom (md+), 1 kolom di mobile.
+   * Kiri: lokasi muat & DO; Tengah: driver; Kanan: timeline.
+   */
+  function renderExpanded(row: RowData) {
+    const id = String(row.id);
     return (
-      <tr id={`row-detail-${id}`} className="transition-all">
-        {/* [1] spacer kolom toggle */}
-        <td className="px-2 pt-0 pb-3 align-top">
-          <div className="grid grid-rows-[1fr] mt-2">
-            <div className="overflow-hidden" />
-          </div>
-        </td>
-
-        {/* [2] Lokasi Muat + Nomor DO + DO Internal */}
-        <td className="px-4 pt-0 pb-3 align-top">
-          <div className="grid grid-rows-[1fr] mt-2">
-            <div className="overflow-hidden">
-              <div className="grid gap-3">
+      <tr id={`row-detail-${id}`} className="bg-transparent">
+        <td colSpan={5} className="px-2 pb-4 pt-0 align-top">
+          <div className="rounded-lg border border-gray-100 bg-white/70 p-3 md:p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Kolom 1 */}
+              <div className="space-y-3">
                 <DetailItem
                   label={t("statustracking.detail.lokasiMuat")}
                   value={row.lokasiMuat}
@@ -289,48 +344,46 @@ export default function StatusTrackingPage({
                   value={row.nomorDOInternal}
                 />
               </div>
-            </div>
-          </div>
-        </td>
 
-        {/* [3] Driver & Nomor */}
-        <td className="px-4 pt-0 pb-3 align-top">
-          <div className="grid grid-rows-[1fr] mt-2">
-            <div className="overflow-hidden">
-              <DetailItem
-                label={t("statustracking.detail.driverNomor")}
-                value={`${row.driver.name} — ${row.driver.phone}`}
-              />
-            </div>
-          </div>
-        </td>
+              {/* Kolom 2 */}
+              <div className="space-y-3">
+                <DetailItem
+                  label={t("statustracking.detail.driverNomor")}
+                  value={`${row.driver.name} — ${row.driver.phone}`}
+                />
+              </div>
 
-        {/* [4] sejajar Jenis Muatan (kosong sesuai desain) */}
-        <td className="px-4 pt-0 pb-3 align-top">
-          <div className="grid grid-rows-[1fr] mt-2">
-            <div className="overflow-hidden" />
-          </div>
-        </td>
-
-        {/* [5] Status Path */}
-        <td className="px-4 pt-0 pb-3 align-top">
-          <div className="grid grid-rows-[1fr] mt-2">
-            <div className="overflow-hidden">
-              <ol className="relative space-y-3">
-                {row.statusPath.map((s, i) => (
-                  <li key={`${id}-step-${i}`} className="pl-6">
-                    <span className="absolute left-0 top-1.5 inline-flex h-3 w-3 rounded-full bg-gray-400" />
-                    <div className="flex flex-wrap items-center gap-x-2">
-                      <span className="rounded-md border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-700">
-                        {s.label}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {fmt(s.timeISO)}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              {/* Kolom 3: Timeline */}
+              <div className="pt-1">
+                <div className="relative pl-4">
+                  {/* garis vertikal hanya setinggi konten */}
+                  <span
+                    aria-hidden
+                    className="absolute left-1 top-1 bottom-1 w-px bg-gray-200"
+                  />
+                  <ol className="space-y-3">
+                    {row.statusPath.map((s, i) => {
+                      const sty = stepStyles(s.label);
+                      return (
+                        <li key={`${id}-step-${i}`} className="relative">
+                          <span
+                            className={`absolute -left-1.5 top-1 inline-flex h-3 w-3 rounded-full ${sty.dot}`}
+                          />
+                          <div className="flex flex-wrap items-center gap-x-2">
+                            <span className={sty.chip}>
+                              <span className="text-current">{sty.icon}</span>
+                              {s.label}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {fmt(s.timeISO)}
+                            </span>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              </div>
             </div>
           </div>
         </td>
@@ -338,37 +391,35 @@ export default function StatusTrackingPage({
     );
   }
 
-  const rowsToUse = rows && rows.length ? rows : demoRows;
-
-  // render setelah dictionary siap
   if (!i18nReady) return null;
 
   return (
     <ListTemplate<RowData>
-      fetchBase="/api/dummy" // tidak dipakai karena staticData diisi
+      fetchBase="/api/dummy"
       deleteBase="/api/dummy"
       columns={columns}
       searchPlaceholder={t("statustracking.searchPlaceholder")}
       rowsPerPageLabel={t("statustracking.rowsPerPage")}
       initialPageSize={pageSize}
-      staticData={rowsToUse}
+      staticData={rowsNormalized}
       leftHeader={
         <h2 className="text-base font-semibold text-gray-900">
           {title ?? t("statustracking.title")}
         </h2>
       }
-      getRowKey={(row, idx) => getRowId(row, idx)}
+      getRowKey={(row) => row.id}
       isRowExpanded={(row) =>
-        openId != null ? String(row.id ?? "") === String(openId) : false
+        openId != null ? String(row.id) === String(openId) : false
       }
-      renderExpanded={(row, meta) => renderExpanded(row, meta)}
+      renderExpanded={(row) => renderExpanded(row)}
     />
   );
 }
 
+/** ===== Small UI helpers ===== */
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-white px-3 py-2">
+    <div className="rounded-md bg-white px-3 py-2 border border-gray-100">
       <div className="text-xs font-medium text-gray-500">{label}</div>
       <div className="mt-0.5 text-sm text-gray-900">{value || "-"}</div>
     </div>

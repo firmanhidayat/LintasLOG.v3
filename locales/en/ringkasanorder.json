@@ -1,8 +1,23 @@
 {
     "ringkasanorder": {
         "title": "Order Summary",
-        "subtitle": "Year 2025",
-        "statsToday": "Stats Today",
-        "orders": "IDR"
+        "subtitle": "Business performance and latest KPIs.",
+        "kpi": {
+            "customer": "Customers",
+            "revenue": "Revenue",
+            "growth": "Growth",
+            "returns": "Returns",
+            "downloads": "Downloads",
+            "order": "Order Rate"
+        },
+        "stats": {
+            "totalProfit": "Total Profit",
+            "totalOrders": "Total Orders",
+            "averagePrice": "Average Price",
+            "quantity": "Quantity"
+        },
+        "departmentMonthlyTitle": "Department-wise monthly sales report",
+        "totalSales": "Total Sales",
+        "average": "Average"
     }
 }

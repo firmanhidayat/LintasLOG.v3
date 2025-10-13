@@ -9,13 +9,14 @@ type FastapiErrorItem = {
 
 export function mapFastapi422(
   detail: FastapiErrorItem[],
-  lang: Lang
+  _lang: Lang
 ): {
   fieldErrors: Partial<Record<"email" | "password", string>>;
   generic: string[];
 } {
   const fieldErrors: Partial<Record<"email" | "password", string>> = {};
   const generic: string[] = [];
+  void _lang;
 
   for (const item of detail) {
     const lastStr = [...(item.loc ?? [])]

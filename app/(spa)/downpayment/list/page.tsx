@@ -356,6 +356,42 @@ export default function DownPaymentListPage() {
 
     return [
       {
+        id: "jo_no",
+        label: L("downpayment.columns.joNo", "No. JO"),
+        sortable: true,
+        sortValue: (r) => r.jo_no.toLowerCase(),
+        className: "w-40",
+        cell: (r) => <div className="font-medium text-gray-900">{r.jo_no}</div>,
+      },
+      {
+        id: "dp_percent",
+        label: L("downpayment.columns.dpPercent", "Down Payment %"),
+        sortable: true,
+        sortValue: (r) => String(r.dp_percent ?? ""),
+        className: "w-40 text-right",
+        cell: (r) => (
+          <span className="tabular-nums">{fmtPercent(r.dp_percent)}</span>
+        ),
+      },
+      {
+        id: "amount_total",
+        label: L("downpayment.columns.amountTotal", "Amount Total"),
+        sortable: true,
+        sortValue: (r) => String(r.amount_total ?? ""),
+        className: "w-44 text-right",
+        cell: (r) => (
+          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
+        ),
+      },
+      {
+        id: "status",
+        label: L("downpayment.columns.status", "Status"),
+        sortable: true,
+        sortValue: (r) => String(r.status),
+        className: "w-40",
+        cell: (r) => <Pill value={String(r.status)} />,
+      },
+      {
         id: "actions",
         label: "",
         isAction: true,
@@ -418,42 +454,6 @@ export default function DownPaymentListPage() {
             )}
           </div>
         ),
-      },
-      {
-        id: "jo_no",
-        label: L("downpayment.columns.joNo", "No. JO"),
-        sortable: true,
-        sortValue: (r) => r.jo_no.toLowerCase(),
-        className: "w-40",
-        cell: (r) => <div className="font-medium text-gray-900">{r.jo_no}</div>,
-      },
-      {
-        id: "dp_percent",
-        label: L("downpayment.columns.dpPercent", "Down Payment %"),
-        sortable: true,
-        sortValue: (r) => String(r.dp_percent ?? ""),
-        className: "w-40 text-right",
-        cell: (r) => (
-          <span className="tabular-nums">{fmtPercent(r.dp_percent)}</span>
-        ),
-      },
-      {
-        id: "amount_total",
-        label: L("downpayment.columns.amountTotal", "Amount Total"),
-        sortable: true,
-        sortValue: (r) => String(r.amount_total ?? ""),
-        className: "w-44 text-right",
-        cell: (r) => (
-          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
-        ),
-      },
-      {
-        id: "status",
-        label: L("downpayment.columns.status", "Status"),
-        sortable: true,
-        sortValue: (r) => String(r.status),
-        className: "w-40",
-        cell: (r) => <Pill value={String(r.status)} />,
       },
     ];
   }, [i18nReady, activeLang]);

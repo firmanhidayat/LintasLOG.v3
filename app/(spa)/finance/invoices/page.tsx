@@ -99,6 +99,66 @@ export default function InvoicesListPage() {
 
     return [
       {
+        id: "invoice_no",
+        label: L("invoices.columns.invoiceNo", "No. Invoice"),
+        sortable: true,
+        sortValue: (r) => r.invoice_no.toLowerCase(),
+        className: "w-44",
+        cell: (r) => (
+          <div className="font-medium text-gray-900">{r.invoice_no}</div>
+        ),
+      },
+      {
+        id: "jo_no",
+        label: L("invoices.columns.joNo", "No. JO"),
+        sortable: true,
+        sortValue: (r) => (r.jo_no ?? "").toLowerCase(),
+        className: "w-36",
+        cell: (r) => r.jo_no ?? "-",
+      },
+      {
+        id: "partner_name",
+        label: L("invoices.columns.customer", "Customer"),
+        sortable: true,
+        sortValue: (r) => (r.partner_name ?? "").toLowerCase(),
+        className: "min-w-52",
+        cell: (r) => r.partner_name ?? "-",
+      },
+      {
+        id: "order_type",
+        label: L("invoices.columns.orderType", "Jenis Order"),
+        sortable: true,
+        sortValue: (r) => (r.order_type ?? "").toLowerCase(),
+        className: "w-36",
+        cell: (r) => r.order_type ?? "-",
+      },
+      {
+        id: "amount_total",
+        label: L("invoices.columns.amountTotal", "Amount Total"),
+        sortable: true,
+        sortValue: (r) => String(r.amount_total ?? ""),
+        className: "w-44 text-right",
+        cell: (r) => (
+          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
+        ),
+      },
+      {
+        id: "payment_status",
+        label: L("invoices.columns.paymentStatus", "Payment Status"),
+        sortable: true,
+        sortValue: (r) => r.payment_status,
+        className: "w-44",
+        cell: (r) => <Pill value={r.payment_status} />,
+      },
+      {
+        id: "invoice_status",
+        label: L("invoices.columns.invoiceStatus", "Invoice Status"),
+        sortable: true,
+        sortValue: (r) => r.invoice_status,
+        className: "w-44",
+        cell: (r) => <Pill value={r.invoice_status} />,
+      },
+      {
         id: "actions",
         label: "",
         isAction: true,
@@ -161,66 +221,6 @@ export default function InvoicesListPage() {
             )}
           </div>
         ),
-      },
-      {
-        id: "invoice_no",
-        label: L("invoices.columns.invoiceNo", "No. Invoice"),
-        sortable: true,
-        sortValue: (r) => r.invoice_no.toLowerCase(),
-        className: "w-44",
-        cell: (r) => (
-          <div className="font-medium text-gray-900">{r.invoice_no}</div>
-        ),
-      },
-      {
-        id: "jo_no",
-        label: L("invoices.columns.joNo", "No. JO"),
-        sortable: true,
-        sortValue: (r) => (r.jo_no ?? "").toLowerCase(),
-        className: "w-36",
-        cell: (r) => r.jo_no ?? "-",
-      },
-      {
-        id: "partner_name",
-        label: L("invoices.columns.customer", "Customer"),
-        sortable: true,
-        sortValue: (r) => (r.partner_name ?? "").toLowerCase(),
-        className: "min-w-52",
-        cell: (r) => r.partner_name ?? "-",
-      },
-      {
-        id: "order_type",
-        label: L("invoices.columns.orderType", "Jenis Order"),
-        sortable: true,
-        sortValue: (r) => (r.order_type ?? "").toLowerCase(),
-        className: "w-36",
-        cell: (r) => r.order_type ?? "-",
-      },
-      {
-        id: "amount_total",
-        label: L("invoices.columns.amountTotal", "Amount Total"),
-        sortable: true,
-        sortValue: (r) => String(r.amount_total ?? ""),
-        className: "w-44 text-right",
-        cell: (r) => (
-          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
-        ),
-      },
-      {
-        id: "payment_status",
-        label: L("invoices.columns.paymentStatus", "Payment Status"),
-        sortable: true,
-        sortValue: (r) => r.payment_status,
-        className: "w-44",
-        cell: (r) => <Pill value={r.payment_status} />,
-      },
-      {
-        id: "invoice_status",
-        label: L("invoices.columns.invoiceStatus", "Invoice Status"),
-        sortable: true,
-        sortValue: (r) => r.invoice_status,
-        className: "w-44",
-        cell: (r) => <Pill value={r.invoice_status} />,
       },
     ];
   }, [i18nReady, activeLang]);

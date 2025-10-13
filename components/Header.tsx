@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Bell,
-  MessageSquare,
-  Megaphone,
-  Search as SearchIcon,
-  X,
-} from "lucide-react";
+import { Bell, Search as SearchIcon, X } from "lucide-react";
 import AvatarMenu from "@/components/AvatarMenu";
 import { LogoutButton } from "@/components/buttons/LogoutButton";
 import { UserCog, KeyRound, Activity } from "lucide-react";
@@ -109,18 +103,6 @@ export default function Header({
               <Bell className="h-4 w-4" />
             </button>
 
-            <button type="button" className={ICON_BTN} aria-label="Messages">
-              <MessageSquare className="h-4 w-4" />
-            </button>
-
-            <button
-              type="button"
-              className={ICON_BTN}
-              aria-label="Push notifications"
-            >
-              <Megaphone className="h-4 w-4" />
-            </button>
-
             <details className="relative group">
               <summary
                 className={`${ICON_BTN_BASE} h-8 w-8 list-none cursor-pointer`}
@@ -182,13 +164,15 @@ export default function Header({
       </header>
 
       <div
-        className={`fixed inset-0 z-50 md:hidden ${searchOpen ? "pointer-events-auto" : "pointer-events-none"
-          }`}
+        className={`fixed inset-0 z-50 md:hidden ${
+          searchOpen ? "pointer-events-auto" : "pointer-events-none"
+        }`}
         aria-hidden={!searchOpen}
       >
         <div
-          className={`absolute inset-0 bg-black/40 transition-opacity ${searchOpen ? "opacity-100" : "opacity-0"
-            }`}
+          className={`absolute inset-0 bg-black/40 transition-opacity ${
+            searchOpen ? "opacity-100" : "opacity-0"
+          }`}
           onClick={() => setSearchOpen(false)}
         />
 

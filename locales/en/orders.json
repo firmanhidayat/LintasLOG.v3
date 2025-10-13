@@ -4,6 +4,9 @@
             "title": "Create Order",
             "info_order": "Order Information"
         },
+        "edit": {
+            "info_order": "Edit - Order Information"
+        },
         "no_jo": "Job Order No.",
         "customer": "Customer",
         "nama_penerima": "Recipient Name",
@@ -35,9 +38,22 @@
         "lampiran_dokumen": "Document Attachments",
         "sj_pod": "SJ / POD",
         "lampiran_sj_pod": "SJ/POD Attachments",
+        "set_ke": "Set",
+        "chat_broadcast": "Chat",
+        "message": "Message",
+        "type_message": "Type message here...",
+        "upload_hint_10mb": "Max. 10 MB per file. Types: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap",
         "search": {
             "placeholder": "search..."
         },
+        "pic_muat_name": "Pickup PIC",
+        "pic_muat_phone": "Pickup PIC Phone",
+        "pic_bongkar_name": "Drop-off PIC",
+        "pic_bongkar_phone": "Drop-off PIC Phone",
+        "confirm_submit_text": "Please make sure all information is correct before submitting. Continue?",
+        "confirm_update_text": "Update the order with your recent changes. Continue?",
+        "create_success": "Order has been created.",
+        "update_success": "Order has been updated.",
         "columns": {
             "joNo": "Job Order No.",
             "pickupDate": "Pickup Date",
@@ -47,6 +63,18 @@
             "specialRequest": "Special Request",
             "price": "Price",
             "status": "Status"
+        },
+        "status": {
+            "pending": "Pending",
+            "accepted": "Accepted",
+            "on_preparation": "On Preparation",
+            "pickup": "Pickup",
+            "on_delivery": "On Delivery",
+            "received": "Received",
+            "on_review": "On Review",
+            "done": "Done",
+            "arrive": "Arrived",
+            "depart": "Departed"
         }
     }
 }

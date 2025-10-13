@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mountedRef.current) return;
       setProfile(data);
       setProfileStatus("success");
-    } catch (err) {
+    } catch (_err) {
       if (!mountedRef.current) return;
       setProfile(null);
       setProfileStatus("error");

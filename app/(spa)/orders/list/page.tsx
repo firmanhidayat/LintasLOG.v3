@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo } from "react";
-// import { useRouter } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import {
@@ -10,54 +9,11 @@ import {
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link";
 import { Icon } from "@/components/icons/Icon";
+import { OrderRow, OrderStatus } from "@/types/orders";
+import { fmtDate, fmtPrice } from "@/lib/helpers";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
-const USE_STATIC = true;
+const GET_ORDERS_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 
-/** ===== Types ===== */
-type OrderStatus =
-  | "Pending"
-  | "Accepted"
-  | "On Preparation"
-  | "Pickup"
-  | "On Delivery"
-  | "Received"
-  | "On Review"
-  | "Done";
-
-type OrderRow = {
-  id: number | string;
-  jo_no: string;
-  pickup_date?: string;
-  pickup_to?: string;
-  drop_date?: string;
-  drop_to?: string;
-  special_request?: string;
-  price?: number;
-  status: OrderStatus;
-};
-
-/** ===== Helpers ===== */
-function fmtDate(d?: string) {
-  if (!d) return "-";
-  const dt = new Date(d);
-  const dd = String(dt.getDate()).padStart(2, "0");
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const yyyy = dt.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-}
-function fmtPrice(v?: number) {
-  if (v == null) return "-";
-  try {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(v);
-  } catch {
-    return String(v);
-  }
-}
 function StatusPill({ value }: { value: OrderStatus }) {
   const color =
     value === "Pending"
@@ -85,50 +41,78 @@ function StatusPill({ value }: { value: OrderStatus }) {
   );
 }
 
-/** ===== Dummy data (dipakai hanya jika NEXT_PUBLIC_DUMMY=1) ===== */
-const DEMO_ORDERS: OrderRow[] = [
-  {
-    id: 1,
-    jo_no: "JO-2025-0001",
-    pickup_date: "2025-10-05",
-    pickup_to: "Gudang A, Jakarta",
-    drop_date: "2025-10-06",
-    drop_to: "Outlet X, Bandung",
-    special_request: "Fragile, jangan ditumpuk",
-    price: 1_250_000,
-    status: "On Delivery",
-  },
-  {
-    id: 2,
-    jo_no: "JO-2025-0002",
-    pickup_date: "2025-10-06",
-    pickup_to: "Pelabuhan Tj. Priok",
-    drop_date: "2025-10-07",
-    drop_to: "Gudang B, Surabaya",
-    special_request: "Butuh pendingin",
-    price: 3_500_000,
-    status: "Accepted",
-  },
-  {
-    id: 3,
-    jo_no: "JO-2025-0003",
-    pickup_date: "2025-10-04",
-    pickup_to: "DC Cikarang",
-    drop_date: "2025-10-05",
-    drop_to: "Ritel Y, Semarang",
-    special_request: "",
-    price: 1_780_000,
-    status: "Done",
-  },
-];
-
 export default function OrdersListPage() {
-  //  const router = useRouter();
   const { i18nReady, activeLang } = useI18nReady();
-
-  // kolom mengikuti ColumnDef<T> dari ListTemplate (bukan key/header/render versi lain)
   const columns = useMemo<ColumnDef<OrderRow>[]>(
     () => [
+      {
+        id: "jo_no",
+        label: t("orders.columns.joNo") || "No. JO",
+        sortable: true,
+        sortValue: (r) => r.jo_no ?? "",
+        className: "w-40",
+        cell: (r) => <div className="font-medium text-gray-900">{r.jo_no}</div>,
+      },
+      {
+        id: "pickup_date",
+        label: t("orders.columns.pickupDate") || "Tanggal Pickup",
+        sortable: true,
+        sortValue: (r) => r.pickup_date_planne ?? "",
+        className: "w-36",
+        cell: (r) => fmtDate(r.pickup_date_planne),
+      },
+      {
+        id: "pickup_to",
+        label: t("orders.columns.pickupTo") || "Tujuan Pickup",
+        sortable: true,
+        sortValue: (r) => (r.origin_city?.name ?? "").toLowerCase(),
+        cell: (r) => (
+          <span className="text-gray-700">{r.origin_city?.name ?? "-"}</span>
+        ),
+      },
+      {
+        id: "drop_date",
+        label: t("orders.columns.dropDate") || "Tanggal Drop",
+        sortable: true,
+        sortValue: (r) => r.drop_off_date_planne ?? "",
+        className: "w-36",
+        cell: (r) => fmtDate(r.drop_off_date_planne),
+      },
+      {
+        id: "drop_to",
+        label: t("orders.columns.dropTo") || "Tujuan Drop",
+        sortable: true,
+        sortValue: (r) => (r.dest_city?.name ?? "").toLowerCase(),
+        cell: (r) => (
+          <span className="text-gray-700">{r.dest_city?.name ?? "-"}</span>
+        ),
+      },
+      {
+        id: "special_request",
+        label: t("orders.columns.specialRequest") || "Permintaan Khusus",
+        sortable: true,
+        sortValue: (r) => (r.special_request ?? "").toLowerCase(),
+        className: "min-w-60",
+        cell: (r) => r.special_request?.trim() || "-",
+      },
+      {
+        id: "price",
+        label: t("orders.columns.price") || "Harga",
+        sortable: true,
+        sortValue: (r) => String(r.price ?? ""),
+        className: "w-36 text-right",
+        cell: (r) => <span className="tabular-nums">{fmtPrice(r.price)}</span>,
+      },
+      {
+        id: "status",
+        label: t("orders.columns.status") || "Status",
+        sortable: true,
+        sortValue: (r) => r.status,
+        className: "w-44",
+        cell: (r) => <StatusPill value={r.status} />,
+        // jika menambahkan filter di ListTemplate, bisa aktifkan:
+        // filter: { type: "select", options: STATUS_ORDER.map(s => ({ label: s, value: s })) },
+      },
       {
         id: "actions",
         label: "",
@@ -193,72 +177,6 @@ export default function OrdersListPage() {
           </div>
         ),
       },
-      {
-        id: "jo_no",
-        label: t("orders.columns.joNo") || "No. JO",
-        sortable: true,
-        sortValue: (r) => r.jo_no.toLowerCase(),
-        className: "w-40",
-        cell: (r) => <div className="font-medium text-gray-900">{r.jo_no}</div>,
-      },
-      {
-        id: "pickup_date",
-        label: t("orders.columns.pickupDate") || "Tanggal Pickup",
-        sortable: true,
-        sortValue: (r) => r.pickup_date ?? "",
-        className: "w-36",
-        cell: (r) => fmtDate(r.pickup_date),
-      },
-      {
-        id: "pickup_to",
-        label: t("orders.columns.pickupTo") || "Tujuan Pickup",
-        sortable: true,
-        sortValue: (r) => (r.pickup_to ?? "").toLowerCase(),
-        cell: (r) => (
-          <span className="text-gray-700">{r.pickup_to ?? "-"}</span>
-        ),
-      },
-      {
-        id: "drop_date",
-        label: t("orders.columns.dropDate") || "Tanggal Drop",
-        sortable: true,
-        sortValue: (r) => r.drop_date ?? "",
-        className: "w-36",
-        cell: (r) => fmtDate(r.drop_date),
-      },
-      {
-        id: "drop_to",
-        label: t("orders.columns.dropTo") || "Tujuan Drop",
-        sortable: true,
-        sortValue: (r) => (r.drop_to ?? "").toLowerCase(),
-        cell: (r) => <span className="text-gray-700">{r.drop_to ?? "-"}</span>,
-      },
-      {
-        id: "special_request",
-        label: t("orders.columns.specialRequest") || "Permintaan Khusus",
-        sortable: true,
-        sortValue: (r) => (r.special_request ?? "").toLowerCase(),
-        className: "min-w-60",
-        cell: (r) => r.special_request?.trim() || "-",
-      },
-      {
-        id: "price",
-        label: t("orders.columns.price") || "Harga",
-        sortable: true,
-        sortValue: (r) => String(r.price ?? ""),
-        className: "w-36 text-right",
-        cell: (r) => <span className="tabular-nums">{fmtPrice(r.price)}</span>,
-      },
-      {
-        id: "status",
-        label: t("orders.columns.status") || "Status",
-        sortable: true,
-        sortValue: (r) => r.status,
-        className: "w-44",
-        cell: (r) => <StatusPill value={r.status} />,
-        // jika kamu menambahkan filter di ListTemplate, bisa aktifkan:
-        // filter: { type: "select", options: STATUS_ORDER.map(s => ({ label: s, value: s })) },
-      },
     ],
     [activeLang]
   );
@@ -279,23 +197,13 @@ export default function OrdersListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<OrderRow>
-        fetchBase={`${API_BASE}/api-tms/orders/list`}
-        deleteBase={`${API_BASE}/api-tms/orders`}
+        fetchBase={`${GET_ORDERS_URL}`}
+        deleteBase={`${GET_ORDERS_URL}`}
         columns={columns}
-        searchPlaceholder={t("orders.search.placeholder") || "Cari order..."}
-        rowsPerPageLabel={t("orders.rowsPerPage") || "Baris per halaman"}
+        searchPlaceholder={t("orders.search.placeholder")}
+        rowsPerPageLabel={t("orders.rowsPerPage")}
+        initialPageSize={80}
         leftHeader={leftHeader}
-        initialSort={{ by: "pickup_date", dir: "desc" }}
-        // === inilah kuncinya: saat NEXT_PUBLIC_DUMMY=1, pakai data statis ===
-        staticData={USE_STATIC ? DEMO_ORDERS : undefined}
-        // optional: cara pencarian khusus saat static
-        staticSearch={(row, q) =>
-          row.jo_no.toLowerCase().includes(q) ||
-          (row.pickup_to ?? "").toLowerCase().includes(q) ||
-          (row.drop_to ?? "").toLowerCase().includes(q) ||
-          (row.special_request ?? "").toLowerCase().includes(q) ||
-          row.status.toLowerCase().includes(q)
-        }
       />
     </div>
   );
