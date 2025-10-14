@@ -15,7 +15,7 @@ export default function Sidebar({
   open?: boolean;
   onClose?: () => void;
 }) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const safeClose = () => startTransition(() => onClose?.());
 
   return (
@@ -208,7 +208,7 @@ const SidebarContent = memo(function SidebarContent() {
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
     return () => off?.();
-  }, []);
+  }, [activeLang]);
 
   useEffect(() => {
     if (!loaded) return;

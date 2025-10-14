@@ -120,7 +120,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Accept-Language": getLang(),
+          "Accept-Language": activeLang,
         },
         body: JSON.stringify({ login: email, password }),
         credentials: "include",

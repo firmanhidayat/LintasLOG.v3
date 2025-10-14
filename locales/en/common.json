@@ -39,5 +39,16 @@
         "time_required": "time is required",
         "must_after_or_equal_pickup": "must after or equal pickup",
         "address_pair_required": "Fill both pickup and drop-off addresses."
+    },
+    "phone": {
+        "invalid": "Invalid phone number",
+        "invalid_format": "Invalid phone number format",
+        "example": "Example: 08123456789 or +628123456789"
+    },
+    "validation": {
+        "id_phone_pattern": "Phone number must start with 0 or +62, followed by 8-13 digits."
+    },
+    "placeholders": {
+        "phone": "Enter phone number"
     }
 }

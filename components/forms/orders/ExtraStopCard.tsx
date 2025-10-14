@@ -4,6 +4,7 @@ import AddressAutocomplete from "@/components/forms/orders/AddressAutocomplete";
 import { FieldText } from "@/components/form/FieldText";
 import DateTimePickerTW from "@/components/form/DateTimePickerTW";
 import type { AddressItem } from "@/types/orders";
+import FieldPhone from "@/components/form/FieldPhone";
 
 export type ExtraStop = {
   lokMuat: AddressItem | null;
@@ -124,7 +125,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FieldText
+          {/* <FieldText
             label={
               (t("orders.pic_muat_phone") ?? "PIC Muat - Telepon") +
               ` (${idx + 1})`
@@ -132,9 +133,20 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             value={stop.originPicPhone}
             onChange={(v) => onChange({ originPicPhone: v })}
             inputMode="tel"
-            pattern="^[0-9+() -]*$"
+            pattern={ID_PHONE_PATTERN}
+          /> */}
+          <FieldPhone
+            label={
+              (t("orders.pic_muat_phone") ?? "PIC Muat - Telepon") +
+              ` (${idx + 1})`
+            }
+            value={stop.originPicPhone}
+            onChange={(v) => onChange({ originPicPhone: v })}
+            kind="mobile"
+            placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
           />
-          <FieldText
+
+          {/* <FieldText
             label={
               (t("orders.pic_bongkar_phone") ?? "PIC Bongkar - Telepon") +
               ` (${idx + 1})`
@@ -142,7 +154,17 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             value={stop.destPicPhone}
             onChange={(v) => onChange({ destPicPhone: v })}
             inputMode="tel"
-            pattern="^[0-9+() -]*$"
+            pattern={ID_PHONE_PATTERN}
+          /> */}
+          <FieldPhone
+            label={
+              (t("orders.pic_bongkar_phone") ?? "PIC Bongkar - Telepon") +
+              ` (${idx + 1})`
+            }
+            value={stop.destPicPhone}
+            onChange={(v) => onChange({ destPicPhone: v })}
+            kind="mobile"
+            placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
           />
         </div>
       </div>

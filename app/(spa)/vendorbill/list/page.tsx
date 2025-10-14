@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
+
 import {
   ListTemplate,
   type ColumnDef,
@@ -11,7 +12,7 @@ import {
 import { Icon } from "@/components/icons/Icon";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
-
+//
 /** ===== Types ===== */
 type TwoState = "Approved" | "Paid";
 
@@ -89,16 +90,11 @@ const DEMO_VENDOR_BILLS: VendorBillRow[] = [
 
 export default function VendorBillListPage() {
   const { i18nReady, activeLang } = useI18nReady();
-
-  // Columns via useMemo (non-kondisional); t() dipanggil hanya jika i18n siap
   const columns = useMemo<ColumnDef<VendorBillRow>[]>(() => {
-    const L = (key: string, fallback: string) =>
-      i18nReady && activeLang ? t(key) || fallback : fallback;
-
     return [
       {
         id: "bill_no",
-        label: L("vendorbill.columns.billNo", "No. Bill"),
+        label: t("vendorbill.columns.billNo"),
         sortable: true,
         sortValue: (r) => r.bill_no.toLowerCase(),
         className: "w-44",
@@ -108,7 +104,7 @@ export default function VendorBillListPage() {
       },
       {
         id: "jo_no",
-        label: L("vendorbill.columns.joNo", "No. JO"),
+        label: t("vendorbill.columns.joNo"),
         sortable: true,
         sortValue: (r) => (r.jo_no ?? "").toLowerCase(),
         className: "w-36",
@@ -116,7 +112,7 @@ export default function VendorBillListPage() {
       },
       {
         id: "bill_date",
-        label: L("vendorbill.columns.date", "Tanggal"),
+        label: t("vendorbill.columns.date"),
         sortable: true,
         sortValue: (r) => r.bill_date ?? "",
         className: "w-36",
@@ -124,7 +120,7 @@ export default function VendorBillListPage() {
       },
       {
         id: "amount_total",
-        label: L("vendorbill.columns.amountTotal", "Amount Total"),
+        label: t("vendorbill.columns.amountTotal"),
         sortable: true,
         sortValue: (r) => String(r.amount_total ?? ""),
         className: "w-44 text-right",
@@ -134,7 +130,7 @@ export default function VendorBillListPage() {
       },
       {
         id: "status",
-        label: L("vendorbill.columns.status", "Status"),
+        label: t("vendorbill.columns.status"),
         sortable: true,
         sortValue: (r) => r.status,
         className: "w-36",
@@ -225,6 +221,7 @@ export default function VendorBillListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<VendorBillRow>
+        key={activeLang} // reset state internal ListTemplate jika ganti bahasa
         fetchBase={`${API_BASE}/api-tms/finance/vendorbills`} // diabaikan saat staticData dipakai
         deleteBase={`${API_BASE}/api-tms/finance/vendorbills`} // diabaikan saat staticData dipakai
         columns={columns}

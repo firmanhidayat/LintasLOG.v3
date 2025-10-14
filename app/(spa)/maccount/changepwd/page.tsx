@@ -144,7 +144,7 @@ export default function ChangePasswordPage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Accept-Language": getLang(),
+          "Accept-Language": activeLang,
         },
         credentials: "include", // penting: bawa cookie fastapi_auth_partner
         body: JSON.stringify({

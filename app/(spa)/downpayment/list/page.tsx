@@ -476,6 +476,7 @@ export default function DownPaymentListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<DownPaymentRow>
+        key={activeLang} // reset state internal ListTemplate jika ganti bahasa
         fetchBase={`${API_BASE}/api-tms/finance/downpayments`} // diabaikan saat staticData dipakai
         deleteBase={`${API_BASE}/api-tms/finance/downpayments`} // diabaikan saat staticData dipakai
         columns={columns}

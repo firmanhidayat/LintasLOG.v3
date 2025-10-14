@@ -62,11 +62,11 @@ export default function RouteMap({
   // ==== Stabilkan request & cegah spam calls ====
 
   // NOTE: gunakan join untuk menstabilkan dependensi array
-  const waypointsKey = useMemo(
-    () =>
-      waypoints && waypoints.length ? waypoints.filter(Boolean).join("|") : "",
-    [waypoints]
-  );
+  // const waypointsKey = useMemo(
+  //   () =>
+  //     waypoints && waypoints.length ? waypoints.filter(Boolean).join("|") : "",
+  //   [waypoints]
+  // );
 
   const request = useMemo<google.maps.DirectionsRequest | null>(() => {
     if (!hasRoute || !origin || !destination) return null;
@@ -82,7 +82,7 @@ export default function RouteMap({
       provideRouteAlternatives: false,
     };
     // penting: pakai waypointsKey, bukan objek array
-  }, [hasRoute, origin, destination, waypointsKey]);
+  }, [hasRoute, origin, destination]);
 
   const requestKey = useMemo(
     () => (request ? JSON.stringify(request) : ""),

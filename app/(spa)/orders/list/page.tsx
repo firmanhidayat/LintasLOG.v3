@@ -207,6 +207,7 @@ export default function OrdersListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<OrderRow>
+        key={activeLang} // reset state internal ListTemplate jika ganti bahasa
         fetchBase={`${GET_ORDERS_URL}`}
         deleteBase={`${GET_ORDERS_URL}`}
         columns={columns}

@@ -18,11 +18,11 @@ import LangToggle from "@/components/LangToggle";
 
 const SET_PASSWORD_URL = process.env.NEXT_PUBLIC_TMS_SET_PASSWORD_URL!;
 
-interface VerifyOk {
-  status: "ok";
-  email?: string;
-  message?: string;
-}
+// interface VerifyOk {
+//   status: "ok";
+//   email?: string;
+//   message?: string;
+// }
 interface FastapiErrorItem {
   loc: (string | number)[];
   msg: string;
@@ -156,7 +156,7 @@ function VerifyTokenForgotPwdInner() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Accept-Language": getLang(),
+          "Accept-Language": activeLang,
         },
         body: JSON.stringify({ token, password }),
       });
@@ -179,7 +179,7 @@ function VerifyTokenForgotPwdInner() {
         }
         setState({ kind: "error", reason });
         return;
-        }
+      }
       const raw = (await res.json()) as unknown;
       const rec = isRecord(raw) ? (raw as Record<string, unknown>) : {};
       const email =
@@ -337,7 +337,9 @@ function VerifyTokenForgotPwdInner() {
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">
-                    {t("forgot.form.confirmPassword", { default: "Confirm Password" })}
+                    {t("forgot.form.confirmPassword", {
+                      default: "Confirm Password",
+                    })}
                   </label>
                   <div className="relative">
                     <input
@@ -348,9 +350,12 @@ function VerifyTokenForgotPwdInner() {
                       minLength={minLen}
                       value={confirm}
                       onChange={(e) => setConfirm(e.target.value)}
-                      placeholder={t("forgot.form.placeholders.confirmPassword", {
-                        default: "Re-enter new password",
-                      })}
+                      placeholder={t(
+                        "forgot.form.placeholders.confirmPassword",
+                        {
+                          default: "Re-enter new password",
+                        }
+                      )}
                       className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 pr-11 outline-none ring-0 placeholder:text-gray-400"
                     />
                     <button
@@ -358,7 +363,9 @@ function VerifyTokenForgotPwdInner() {
                       onClick={() => setShowConfirm((v) => !v)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
                       aria-label={
-                        showConfirm ? t("forgot.a11y.hide") : t("forgot.a11y.show")
+                        showConfirm
+                          ? t("forgot.a11y.hide")
+                          : t("forgot.a11y.show")
                       }
                     >
                       {showConfirm ? t("forgot.ui.hide") : t("forgot.ui.show")}
@@ -387,7 +394,9 @@ function VerifyTokenForgotPwdInner() {
                   {state.kind === "submitting" ? (
                     <span className="inline-flex items-center gap-2">
                       <Spinner ariaLabel={t("verify.a11y.verifying")} />
-                      <span>{t("setPwd.cta.setting", { default: "Saving…" })}</span>
+                      <span>
+                        {t("setPwd.cta.setting", { default: "Saving…" })}
+                      </span>
                     </span>
                   ) : (
                     t("setPwd.cta.save", { default: "Set Password" })

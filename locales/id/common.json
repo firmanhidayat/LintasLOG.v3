@@ -39,5 +39,16 @@
         "time_required": "jam wajib diisi",
         "must_after_or_equal_pickup": "harus setelah atau sama dengan tanggal pickup",
         "address_pair_required": "Isi lengkap pasangan lokasi muat dan bongkar."
+    },
+    "phone": {
+        "invalid": "Nomor telepon tidak valid",
+        "invalid_format": "Format nomor telepon tidak valid",
+        "example": "Contoh: 08123456789 atau +628123456789"
+    },
+    "validation": {
+        "id_phone_pattern": "Nomor telepon harus dimulai dengan 0 atau +62, diikuti 8-13 digit angka."
+    },
+    "placeholders": {
+        "phone": "Masukkan nomor telepon"
     }
 }

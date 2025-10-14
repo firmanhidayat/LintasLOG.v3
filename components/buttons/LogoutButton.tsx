@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { clearAuth, apiLogout } from "@/lib/auth";
+import { apiLogout } from "@/lib/auth";
 import { LogOut } from "lucide-react";
 
 export function LogoutButton({

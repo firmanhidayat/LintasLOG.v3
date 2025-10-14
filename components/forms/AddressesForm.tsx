@@ -1,7 +1,5 @@
 "use client";
 
-/* global google */
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { t, getLang } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
@@ -17,7 +15,8 @@ import { useDebounced } from "@/hooks/useDebounced";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
-import { Copy } from "lucide-react";
+import { Copy, RefreshCw } from "lucide-react";
+import FieldPhone from "@/components/form/FieldPhone";
 
 const ADDRESS_POST_URL = process.env.NEXT_PUBLIC_TMS_USER_ADDRESS_URL ?? "";
 const LOCATION_DISTRIC_URL =
@@ -113,6 +112,14 @@ export default function AddressForm({
 
   // Map search (independen)
   const [mapSearch, setMapSearch] = useState<string>("");
+
+  const [mapEpoch, setMapEpoch] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  function handleRefreshMap() {
+    setIsRefreshing(true);
+    setMapEpoch((e) => e + 1);
+  }
 
   // Snapshot awal (untuk discard)
   const initialSnap = useRef({
@@ -473,11 +480,14 @@ export default function AddressForm({
           }
         }
       }, 250);
+
+      setIsRefreshing(false);
     } catch (err) {
       console.error("[GoogleMaps init]", err);
       setMapError(
         err instanceof Error ? err.message : "Gagal inisialisasi Google Maps"
       );
+      setIsRefreshing(false);
     }
 
     // CLEANUP saat unmount atau re-init
@@ -496,7 +506,7 @@ export default function AddressForm({
       autocompleteRef.current = null;
       mapsReadyRef.current = false;
     };
-  }, [mapsReady, mapsError, GOOGLE_KEY]);
+  }, [mapsReady, mapsError, GOOGLE_KEY, mapEpoch]);
 
   // Update marker ketika lat/lng berubah
   useEffect(() => {
@@ -550,6 +560,7 @@ export default function AddressForm({
           mapObj.current.panTo(loc);
           mapObj.current.setZoom(16);
         }
+        setMapSearch("");
       }
     } catch (err) {
       console.warn("[geocodeText] gagal:", err);
@@ -916,12 +927,21 @@ export default function AddressForm({
 
                   <div className="grid gap-4">
                     {/* Phone */}
-                    <FieldText
+                    {/* <FieldText
                       label={t("addr.phone.label")}
                       value={mobile}
                       onChange={setMobile}
                       placeholder={t("addr.phone.placeholder")}
                       type="tel"
+                    /> */}
+                    <FieldPhone
+                      label={t("addr.phone.label")}
+                      value={mobile}
+                      kind="mobile"
+                      onChange={setMobile}
+                      placeholder={
+                        t("placeholders.phone") ?? "08xx atau +628xx"
+                      }
                     />
                     {/* Email */}
                     <FieldText
@@ -1078,7 +1098,7 @@ export default function AddressForm({
                   </Alert>
                 )}
 
-                {errMsg && <Alert kind="error">{errMsg}</Alert>}
+                {errMsg && <Alert kind="warning">{errMsg}</Alert>}
 
                 <FormActions>
                   <Button
@@ -1134,6 +1154,7 @@ export default function AddressForm({
                   ref={searchInputRef}
                   value={mapSearch}
                   onChange={(e) => setMapSearch(e.target.value)}
+                  onBlur={() => setMapSearch("")}
                   placeholder="Search place or address…"
                   className="w-full rounded-md border px-3 py-2 text-sm"
                   aria-label="Search address on map"
@@ -1144,6 +1165,21 @@ export default function AddressForm({
                   onClick={() => geocodeText(mapSearch)}
                 >
                   Search
+                </Button>
+
+                {/* ⬇️ Tombol Refresh */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleRefreshMap}
+                  disabled={!mapsReady || isRefreshing}
+                  aria-label="Refresh map"
+                  title="Refresh map"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                  />
+                  <span className="ml-2">Refresh</span>
                 </Button>
               </div>
 

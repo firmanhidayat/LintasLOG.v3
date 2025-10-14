@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { t, getLang } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 
@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import MultiFileUpload from "@/components/form/MultiFileUpload";
-import Datepicker, { type DateValueType } from "react-tailwindcss-datepicker";
+// import { type DateValueType } from "react-tailwindcss-datepicker";
 import DateTimePickerTW from "@/components/form/DateTimePickerTW";
 
 /** ===== ENV (sesuaikan) ===== */
@@ -83,10 +83,10 @@ export default function InvoiceSubmitForm() {
   const joInputRef = useRef<HTMLInputElement | null>(null);
 
   // --- Date
-  const [invoiceDate, setInvoiceDate] = useState<DateValueType>({
-    startDate: null,
-    endDate: null,
-  });
+  // const [invoiceDate, setInvoiceDate] = useState<DateValueType>({
+  //   startDate: null,
+  //   endDate: null,
+  // });
 
   // --- Files (MultiFileUpload)
   const [files, setFiles] = useState<File[]>([]);
@@ -122,7 +122,7 @@ export default function InvoiceSubmitForm() {
           name: `${r.jo_no}${r.customer ? " — " + r.customer : ""}`,
         }));
         setJoOptions(opt);
-      } catch (e) {
+      } catch {
         setJoOptions([]);
       } finally {
         setJoLoading(false);
@@ -146,7 +146,7 @@ export default function InvoiceSubmitForm() {
         if (!res.ok) throw new Error("detail failed");
         const data: OrderDetail = await res.json();
         setOrder(data);
-      } catch (e) {
+      } catch {
         setOrder(null);
       }
     })();

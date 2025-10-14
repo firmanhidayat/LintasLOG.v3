@@ -7,6 +7,7 @@ import { FieldText } from "@/components/form/FieldText";
 import type { AddressItem, CityItem } from "@/types/orders";
 import MultiPickupDropSection from "./MultiPickupDropSection";
 import type { ExtraStop } from "./ExtraStopCard";
+import FieldPhone from "@/components/form/FieldPhone";
 
 type DivRef =
   | React.RefObject<HTMLDivElement>
@@ -123,12 +124,19 @@ export default function LocationInfoCard({
               value={picMuatNama}
               onChange={setPicMuatNama}
             />
-            <FieldText
+            {/* <FieldText
               label={t("orders.pic_muat_phone") ?? "PIC Muat - Telepon"}
               value={picMuatTelepon}
               onChange={setPicMuatTelepon}
               inputMode="tel"
-              pattern="^[0-9+() -]*$"
+              pattern={ID_PHONE_PATTERN}
+            /> */}
+            <FieldPhone
+              label={t("orders.pic_muat_phone") ?? "PIC Muat - Telepon"}
+              value={picMuatTelepon}
+              onChange={setPicMuatTelepon}
+              kind="mobile"
+              placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
             />
           </div>
 
@@ -165,12 +173,19 @@ export default function LocationInfoCard({
               value={picBongkarNama}
               onChange={setPicBongkarNama}
             />
-            <FieldText
+            {/* <FieldText
               label={t("orders.pic_bongkar_phone") ?? "PIC Bongkar - Telepon"}
               value={picBongkarTelepon}
               onChange={setPicBongkarTelepon}
               inputMode="tel"
-              pattern="^[0-9+() -]*$"
+              pattern={ID_PHONE_PATTERN}
+            /> */}
+            <FieldPhone
+              label={t("orders.pic_bongkar_phone") ?? "PIC Bongkar - Telepon"}
+              value={picBongkarTelepon}
+              onChange={setPicBongkarTelepon}
+              kind="mobile"
+              placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
             />
           </div>
         </div>

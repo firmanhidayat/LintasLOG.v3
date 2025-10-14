@@ -119,7 +119,7 @@ function strengthText(
   const tWeak = labels?.weak ?? "Weak";
   const tFair = labels?.fair ?? "Fair";
   const tStrong = labels?.strong ?? "Strong";
-  const tVeryStrong = labels?.veryStrong ?? "Very strong";
+  // const tVeryStrong = labels?.veryStrong ?? "Very strong";
   switch (score) {
     case 0:
       return "";

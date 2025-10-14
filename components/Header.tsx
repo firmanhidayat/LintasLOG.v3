@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, Search as SearchIcon, X } from "lucide-react";
+import { Bell } from "lucide-react";
 import AvatarMenu from "@/components/AvatarMenu";
 import { LogoutButton } from "@/components/buttons/LogoutButton";
 import { UserCog, KeyRound, Activity } from "lucide-react";
@@ -27,7 +27,7 @@ export default function Header({
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
     return () => off?.();
-  }, []);
+  }, [activeLang]);
 
   useEffect(() => {
     const handler = () => {
@@ -37,7 +37,7 @@ export default function Header({
     };
     window.addEventListener("resize", handler);
     return () => window.removeEventListener("resize", handler);
-  }, []);
+  }, [searchOpen]);
 
   return (
     <>

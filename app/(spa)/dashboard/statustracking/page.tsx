@@ -395,6 +395,7 @@ export default function StatusTrackingPage({
 
   return (
     <ListTemplate<RowData>
+      key={lang} // reset state internal ListTemplate jika ganti bahasa
       fetchBase="/api/dummy"
       deleteBase="/api/dummy"
       columns={columns}

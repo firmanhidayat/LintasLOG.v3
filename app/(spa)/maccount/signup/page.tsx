@@ -304,7 +304,7 @@ export default function SignUpPage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Accept-Language": getLang(),
+          "Accept-Language": activeLang,
         },
         body: JSON.stringify(payload),
       });

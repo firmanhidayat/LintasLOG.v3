@@ -16,13 +16,12 @@ import {
 } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 
-
 const VERIFY_EMAIL_URL = process.env.NEXT_PUBLIC_TMS_VERIFY_EMAIL_URL!;
-interface VerifyOk {
-  status: "ok";
-  email?: string;
-  message?: string;
-}
+// interface VerifyOk {
+//   status: "ok";
+//   email?: string;
+//   message?: string;
+// }
 interface FastapiErrorItem {
   loc: (string | number)[];
   msg: string;
@@ -145,7 +144,7 @@ function VerifyEmailInner() {
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
-            "Accept-Language": getLang(), 
+            "Accept-Language": getLang(),
           },
           body: JSON.stringify({ token }),
         });

@@ -46,10 +46,10 @@ const DETAIL_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const UPDATE_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const APP_BASE_PATH = process.env.NEXT_PUBLIC_URL_BASE ?? "";
 
-/* === Optional metadata untuk Tiba/Keluar per step === */
-type StatusMeta = Partial<
-  Record<OrderStatus, { arrive?: string; depart?: string }>
->;
+// /* === Optional metadata untuk Tiba/Keluar per step === */
+// type StatusMeta = Partial<
+//   Record<OrderStatus, { arrive?: string; depart?: string }>
+// >;
 
 /** ExtraStop seragam dengan mainRoute (akan dikirim sebagai bagian dari route_ids) */
 type ExtraStop = {
@@ -189,19 +189,19 @@ function addrFromRoute(
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>
 ) {
-  type Maybe<T> = T | null | undefined;
+  // type Maybe<T> = T | null | undefined;
 
-  const toOrderTypeItem = (
-    v: Maybe<string | OrderTypeItem>
-  ): OrderTypeItem | null => {
-    if (!v) return null;
-    return typeof v === "string" ? { id: v, name: v } : v;
-  };
+  // const toOrderTypeItem = (
+  //   v: Maybe<string | OrderTypeItem>
+  // ): OrderTypeItem | null => {
+  //   if (!v) return null;
+  //   return typeof v === "string" ? { id: v, name: v } : v;
+  // };
 
-  const toModaItem = (v: Maybe<string | ModaItem>): ModaItem | null => {
-    if (!v) return null;
-    return typeof v === "string" ? { id: v, name: v } : v;
-  };
+  // const toModaItem = (v: Maybe<string | ModaItem>): ModaItem | null => {
+  //   if (!v) return null;
+  //   return typeof v === "string" ? { id: v, name: v } : v;
+  // };
 
   // console.log("data edit form (prefill):", data);
 

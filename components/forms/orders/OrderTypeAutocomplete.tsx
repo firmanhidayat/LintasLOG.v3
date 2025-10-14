@@ -33,8 +33,8 @@ function normalizeItem(it: unknown): OrderTypeItem | null {
       (typeof idRaw === "string" || typeof idRaw === "number") &&
       typeof nameRaw === "string"
     ) {
-      const code =
-        typeof it["code"] === "string" ? (it["code"] as string) : undefined;
+      // const code =
+      //   typeof it["code"] === "string" ? (it["code"] as string) : undefined;
       return { id: idRaw, name: nameRaw };
     }
   }

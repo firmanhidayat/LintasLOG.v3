@@ -30,7 +30,7 @@ export default function SuccessPage() {
   const [allowed, setAllowed] = useState(false);
 
   const [i18nReady, setI18nReady] = useState(false);
-  const [activeLang, setActiveLang] = useState<Lang>(getLang());
+  const [, setActiveLang] = useState<Lang>(getLang());
 
   useEffect(() => {
     let mounted = true;

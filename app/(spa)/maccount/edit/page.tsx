@@ -96,7 +96,7 @@ export default function ManageAccountEditPage() {
       phone: (phone ?? "").trim(),
       mobile: (mobile ?? "").trim(),
       vat: (vat ?? "").trim(),
-      tz: tz ?? (form.tz || "Asia/Jakarta"),
+      tz: tz ?? "Asia/Jakarta",
     });
   }, [name, email, phone, mobile, vat, tz]);
 

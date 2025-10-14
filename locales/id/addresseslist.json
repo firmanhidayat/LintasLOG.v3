@@ -42,7 +42,7 @@
             "placeholder": "user@example.com"
         },
         "district": {
-            "placeholder": "Ketik minimal 2 karakter…",
+            "placeholder": "Pilih Kecamatan - Kota / Kab - Propinsi",
             "aria": "Wilayah"
         },
         "zip": {
