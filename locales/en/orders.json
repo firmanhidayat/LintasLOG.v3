@@ -46,6 +46,8 @@
         "search": {
             "placeholder": "search..."
         },
+        "search_moda": "Fleet Type...",
+        "search_order_type": "Order Type...",
         "pic_muat_name": "Pickup PIC",
         "pic_muat_phone": "Pickup PIC Phone",
         "pic_bongkar_name": "Drop-off PIC",

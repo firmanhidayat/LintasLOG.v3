@@ -14,8 +14,6 @@ import SpecialServicesCard from "@/components/forms/orders/SpecialServicesCard";
 import CargoInfoCard from "@/components/forms/orders/CargoInfoCard";
 import CostDetailsCard from "@/components/forms/orders/CostDetailsCard";
 import ShippingDocumentsCard from "@/components/forms/orders/ShippingDocumentsCard";
-import { TruckIcon } from "@/components/icons/Icon";
-
 import { tzDateToUtcISO } from "@/lib/tz";
 import { useAuth } from "@/components/providers/AuthProvider";
 
@@ -39,6 +37,7 @@ import {
   buildDetailUrl,
   pathJoin,
 } from "@/components/shared/Helper";
+import StatusTracker from "@/components/ui/StatusTracker";
 
 /** ENV */
 const POST_ORDER_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL!;
@@ -159,129 +158,6 @@ function ResponseDialog({
         </div>
       </div>
     </Modal>
-  );
-}
-
-/* === Komponen tracker (dinamis + i18n) === */
-function StatusTracker({
-  current = "Pending",
-  meta,
-}: {
-  current?: OrderStatus;
-  meta?: StatusMeta;
-}) {
-  const steps: Array<{
-    key: OrderStatus;
-    label: string;
-    showSub?: boolean; // tampilkan Tiba/Keluar
-  }> = [
-    { key: "Pending", label: t("orders.status.pending") ?? "Pending" },
-    { key: "Accepted", label: t("orders.status.accepted") ?? "Accepted" },
-    {
-      key: "On Preparation",
-      label: t("orders.status.on_preparation") ?? "On Preparation",
-    },
-    {
-      key: "Pickup",
-      label: t("orders.status.pickup") ?? "Pickup",
-      showSub: true,
-    },
-    {
-      key: "On Delivery",
-      label: t("orders.status.on_delivery") ?? "On Delivery",
-    },
-    {
-      key: "Received",
-      label: t("orders.status.received") ?? "Received",
-      showSub: true,
-    },
-    {
-      key: "On Review",
-      label: t("orders.status.on_review") ?? "On Review",
-      showSub: true,
-    },
-    { key: "Done", label: t("orders.status.done") ?? "Done" },
-  ];
-
-  const activeIdx = Math.max(
-    0,
-    steps.findIndex((s) => s.key === current)
-  );
-
-  return (
-    <div className="mb-4 overflow-x-auto">
-      <div className="min-w-[720px]">
-        <div className="flex items-start">
-          {steps.map((s, i) => {
-            const isActive = i === activeIdx;
-            const isCompleted = i < activeIdx;
-            const m = meta?.[s.key];
-
-            return (
-              <div key={s.key} className="flex-1">
-                {/* dot + dashed connector */}
-                <div className="flex items-center">
-                  <div className="relative flex h-8 w-8 items-center justify-center">
-                    {i === 0 && isActive ? (
-                      <div className="text-green-700">
-                        <TruckIcon className="h-6 w-6" />
-                      </div>
-                    ) : (
-                      <div
-                        className={[
-                          "h-4 w-4 rounded-full border",
-                          isActive
-                            ? "bg-green-600 border-green-600"
-                            : isCompleted
-                            ? "bg-green-500 border-green-500"
-                            : "bg-gray-300 border-gray-300",
-                        ].join(" ")}
-                      />
-                    )}
-                  </div>
-                  {i < steps.length - 1 && (
-                    <div className="mx-3 h-px flex-1 border-t border-dashed border-gray-300" />
-                  )}
-                </div>
-
-                {/* labels */}
-                <div className="mt-2 text-center">
-                  <div
-                    className={[
-                      "text-xs font-medium",
-                      isActive ? "text-gray-900" : "text-gray-600",
-                    ].join(" ")}
-                  >
-                    {s.label}
-                  </div>
-
-                  {s.showSub && (
-                    <div className="mt-1 space-y-1 text-[11px] leading-4">
-                      <div>
-                        <span className="text-gray-600">
-                          {t("orders.status.arrive") ?? "Tiba"} :
-                        </span>{" "}
-                        <span className="text-gray-500">
-                          {m?.arrive ?? "-"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-green-700">
-                          {t("orders.status.depart") ?? "Keluar"} :
-                        </span>{" "}
-                        <span className="text-gray-500">
-                          {m?.depart ?? "-"}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -1108,6 +984,8 @@ export default function OrdersCreateForm({
     >
       {/* === Status Tracker (dinamis) === */}
       <StatusTracker
+        className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-200 shadow-sm"
+        i18nReady={i18nReady}
         current={statusCurrent ?? "Pending"}
         meta={{
           Pickup: { arrive: "-", depart: "-" },

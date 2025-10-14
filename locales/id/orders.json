@@ -46,6 +46,8 @@
         "search": {
             "placeholder": "cari..."
         },
+        "search_moda": "Jenis armada...",
+        "search_order_type": "Jenis order...",
         "pic_muat_name": "PIC Muat",
         "pic_muat_phone": "PIC Muat Telepon",
         "pic_bongkar_name": "PIC Bongkar",

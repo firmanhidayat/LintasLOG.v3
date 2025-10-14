@@ -66,7 +66,7 @@ export default function Header({
             </button>
           </div>
 
-          <div className="flex flex-1 justify-center">
+          {/* <div className="flex flex-1 justify-center">
             <form
               role="search"
               className="relative hidden w-full max-w-md md:block"
@@ -78,14 +78,14 @@ export default function Header({
                 className="h-9 w-full rounded-full border border-gray-300 bg-white pl-9 pr-3 text-sm text-black outline-none focus:ring-2 focus:ring-primary/40"
               />
             </form>
-          </div>
+          </div> */}
 
           <div className="ml-auto flex items-center gap-1">
             <div className="mr-1">
               <LangToggle />
             </div>
 
-            <button
+            {/* <button
               type="button"
               className={`md:hidden ${ICON_BTN}`}
               aria-label="Open search"
@@ -93,7 +93,7 @@ export default function Header({
               onClick={() => setSearchOpen(true)}
             >
               <SearchIcon className="h-4 w-4" />
-            </button>
+            </button> */}
 
             <button
               type="button"
@@ -163,7 +163,7 @@ export default function Header({
         </div>
       </header>
 
-      <div
+      {/* <div
         className={`fixed inset-0 z-50 md:hidden ${
           searchOpen ? "pointer-events-auto" : "pointer-events-none"
         }`}
@@ -205,7 +205,7 @@ export default function Header({
             </form>
           </div>
         </div>
-      </div>
+      </div> */}
     </>
   );
 }
