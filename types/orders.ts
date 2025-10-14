@@ -8,6 +8,22 @@ export interface AddressItem {
   name: string;
 }
 
+export type OrderTypeItem = {
+  id: string | number;
+  name: string;
+  code?: string;
+};
+
+export type ModaItem = {
+  id: string | number;
+  name: string;
+  code?: string;
+};
+export type PartnerItem = {
+  id: number | string;
+  name: string;
+};
+
 export type OrderStatus =
   | "Pending"
   | "Accepted"
@@ -20,7 +36,7 @@ export type OrderStatus =
 
 export type OrderRow = {
   id: number | string;
-  jo_no?: string;
+  name?: string;
   pickup_date_planne?: string;
   origin_city?: { id: number; name: string };
   drop_off_date_planne?: string;
@@ -30,10 +46,7 @@ export type OrderRow = {
   status: OrderStatus;
 };
 
-export type JenisOrder = "FTL" | "LTL" | "Project" | "Express";
 export type RoutePayload = {
-  // pic_name: string;
-  // pic_phone: string;
   is_main_route: boolean;
   origin_address_id: number;
   origin_pic_name: string;
@@ -41,15 +54,17 @@ export type RoutePayload = {
   dest_address_id: number;
   dest_pic_name: string;
   dest_pic_phone: string;
+  etd_date: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
+  eta_date: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
 };
 export type ApiPayload = {
   receipt_by: string;
   origin_city_id: number;
   dest_city_id: number;
-  order_type: JenisOrder;
+  order_type: string;
   moda: string;
-  pickup_date_planne: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
-  drop_off_date_planne: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
+  // pickup_date_planne: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
+  // drop_off_date_planne: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
   route_ids: RoutePayload[];
 };
 export type Error422 = {
@@ -65,14 +80,14 @@ export interface CreateOrderPayload {
   receipt_by?: string;
   origin_city_id: number | string;
   dest_city_id: number | string;
-  order_type: JenisOrder;
-  moda: string;
+  order_type_id: OrderTypeItem;
+  moda_id: ModaItem;
 
-  // Lokasi Muat/Bongkar
-  pickup_date_planne: string;
-  drop_off_date_planne: string;
+  etd_date: string;
+  eta_date: string;
 
   multi_pickdrop: boolean;
+  // Lokasi Muat/Bongkar
   lokasi_muat_id?: number | string;
   lokasi_bongkar_id?: number | string;
 
@@ -82,7 +97,6 @@ export interface CreateOrderPayload {
 
   // Informasi Muatan
   muatan_nama: string;
-  // muatan_jenis: string;
   muatan_deskripsi: string;
 
   // Dokumen
@@ -91,3 +105,49 @@ export interface CreateOrderPayload {
 
   profile_timezone?: string;
 }
+
+/** EDIT FORM */
+/** ===================== Props & Helpers (Reusable) ===================== */
+export type OrdersCreateFormProps = {
+  mode?: "create" | "edit";
+  orderId?: string | number;
+  /** Jika tersedia, form akan prefill dari sini (override fetch) */
+  initialData?: Partial<{
+    id: number | string;
+    name: string; // NO JO
+    partner: PartnerItem;
+    receipt_by: string;
+    origin_city_id: number;
+    dest_city_id: number;
+    order_type_id: OrderTypeItem;
+    moda_id: ModaItem;
+    pickup_date_planne: string; // "YYYY-MM-DD HH:mm:ss" or ISO
+    drop_off_date_planne: string; // same format
+    origin_city?: CityItem;
+    dest_city?: CityItem;
+
+    // 🔥 Tambahan (top-level) untuk prefill alamat dari API
+    origin_address?: AddressItem;
+    dest_address?: AddressItem;
+
+    route_ids?: Array<{
+      is_main_route: boolean;
+      origin_address_id: number;
+      origin_pic_name?: string;
+      origin_pic_phone?: string;
+      dest_address_id: number;
+      dest_pic_name?: string;
+      dest_pic_phone?: string;
+
+      // 🔥 Tambahan (per-route) untuk prefill alamat dari API
+      origin_address?: AddressItem;
+      dest_address?: AddressItem;
+
+      etd_date?: string;
+      eta_date?: string;
+    }>;
+    status?: OrderStatus;
+  }>;
+  /** Callback opsional setelah sukses submit */
+  onSuccess?: (result?: unknown) => void;
+};

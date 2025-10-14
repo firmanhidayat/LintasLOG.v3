@@ -49,9 +49,9 @@ export default function OrdersListPage() {
         id: "jo_no",
         label: t("orders.columns.joNo") || "No. JO",
         sortable: true,
-        sortValue: (r) => r.jo_no ?? "",
+        sortValue: (r) => r.name ?? "",
         className: "w-40",
-        cell: (r) => <div className="font-medium text-gray-900">{r.jo_no}</div>,
+        cell: (r) => <div className="font-medium text-gray-900">{r.name}</div>,
       },
       {
         id: "pickup_date",
@@ -146,7 +146,7 @@ export default function OrdersListPage() {
                 onClick={() => {
                   // ListTemplate kini menangani event ini & membuka modal konfirmasi
                   const evt = new CustomEvent("llog.openDeleteConfirm", {
-                    detail: { id: it.id, name: it.jo_no },
+                    detail: { id: it.id, name: it.name },
                   });
                   window.dispatchEvent(evt);
                 }}

@@ -2,18 +2,18 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { t, getLang, onLangChange } from "@/lib/i18n";
+import { t, getLang, onLangChange, type Lang } from "@/lib/i18n";
 import { goSignIn } from "@/lib/goSignIn";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { FieldText } from "@/components/form/FieldText";
 import { FieldTextarea } from "@/components/form/FieldTextarea";
-import OrderInfoCard from "@/components/forms/orders/OrderInfoCard";
-import LocationInfoCard from "@/components/forms/orders/LocationInfoCard";
-import SpecialServicesCard from "@/components/forms/orders/SpecialServicesCard";
-import CargoInfoCard from "@/components/forms/orders/CargoInfoCard";
-import CostDetailsCard from "@/components/forms/orders/CostDetailsCard";
-import ShippingDocumentsCard from "@/components/forms/orders/ShippingDocumentsCard";
+import { FieldSelect } from "@/components/form/FieldSelect";
+import CityAutocomplete from "@/components/forms/orders/CityAutocomplete";
+import AddressAutocomplete from "@/components/forms/orders/AddressAutocomplete";
+import DateTimePickerTW from "@/components/form/DateTimePickerTW";
+import MultiFileUpload from "@/components/form/MultiFileUpload";
 import { TruckIcon } from "@/components/icons/Icon";
 
 import { tzDateToUtcISO } from "@/lib/tz";
@@ -21,24 +21,17 @@ import { useAuth } from "@/components/providers/AuthProvider";
 
 import type {
   AddressItem,
-  OrderTypeItem,
-  ModaItem,
+  JenisOrder,
   ApiPayload,
+  Error422,
   OrderStatus,
   CityItem,
-  OrdersCreateFormProps,
-  PartnerItem,
 } from "@/types/orders";
 
 // === parsing bantuan untuk prefill dari API ===
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 dayjs.extend(customParseFormat);
-import {
-  apiToLocalIsoMinute,
-  buildDetailUrl,
-  pathJoin,
-} from "@/components/shared/Helper";
 
 /** ENV */
 const POST_ORDER_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL!;
@@ -46,6 +39,39 @@ const POST_CHAT_URL = process.env.NEXT_PUBLIC_TMS_ORDER_CHAT_URL ?? "";
 const DETAIL_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const UPDATE_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const APP_BASE_PATH = process.env.NEXT_PUBLIC_URL_BASE ?? "";
+
+/** Join path aman dari double slash */
+function pathJoin(...parts: Array<string | undefined | null>): string {
+  const cleaned = parts
+    .filter((p): p is string => !!p)
+    .map((p) => p.replace(/\/+$/g, "").replace(/^\/+/g, "/"));
+  let joined = cleaned.join("/");
+  joined = joined.replace(/\/{2,}/g, "/");
+  if (!joined.startsWith("/")) joined = `/${joined}`;
+  return joined === "" ? "/" : joined;
+}
+
+/** Build URL detail yang fleksibel:
+ * - support template :id
+ * - support base + /{id}
+ * - support querystring ?id=...
+ */
+function buildDetailUrl(tpl: string, id: string | number | undefined): string {
+  if (!tpl || id == null) return "";
+  const sid = String(id);
+  if (tpl.includes(":id")) return tpl.replace(":id", sid);
+
+  if (tpl.includes("?")) {
+    // Tambal / override id di querystring
+    const [base, qs = ""] = tpl.split("?");
+    const usp = new URLSearchParams(qs);
+    usp.set("id", sid);
+    return `${base}?${usp}`;
+  }
+
+  // default: base/{id}
+  return `${tpl.replace(/\/$/, "")}/${sid}`;
+}
 
 /* === Optional metadata untuk Tiba/Keluar per step === */
 type StatusMeta = Partial<
@@ -62,9 +88,32 @@ type ExtraStop = {
   /** PIC di destination (lokasi bongkar) */
   destPicName: string;
   destPicPhone: string;
-  tglETDMuat: string;
-  tglETABongkar: string;
 };
+
+/** Helper: isi date-time picker dari string API → "YYYY-MM-DDTHH:mm" (local) */
+function apiToLocalIsoMinute(
+  s: string | null | undefined,
+  fallbackTime = "08:00"
+): string {
+  if (!s) return "";
+  const candidates = [
+    "YYYY-MM-DD HH:mm:ss",
+    "YYYY-MM-DDTHH:mm:ssZ",
+    "YYYY-MM-DDTHH:mm:ss",
+    "YYYY-MM-DDTHH:mm",
+    "YYYY-MM-DD",
+  ];
+  for (const fmt of candidates) {
+    const d = dayjs(s, fmt, true);
+    if (d.isValid()) {
+      const datePart = d.format("YYYY-MM-DD");
+      const hasTime = fmt !== "YYYY-MM-DD";
+      const timePart = hasTime ? d.format("HH:mm") : fallbackTime;
+      return `${datePart}T${timePart}`;
+    }
+  }
+  return "";
+}
 
 /* === Lightweight Modal/Dialog === */
 function Modal({
@@ -285,6 +334,47 @@ function StatusTracker({
   );
 }
 
+/** ===================== Props & Helpers (Reusable) ===================== */
+type OrdersCreateFormProps = {
+  mode?: "create" | "edit";
+  /** Digunakan di edit mode untuk fetch detail otomatis jika initialData tidak diberikan */
+  orderId?: string | number;
+  /** Jika tersedia, form akan prefill dari sini (override fetch) */
+  initialData?: Partial<{
+    id: number | string;
+    receipt_by: string;
+    origin_city_id: number;
+    dest_city_id: number;
+    order_type: JenisOrder;
+    moda: string;
+    pickup_date_planne: string; // "YYYY-MM-DD HH:mm:ss" or ISO
+    drop_off_date_planne: string; // same format
+    origin_city?: CityItem;
+    dest_city?: CityItem;
+
+    // 🔥 Tambahan (top-level) untuk prefill alamat dari API
+    origin_address?: AddressItem;
+    dest_address?: AddressItem;
+
+    route_ids?: Array<{
+      is_main_route: boolean;
+      origin_address_id: number;
+      origin_pic_name?: string;
+      origin_pic_phone?: string;
+      dest_address_id: number;
+      dest_pic_name?: string;
+      dest_pic_phone?: string;
+
+      // 🔥 Tambahan (per-route) untuk prefill alamat dari API
+      origin_address?: AddressItem;
+      dest_address?: AddressItem;
+    }>;
+    status?: OrderStatus;
+  }>;
+  /** Callback opsional setelah sukses submit */
+  onSuccess?: (result?: unknown) => void;
+};
+
 function fillUrlTemplate(tpl: string, id?: string | number): string {
   if (!tpl) return "";
   if (tpl.includes(":id")) return tpl.replace(":id", String(id ?? ""));
@@ -313,26 +403,10 @@ function addrFromRoute(
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>
 ) {
-  type Maybe<T> = T | null | undefined;
-
-  const toOrderTypeItem = (
-    v: Maybe<string | OrderTypeItem>
-  ): OrderTypeItem | null => {
-    if (!v) return null;
-    return typeof v === "string" ? { id: v, name: v, code: v } : v;
-  };
-
-  const toModaItem = (v: Maybe<string | ModaItem>): ModaItem | null => {
-    if (!v) return null;
-    return typeof v === "string" ? { id: v, name: v, code: v } : v;
-  };
-
   const form = {
-    noJo: data.name ?? "",
-    customer: (data.partner as PartnerItem)?.name ?? "",
     namaPenerima: data.receipt_by ?? "",
-    jenisOrder: toOrderTypeItem(data.order_type_id) ?? "",
-    armada: toModaItem(data.moda_id) ?? "",
+    jenisOrder: (data.order_type ?? "") as JenisOrder | "",
+    armada: data.moda ?? "",
     kotaMuat:
       data.origin_city ??
       (data.origin_city_id ? ({ id: data.origin_city_id } as CityItem) : null),
@@ -380,49 +454,16 @@ function prefillFromInitial(
       originPicPhone: r.origin_pic_phone ?? "",
       destPicName: r.dest_pic_name ?? "",
       destPicPhone: r.dest_pic_phone ?? "",
-      tglETDMuat: r.etd_date ?? "", // belum ada dari API → kosong
-      tglETABongkar: r.eta_date ?? "", // belum ada dari API → kosong
     })
   );
 
   return form;
 }
 
-function extractCreatedId(json: unknown): string | number | undefined {
-  if (json && typeof json === "object") {
-    const o = json as Record<string, unknown>;
-
-    const direct = o["id"];
-    if (typeof direct === "string" || typeof direct === "number") return direct;
-
-    const data = o["data"];
-    if (data && typeof data === "object") {
-      const did = (data as Record<string, unknown>)["id"];
-      if (typeof did === "string" || typeof did === "number") return did;
-    }
-
-    const result = o["result"];
-    if (result && typeof result === "object") {
-      const rid = (result as Record<string, unknown>)["id"];
-      if (typeof rid === "string" || typeof rid === "number") return rid;
-    }
-  }
-  return undefined;
-}
-
-type ApiErrorItem = string | { msg?: string } | Record<string, unknown>;
-type ApiErrorBody = {
-  message?: string;
-  error?: string;
-  errors?: ApiErrorItem[];
-  detail?: ApiErrorItem[];
-};
-
-function itemToMsg(it: ApiErrorItem): string | null {
-  if (typeof it === "string") return it;
-  if (it && typeof it === "object" && "msg" in it) {
-    const v = (it as { msg?: unknown }).msg;
-    if (typeof v === "string") return v;
+function extractMsg(x: unknown): string | null {
+  if (x && typeof x === "object") {
+    const v = (x as Record<string, unknown>)["msg"];
+    return typeof v === "string" ? v : null;
   }
   return null;
 }
@@ -444,14 +485,13 @@ export default function OrdersCreateForm({
 
   const { profile } = useAuth();
 
-  // i18n// i18n
+  // i18n
   const { ready: i18nReady } = useI18nReady();
-  // pakai reducer utk trigger re-render tanpa state variabel yang unused
-  const forceRerender = React.useReducer((x: number) => x + 1, 0)[1];
+  const [activeLang, setActiveLang] = useState<Lang>(getLang());
   useEffect(() => {
-    const off = onLangChange(() => forceRerender());
+    const off = onLangChange((lang) => setActiveLang(lang));
     return () => off?.();
-  }, [forceRerender]);
+  }, []);
 
   const profileTimezone =
     (profile as { tz?: string } | undefined)?.tz || "Asia/Jakarta";
@@ -464,9 +504,8 @@ export default function OrdersCreateForm({
   const [kotaMuat, setKotaMuat] = useState<CityItem | null>(null);
   const [kotaBongkar, setKotaBongkar] = useState<CityItem | null>(null);
 
-  const [jenisOrder, setJenisOrder] = useState<OrderTypeItem | "">("");
-
-  const [armada, setArmada] = useState<ModaItem | "">("");
+  const [jenisOrder, setJenisOrder] = useState<JenisOrder | "">("");
+  const [armada, setArmada] = useState<string>("");
 
   // DateTime (ISO lokal "YYYY-MM-DDTHH:mm")
   const [tglMuat, setTglMuat] = useState<string>("");
@@ -491,8 +530,6 @@ export default function OrdersCreateForm({
       originPicPhone: "",
       destPicName: "",
       destPicPhone: "",
-      tglETDMuat: "", // ⬅️ baru
-      tglETABongkar: "", // ⬅️ baru
     },
     {
       lokMuat: null,
@@ -501,8 +538,6 @@ export default function OrdersCreateForm({
       originPicPhone: "",
       destPicName: "",
       destPicPhone: "",
-      tglETDMuat: "",
-      tglETABongkar: "",
     },
   ]);
 
@@ -602,8 +637,8 @@ export default function OrdersCreateForm({
     if (!initialData) return;
     const f = prefillFromInitial(initialData);
     setNamaPenerima(f.namaPenerima);
-    setJenisOrder(typeof f.jenisOrder === "string" ? "" : f.jenisOrder);
-    setArmada(typeof f.armada === "string" ? "" : f.armada);
+    setJenisOrder(f.jenisOrder);
+    setArmada(f.armada);
     // prefill langsung set kota (tanpa trigger handler reset)
     setKotaMuat(f.kotaMuat);
     setKotaBongkar(f.kotaBongkar);
@@ -654,8 +689,8 @@ export default function OrdersCreateForm({
         if (json) {
           const f = prefillFromInitial(json);
           setNamaPenerima(f.namaPenerima);
-          setJenisOrder(typeof f.jenisOrder === "string" ? "" : f.jenisOrder);
-          setArmada(typeof f.armada === "string" ? "" : f.armada);
+          setJenisOrder(f.jenisOrder);
+          setArmada(f.armada);
           setKotaMuat(f.kotaMuat);
           setKotaBongkar(f.kotaBongkar);
           setTglMuat(f.tglMuat);
@@ -688,13 +723,7 @@ export default function OrdersCreateForm({
 
     if (!kotaMuat) e.kotaMuat = REQ;
     if (!kotaBongkar) e.kotaBongkar = REQ;
-    // if (!jenisOrder) e.jenisOrder = REQ;
-    if (
-      !jenisOrder ||
-      (typeof jenisOrder === "object" && !jenisOrder.code && !jenisOrder.name)
-    ) {
-      e.jenisOrder = REQ;
-    }
+    if (!jenisOrder) e.jenisOrder = REQ;
     if (!armada) e.armada = REQ;
 
     if (!tglMuat) e.tglMuat = REQ;
@@ -755,10 +784,7 @@ export default function OrdersCreateForm({
 
   const canSubmit = useMemo(() => {
     return Boolean(
-      !!(
-        typeof jenisOrder === "object" &&
-        (jenisOrder.id || jenisOrder.name)
-      ) &&
+      jenisOrder &&
         armada &&
         kotaMuat?.id &&
         kotaBongkar?.id &&
@@ -786,16 +812,6 @@ export default function OrdersCreateForm({
   function buildApiPayload(): ApiPayload {
     const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 
-    const extractOrderType = (ot: OrderTypeItem | ""): string => {
-      if (!ot) return "";
-      return ot.code ?? String(ot.id) ?? ot.name;
-    };
-
-    const extractModa = (m: ModaItem | ""): string => {
-      if (!m) return "";
-      return m.code ?? String(m.id) ?? m.name;
-    };
-
     const toBackendDate = (localStr: string, tz: string): string => {
       if (!localStr) return "";
       const utcIso = tzDateToUtcISO(localStr, tz);
@@ -819,8 +835,6 @@ export default function OrdersCreateForm({
       dest_address_id: Number(lokBongkar?.id ?? 0),
       dest_pic_name: (picBongkarNama ?? "").trim(),
       dest_pic_phone: (picBongkarTelepon ?? "").trim(),
-      etd_date: toBackendDate(tglMuat, profileTimezone),
-      eta_date: toBackendDate(tglBongkar, profileTimezone),
     };
 
     const extraRoutes = multiPickupDrop
@@ -834,8 +848,6 @@ export default function OrdersCreateForm({
             dest_address_id: Number(s.lokBongkar?.id ?? 0),
             dest_pic_name: (s.destPicName ?? "").trim(),
             dest_pic_phone: (s.destPicPhone ?? "").trim(),
-            etd_date: toBackendDate(s.tglETDMuat ?? "", profileTimezone),
-            eta_date: toBackendDate(s.tglETABongkar ?? "", profileTimezone),
           }))
       : [];
 
@@ -843,8 +855,10 @@ export default function OrdersCreateForm({
       receipt_by: (namaPenerima ?? "").trim(),
       origin_city_id: Number(kotaMuat!.id),
       dest_city_id: Number(kotaBongkar!.id),
-      order_type: (jenisOrder as OrderTypeItem).id.toString(),
-      moda: (armada as ModaItem).id.toString(),
+      order_type: jenisOrder as JenisOrder,
+      moda: armada,
+      pickup_date_planne: toBackendDate(tglMuat, profileTimezone),
+      drop_off_date_planne: toBackendDate(tglBongkar, profileTimezone),
       route_ids: [mainRoute, ...extraRoutes],
       // // attachments: siapkan kolom untuk backend (nanti ganti dengan IDs)
       // attachments: {
@@ -916,7 +930,10 @@ export default function OrdersCreateForm({
           const ct = res.headers.get("content-type") || "";
           if (ct.includes("application/json")) {
             const json = await res.json();
-            createdId = extractCreatedId(json);
+            createdId =
+              (json as any)?.id ??
+              (json as any)?.data?.id ??
+              (json as any)?.result?.id;
           }
           if (!createdId) {
             const loc =
@@ -949,21 +966,24 @@ export default function OrdersCreateForm({
           const ct = res.headers.get("content-type") || "";
           if (ct.includes("application/json")) {
             const json = (await res.json()) as unknown;
-            const body = json as ApiErrorBody;
-
-            const details = body.detail;
+            const details = (json as Partial<Error422>)?.detail;
             if (Array.isArray(details)) {
               const list = details
-                .map(itemToMsg)
+                .map((d) => {
+                  const m = extractMsg(d);
+                  return m ? `• ${m}` : null;
+                })
                 .filter((x): x is string => Boolean(x))
-                .map((s) => `• ${s}`)
                 .join("\n");
               if (list) msg = list;
             } else {
-              const errorsList = Array.isArray(body.errors)
-                ? body.errors.map(itemToMsg).filter(Boolean).join(", ")
-                : "";
-              msg = body.message ?? (errorsList || body.error || msg);
+              msg =
+                (json as any)?.message ??
+                ((Array.isArray((json as any)?.errors)
+                  ? (json as any).errors.map((e: any) => e?.msg || e).join(", ")
+                  : "") ||
+                  (json as any)?.error ||
+                  msg);
             }
           } else {
             msg = await res.text();
@@ -1005,9 +1025,6 @@ export default function OrdersCreateForm({
       return;
     }
     const payload = buildApiPayload();
-
-    console.log(payload);
-
     void doSubmitToApi(payload);
   }
 
@@ -1051,8 +1068,8 @@ export default function OrdersCreateForm({
     }
   }
 
-  // const lokasiMuatDisabled = !kotaMuat;
-  // const lokasiBongkarDisabled = !kotaBongkar;
+  const lokasiMuatDisabled = !kotaMuat;
+  const lokasiBongkarDisabled = !kotaBongkar;
 
   /* =================== Chat state & handler (non-intrusive) ================== */
   const [chatMsg, setChatMsg] = useState("");
@@ -1121,94 +1138,596 @@ export default function OrdersCreateForm({
             {/* ===== Left Column ===== */}
             <div className="space-y-4">
               {/* Info Order */}
-              <OrderInfoCard
-                mode={mode}
-                noJO={noJO}
-                customer={customer}
-                namaPenerima={namaPenerima}
-                setNamaPenerima={setNamaPenerima}
-                jenisOrder={jenisOrder}
-                setJenisOrder={setJenisOrder}
-                armada={armada}
-                setArmada={setArmada}
-                kotaMuat={kotaMuat}
-                onChangeKotaMuat={handleChangeKotaMuat}
-                kotaBongkar={kotaBongkar}
-                onChangeKotaBongkar={handleChangeKotaBongkar}
-                errors={errors}
-                firstErrorKey={firstErrorKey}
-                firstErrorRef={firstErrorRef}
-              />
+              <Card>
+                <CardHeader>
+                  <h3 className="text-3xl font-semibold text-gray-800">
+                    {mode === "edit"
+                      ? t("orders.edit.info_order") ?? "Edit - Info Order"
+                      : t("orders.create.info_order")}
+                  </h3>
+                </CardHeader>
+                <CardBody>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FieldText
+                      label={t("orders.no_jo")}
+                      value={noJO || "-"}
+                      onChange={() => {}}
+                      disabled
+                    />
+                    <FieldText
+                      label={t("orders.customer")}
+                      value={customer || "-"}
+                      onChange={() => {}}
+                      disabled
+                    />
+
+                    <FieldText
+                      label={t("orders.nama_penerima")}
+                      value={namaPenerima}
+                      onChange={setNamaPenerima}
+                    />
+
+                    <div
+                      ref={
+                        firstErrorKey === "jenisOrder"
+                          ? firstErrorRef
+                          : undefined
+                      }
+                    >
+                      <FieldSelect
+                        label={t("orders.jenis_order")}
+                        value={jenisOrder as string}
+                        onChange={(val) =>
+                          setJenisOrder((val || "") as JenisOrder | "")
+                        }
+                        error={errors.jenisOrder}
+                        touched={Boolean(errors.jenisOrder)}
+                        placeholderOption={t("common.select")}
+                        options={[
+                          { value: "FTL", label: "FTL" },
+                          { value: "LTL", label: "LTL" },
+                          { value: "Project", label: "Project" },
+                          { value: "Express", label: "Express" },
+                        ]}
+                      />
+                    </div>
+
+                    {/* Pickup City (kiri) */}
+                    <div
+                      ref={
+                        firstErrorKey === "kotaMuat" ? firstErrorRef : undefined
+                      }
+                    >
+                      <CityAutocomplete
+                        label={t("orders.kota_muat")}
+                        value={kotaMuat}
+                        onChange={handleChangeKotaMuat}
+                        error={errors.kotaMuat}
+                      />
+                    </div>
+
+                    {/* Drop-off City (kanan) */}
+                    <div
+                      ref={
+                        firstErrorKey === "kotaBongkar"
+                          ? firstErrorRef
+                          : undefined
+                      }
+                    >
+                      <CityAutocomplete
+                        label={t("orders.kota_bongkar")}
+                        value={kotaBongkar}
+                        onChange={handleChangeKotaBongkar}
+                        error={errors.kotaBongkar}
+                      />
+                    </div>
+
+                    <div
+                      ref={
+                        firstErrorKey === "armada" ? firstErrorRef : undefined
+                      }
+                    >
+                      <FieldSelect
+                        label={t("orders.armada")}
+                        value={armada}
+                        onChange={(val) => setArmada(val)}
+                        error={errors.armada}
+                        touched={Boolean(errors.armada)}
+                        placeholderOption={t("common.select")}
+                        options={[
+                          { value: "CDE", label: "CDE" },
+                          { value: "CDD", label: "CDD" },
+                          { value: "Fuso", label: "Fuso" },
+                          { value: "Trailer", label: "Trailer" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
 
               {/* Info Lokasi */}
-              <LocationInfoCard
-                tglMuat={tglMuat}
-                setTglMuat={setTglMuat}
-                tglBongkar={tglBongkar}
-                setTglBongkar={setTglBongkar}
-                kotaMuat={kotaMuat}
-                kotaBongkar={kotaBongkar}
-                lokMuat={lokMuat}
-                setLokMuat={setLokMuat}
-                lokBongkar={lokBongkar}
-                setLokBongkar={setLokBongkar}
-                // ⬇️ Tambahkan 8 props PIC berikut
-                picMuatNama={picMuatNama}
-                setPicMuatNama={setPicMuatNama}
-                picMuatTelepon={picMuatTelepon}
-                setPicMuatTelepon={setPicMuatTelepon}
-                picBongkarNama={picBongkarNama}
-                setPicBongkarNama={setPicBongkarNama}
-                picBongkarTelepon={picBongkarTelepon}
-                setPicBongkarTelepon={setPicBongkarTelepon}
-                multiPickupDrop={multiPickupDrop}
-                setMultiPickupDrop={setMultiPickupDrop}
-                extraStops={extraStops}
-                setExtraStops={setExtraStops}
-                errors={errors}
-                firstErrorKey={firstErrorKey}
-                firstErrorRef={firstErrorRef}
-                extraRefs={extraRefs}
-              />
+              <Card>
+                <CardHeader>
+                  <h3 className="text-3xl font-semibold text-gray-800">
+                    {t("orders.info_lokasi")}
+                  </h3>
+                </CardHeader>
+                <CardBody>
+                  {/* === 2-KOLOM: MUAT (kiri) & BONGKAR (kanan) === */}
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    {/* === KOLOM 1: tgl_muat, lokasi_muat, PIC muat === */}
+                    <div className="space-y-4">
+                      {/* Tanggal & Waktu Muat */}
+                      <div
+                        ref={
+                          firstErrorKey === "tglMuat"
+                            ? firstErrorRef
+                            : undefined
+                        }
+                      >
+                        <DateTimePickerTW
+                          label={t("orders.tgl_muat")}
+                          value={tglMuat}
+                          onChange={setTglMuat}
+                          error={errors.tglMuat}
+                          touched={Boolean(errors.tglMuat)}
+                          displayFormat="DD-MM-YYYY"
+                          // displayFormat="DD-MM-YYYY HH:mm"
+                        />
+                      </div>
 
+                      {/* Lokasi Muat */}
+                      <div
+                        ref={
+                          firstErrorKey === "lokMuat"
+                            ? firstErrorRef
+                            : undefined
+                        }
+                      >
+                        <AddressAutocomplete
+                          label={t("orders.lokasi_muat")}
+                          cityId={kotaMuat?.id ?? null}
+                          value={lokMuat}
+                          onChange={setLokMuat}
+                          disabled={!!lokasiMuatDisabled}
+                        />
+                        {errors.lokMuat && (
+                          <div className="mt-1 text-xs text-red-600">
+                            {errors.lokMuat}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* PIC Muat: Nama */}
+                      <div>
+                        <FieldText
+                          label={t("orders.pic_muat_name") ?? "PIC Muat - Nama"}
+                          value={picMuatNama}
+                          onChange={setPicMuatNama}
+                        />
+                      </div>
+
+                      {/* PIC Muat: Telepon */}
+                      <div>
+                        <FieldText
+                          label={
+                            t("orders.pic_muat_phone") ?? "PIC Muat - Telepon"
+                          }
+                          value={picMuatTelepon}
+                          onChange={setPicMuatTelepon}
+                          inputMode="tel"
+                          pattern="^[0-9+() -]*$"
+                        />
+                      </div>
+                    </div>
+
+                    {/* === KOLOM 2: tgl_bongkar, lokasi_bongkar, PIC bongkar === */}
+                    <div className="space-y-4">
+                      {/* Tanggal & Waktu Bongkar */}
+                      <div
+                        ref={
+                          firstErrorKey === "tglBongkar"
+                            ? firstErrorRef
+                            : undefined
+                        }
+                      >
+                        <DateTimePickerTW
+                          label={t("orders.tgl_bongkar")}
+                          value={tglBongkar}
+                          onChange={setTglBongkar}
+                          error={errors.tglBongkar}
+                          touched={Boolean(errors.tglBongkar)}
+                          displayFormat="DD-MM-YYYY"
+                          // displayFormat="DD-MM-YYYY HH:mm"
+                        />
+                      </div>
+
+                      {/* Lokasi Bongkar */}
+                      <div
+                        ref={
+                          firstErrorKey === "lokBongkar"
+                            ? firstErrorRef
+                            : undefined
+                        }
+                      >
+                        <AddressAutocomplete
+                          label={t("orders.lokasi_bongkar")}
+                          cityId={kotaBongkar?.id ?? null}
+                          value={lokBongkar}
+                          onChange={setLokBongkar}
+                          disabled={!!lokasiBongkarDisabled}
+                        />
+                        {errors.lokBongkar && (
+                          <div className="mt-1 text-xs text-red-600">
+                            {errors.lokBongkar}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* PIC Bongkar: Nama */}
+                      <div>
+                        <FieldText
+                          label={
+                            t("orders.pic_bongkar_name") ?? "PIC Bongkar - Nama"
+                          }
+                          value={picBongkarNama}
+                          onChange={setPicBongkarNama}
+                        />
+                      </div>
+
+                      {/* PIC Bongkar: Telepon */}
+                      <div>
+                        <FieldText
+                          label={
+                            t("orders.pic_bongkar_phone") ??
+                            "PIC Bongkar - Telepon"
+                          }
+                          value={picBongkarTelepon}
+                          onChange={setPicBongkarTelepon}
+                          inputMode="tel"
+                          pattern="^[0-9+() -]*$"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ====== Multi Pickup/Drop + ExtraStop ====== */}
+                  <div className="mt-6 space-y-3">
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300"
+                        checked={multiPickupDrop}
+                        onChange={(e) => setMultiPickupDrop(e.target.checked)}
+                      />
+                      <span>
+                        {t("orders.multi_pickdrop") ?? "Multi Pickup/Drop"}
+                      </span>
+                    </label>
+
+                    {multiPickupDrop && (
+                      <div className="space-y-4">
+                        {extraStops.map((s, idx) => (
+                          <div
+                            key={idx}
+                            ref={(el) => {
+                              if (el) extraRefs.current[idx] = el;
+                            }}
+                            className="rounded-xl border border-gray-200 p-3"
+                          >
+                            <div className="mb-2 text-sm font-semibold">
+                              {t("orders.set_ke") ?? "Set ke"} {idx + 1}
+                            </div>
+
+                            {errors[`extra_${idx}`] && (
+                              <div className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                                {errors[`extra_${idx}`]}
+                              </div>
+                            )}
+
+                            {/* Alamat */}
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                              <AddressAutocomplete
+                                label={
+                                  (t("orders.lokasi_muat") ?? "Lokasi Muat") +
+                                  ` (${idx + 1})`
+                                }
+                                cityId={kotaMuat?.id ?? null}
+                                value={s.lokMuat}
+                                onChange={(v) =>
+                                  setExtraStops((prev) => {
+                                    const next = [...prev];
+                                    next[idx] = { ...next[idx], lokMuat: v };
+                                    return next;
+                                  })
+                                }
+                                disabled={!!lokasiMuatDisabled}
+                              />
+                              <AddressAutocomplete
+                                label={
+                                  (t("orders.lokasi_bongkar") ??
+                                    "Lokasi Bongkar") + ` (${idx + 1})`
+                                }
+                                cityId={kotaBongkar?.id ?? null}
+                                value={s.lokBongkar}
+                                onChange={(v) =>
+                                  setExtraStops((prev) => {
+                                    const next = [...prev];
+                                    next[idx] = { ...next[idx], lokBongkar: v };
+                                    return next;
+                                  })
+                                }
+                                disabled={!!lokasiBongkarDisabled}
+                              />
+                            </div>
+
+                            {/* PIC ORIGIN (MUAT) */}
+                            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                              <FieldText
+                                label={
+                                  (t("orders.pic_muat_name") ??
+                                    "PIC Muat - Nama") + ` (${idx + 1})`
+                                }
+                                value={s.originPicName}
+                                onChange={(v) =>
+                                  setExtraStops((prev) => {
+                                    const next = [...prev];
+                                    next[idx] = {
+                                      ...next[idx],
+                                      originPicName: v,
+                                    };
+                                    return next;
+                                  })
+                                }
+                              />
+                              <FieldText
+                                label={
+                                  (t("orders.pic_bongkar_name") ??
+                                    "PIC Bongkar - Nama") + ` (${idx + 1})`
+                                }
+                                value={s.destPicName}
+                                onChange={(v) =>
+                                  setExtraStops((prev) => {
+                                    const next = [...prev];
+                                    next[idx] = {
+                                      ...next[idx],
+                                      destPicName: v,
+                                    };
+                                    return next;
+                                  })
+                                }
+                              />
+                            </div>
+
+                            {/* PIC DESTINATION (BONGKAR) */}
+                            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                              <FieldText
+                                label={
+                                  (t("orders.pic_muat_phone") ??
+                                    "PIC Muat - Telepon") + ` (${idx + 1})`
+                                }
+                                value={s.originPicPhone}
+                                onChange={(v) =>
+                                  setExtraStops((prev) => {
+                                    const next = [...prev];
+                                    next[idx] = {
+                                      ...next[idx],
+                                      originPicPhone: v,
+                                    };
+                                    return next;
+                                  })
+                                }
+                                inputMode="tel"
+                                pattern="^[0-9+() -]*$"
+                              />
+                              <FieldText
+                                label={
+                                  (t("orders.pic_bongkar_phone") ??
+                                    "PIC Bongkar - Telepon") + ` (${idx + 1})`
+                                }
+                                value={s.destPicPhone}
+                                onChange={(v) =>
+                                  setExtraStops((prev) => {
+                                    const next = [...prev];
+                                    next[idx] = {
+                                      ...next[idx],
+                                      destPicPhone: v,
+                                    };
+                                    return next;
+                                  })
+                                }
+                                inputMode="tel"
+                                pattern="^[0-9+() -]*$"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
               {/* Layanan Khusus */}
-              <SpecialServicesCard
-                layananPreset={layananPreset}
-                layananKhusus={layananKhusus}
-                setLayananKhusus={setLayananKhusus}
-                layananLainnya={layananLainnya}
-                setLayananLainnya={setLayananLainnya}
-              />
+              <Card>
+                <CardHeader>
+                  <h3 className="text-3xl font-semibold text-gray-800">
+                    {t("orders.layanan_khusus")}
+                  </h3>
+                </CardHeader>
+                <CardBody>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {layananPreset.map((k) => (
+                      <label
+                        key={k}
+                        className="inline-flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300"
+                          checked={!!layananKhusus[k]}
+                          onChange={(e) =>
+                            setLayananKhusus((prev) => ({
+                              ...prev,
+                              [k]: e.target.checked,
+                            }))
+                          }
+                        />
+                        {k}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-4">
+                    <FieldTextarea
+                      label={t("orders.layanan_lainnya")}
+                      value={layananLainnya}
+                      onChange={setLayananLainnya}
+                      rows={4}
+                    />
+                  </div>
+                </CardBody>
+              </Card>
             </div>
 
             {/* ===== Right Column ===== */}
             <div className="space-y-4">
               {/* Info Muatan */}
-              <CargoInfoCard
-                muatanNama={muatanNama}
-                setMuatanNama={setMuatanNama}
-                muatanDeskripsi={muatanDeskripsi}
-                setMuatanDeskripsi={setMuatanDeskripsi}
-                errors={errors}
-                firstErrorKey={firstErrorKey}
-                firstErrorRef={firstErrorRef}
-              />
+              <Card>
+                <CardHeader>
+                  <h3 className="text-3xl font-semibold text-gray-800">
+                    {t("orders.info_muatan")}
+                  </h3>
+                </CardHeader>
+                <CardBody>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div
+                      ref={
+                        firstErrorKey === "muatanNama"
+                          ? firstErrorRef
+                          : undefined
+                      }
+                    >
+                      <FieldText
+                        label={t("orders.muatan_nama")}
+                        value={muatanNama}
+                        onChange={setMuatanNama}
+                        error={errors.muatanNama}
+                        touched={Boolean(errors.muatanNama)}
+                      />
+                    </div>
+
+                    <div
+                      ref={
+                        firstErrorKey === "muatanDeskripsi"
+                          ? firstErrorRef
+                          : undefined
+                      }
+                    >
+                      <FieldTextarea
+                        label={t("orders.muatan_deskripsi")}
+                        value={muatanDeskripsi}
+                        error={errors.muatanDeskripsi}
+                        onChange={setMuatanDeskripsi}
+                        rows={4}
+                      />
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
 
               {/* Detail Amount */}
-              <CostDetailsCard
-                biayaKirimLabel={biayaKirimLabel}
-                biayaLayananTambahanLabel={biayaLayananTambahanLabel}
-                taxLabel={taxLabel}
-                totalHargaLabel={totalHargaLabel}
-              />
+              <Card>
+                <CardHeader>
+                  <h3 className="text-3xl font-semibold text-gray-800">
+                    {t("orders.detail_amount")}
+                  </h3>
+                </CardHeader>
+                <CardBody>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span>{t("orders.biaya_kirim")}</span>
+                      <span className="font-medium">{biayaKirimLabel}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>{t("orders.biaya_layanan_tambahan")}</span>
+                      <span className="font-medium">
+                        {biayaLayananTambahanLabel}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>{t("orders.tax")}</span>
+                      <span className="font-medium">{taxLabel}</span>
+                    </div>
+                    <div className="flex items-start justify-between">
+                      <span>{t("orders.biaya_na")}</span>
+                      <span className="max-w-[60%] text-right text-gray-600">
+                        {t("orders.biaya_na_note")}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">
+                        {t("orders.total_harga")}
+                      </span>
+                      <span className="font-semibold">{totalHargaLabel}</span>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
 
               {/* Dokumen Pengiriman */}
-              <ShippingDocumentsCard
-                dokumenFiles={dokumenFiles}
-                setDokumenFiles={setDokumenFiles}
-                sjPodFiles={sjPodFiles}
-                setSjPodFiles={setSjPodFiles}
-              />
+              <Card>
+                <CardHeader>
+                  <h3 className="text-3xl font-semibold text-gray-800">
+                    {t("orders.dok_pengiriman")}
+                  </h3>
+                </CardHeader>
+                <CardBody>
+                  <MultiFileUpload
+                    label={t("orders.lampiran_dokumen")}
+                    value={dokumenFiles}
+                    onChange={setDokumenFiles}
+                    accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
+                    maxFileSizeMB={10}
+                    maxFiles={10}
+                    hint={
+                      t("orders.upload_hint_10mb") ??
+                      "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
+                    }
+                    onReject={(msgs) =>
+                      console.warn("[Dokumen] rejected:", msgs)
+                    }
+                    className="grid grid-cols-1 gap-4"
+                  />
+                </CardBody>
+              </Card>
+
+              {/* SJ & POD */}
+              <Card>
+                <CardHeader>
+                  <h3 className="text-3xl font-semibold text-gray-800">
+                    {t("orders.sj_pod")}
+                  </h3>
+                </CardHeader>
+                <CardBody>
+                  <MultiFileUpload
+                    label={t("orders.lampiran_sj_pod")}
+                    value={sjPodFiles}
+                    onChange={setSjPodFiles}
+                    accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
+                    maxFileSizeMB={10}
+                    maxFiles={10}
+                    hint={
+                      t("orders.upload_hint_10mb") ??
+                      "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
+                    }
+                    onReject={(msgs) =>
+                      console.warn("[SJ/POD] rejected:", msgs)
+                    }
+                    className="grid grid-cols-1 gap-4"
+                    showImagePreview
+                  />
+                </CardBody>
+              </Card>
             </div>
 
             {/* === Button Submit and Discard === */}
@@ -1287,15 +1806,11 @@ export default function OrdersCreateForm({
           if (respIsSuccess) {
             if (onSuccess) onSuccess();
             else if (lastCreatedId) {
-              const idStr = String(lastCreatedId ?? "");
-              router.push(
-                idStr
-                  ? safeJoin(
-                      APP_BASE_PATH,
-                      `/orders/details/?id=${encodeURIComponent(idStr)}`
-                    )
-                  : safeJoin(APP_BASE_PATH, "/orders")
+              const detailUrl = buildDetailUrl(
+                DETAIL_URL_TPL || POST_ORDER_URL,
+                lastCreatedId
               );
+              router.push(detailUrl);
             } else {
               router.push(safeJoin(APP_BASE_PATH, "/orders"));
             }
