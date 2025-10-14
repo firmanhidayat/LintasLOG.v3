@@ -9,15 +9,15 @@ export interface AddressItem {
 }
 
 export type OrderTypeItem = {
-  id: string | number;
+  id: number | string;
   name: string;
-  code?: string;
+  // code?: string;
 };
 
 export type ModaItem = {
-  id: string | number;
+  id: number | string;
   name: string;
-  code?: string;
+  // code?: string;
 };
 export type PartnerItem = {
   id: number | string;
@@ -37,13 +37,14 @@ export type OrderStatus =
 export type OrderRow = {
   id: number | string;
   name?: string;
-  pickup_date_planne?: string;
+  pickup_date_planne?: RoutePayload["etd_date"];
   origin_city?: { id: number; name: string };
-  drop_off_date_planne?: string;
+  drop_off_date_planne?: RoutePayload["eta_date"];
   dest_city?: { id: number; name: string };
-  special_request?: string;
+  requirement_other?: string;
   price?: number;
   status: OrderStatus;
+  route_ids: RoutePayload[];
 };
 
 export type RoutePayload = {
@@ -61,8 +62,21 @@ export type ApiPayload = {
   receipt_by: string;
   origin_city_id: number;
   dest_city_id: number;
-  order_type: string;
-  moda: string;
+  order_type_id: string;
+  moda_id: string;
+  cargo_name: string;
+  cargo_description: string;
+
+  requirement_helmet: boolean;
+  requirement_apar: boolean;
+  requirement_safety_shoes: boolean;
+  requirement_vest: boolean;
+  requirement_glasses: boolean;
+  requirement_gloves: boolean;
+  requirement_face_mask: boolean;
+  requirement_tarpaulin: boolean;
+  requirement_other: string;
+
   // pickup_date_planne: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
   // drop_off_date_planne: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
   route_ids: RoutePayload[];
@@ -92,8 +106,18 @@ export interface CreateOrderPayload {
   lokasi_bongkar_id?: number | string;
 
   // Layanan Khusus
-  layanan_khusus: string[];
-  layanan_lainnya?: string;
+  requirement_helmet: boolean;
+  requirement_apar: boolean;
+  requirement_safety_shoes: boolean;
+  requirement_vest: boolean;
+  requirement_glasses: boolean;
+  requirement_gloves: boolean;
+  requirement_face_mask: boolean;
+  requirement_tarpaulin: boolean;
+  requirement_other: string;
+
+  // layanan_khusus: string[];
+  // layanan_lainnya?: string;
 
   // Informasi Muatan
   muatan_nama: string;
@@ -119,8 +143,21 @@ export type OrdersCreateFormProps = {
     receipt_by: string;
     origin_city_id: number;
     dest_city_id: number;
-    order_type_id: OrderTypeItem;
-    moda_id: ModaItem;
+    order_type_id: number;
+    moda_id: number;
+    moda: ModaItem;
+    order_type: OrderTypeItem;
+    cargo_name: string;
+    cargo_description: string;
+    requirement_helmet: boolean;
+    requirement_apar: boolean;
+    requirement_safety_shoes: boolean;
+    requirement_vest: boolean;
+    requirement_glasses: boolean;
+    requirement_gloves: boolean;
+    requirement_face_mask: boolean;
+    requirement_tarpaulin: boolean;
+    requirement_other: string;
     pickup_date_planne: string; // "YYYY-MM-DD HH:mm:ss" or ISO
     drop_off_date_planne: string; // same format
     origin_city?: CityItem;

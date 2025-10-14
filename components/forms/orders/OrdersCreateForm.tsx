@@ -195,20 +195,27 @@ function prefillFromInitial(
     v: Maybe<string | OrderTypeItem>
   ): OrderTypeItem | null => {
     if (!v) return null;
-    return typeof v === "string" ? { id: v, name: v, code: v } : v;
+    return typeof v === "string" ? { id: v, name: v } : v;
   };
 
   const toModaItem = (v: Maybe<string | ModaItem>): ModaItem | null => {
     if (!v) return null;
-    return typeof v === "string" ? { id: v, name: v, code: v } : v;
+    return typeof v === "string" ? { id: v, name: v } : v;
   };
+
+  // console.log("data edit form (prefill):", data);
 
   const form = {
     noJo: data.name ?? "",
     customer: (data.partner as PartnerItem)?.name ?? "",
     namaPenerima: data.receipt_by ?? "",
-    jenisOrder: toOrderTypeItem(data.order_type_id) ?? "",
-    armada: toModaItem(data.moda_id) ?? "",
+    jenisOrder:
+      data.order_type ??
+      (data.order_type_id
+        ? ({ id: data.order_type_id } as OrderTypeItem)
+        : null),
+    armada:
+      data.moda ?? (data.moda_id ? ({ id: data.moda_id } as ModaItem) : null),
     kotaMuat:
       data.origin_city ??
       (data.origin_city_id ? ({ id: data.origin_city_id } as CityItem) : null),
@@ -219,12 +226,25 @@ function prefillFromInitial(
     tglBongkar: apiToLocalIsoMinute(data.drop_off_date_planne, "08:00"),
     lokMuat: null as AddressItem | null,
     lokBongkar: null as AddressItem | null,
+    muatanNama: data.cargo_name ?? "",
+    muatanDeskripsi: data.cargo_description ?? "",
+    requirement_helmet: Boolean(data.requirement_helmet),
+    requirement_apar: Boolean(data.requirement_apar),
+    requirement_safety_shoes: Boolean(data.requirement_safety_shoes),
+    requirement_vest: Boolean(data.requirement_vest),
+    requirement_glasses: Boolean(data.requirement_glasses),
+    requirement_gloves: Boolean(data.requirement_gloves),
+    requirement_face_mask: Boolean(data.requirement_face_mask),
+    requirement_tarpaulin: Boolean(data.requirement_tarpaulin),
+    requirement_other: data.requirement_other ?? "",
     picMuatNama: "",
     picMuatTelepon: "",
     picBongkarNama: "",
     picBongkarTelepon: "",
     extraStops: [] as ExtraStop[],
   };
+
+  // console.log("form:", form);
 
   const routes: RouteItem[] = Array.isArray(data.route_ids)
     ? (data.route_ids as RouteItem[])
@@ -233,6 +253,8 @@ function prefillFromInitial(
   const main = routes.find((r) => r.is_main_route);
 
   // Prefill dari route main kalau ada
+  form.tglMuat = apiToLocalIsoMinute(main?.etd_date) || form.tglMuat;
+  form.tglBongkar = apiToLocalIsoMinute(main?.eta_date) || form.tglBongkar;
   form.lokMuat = addrFromRoute(main, "origin");
   form.lokBongkar = addrFromRoute(main, "dest");
   form.picMuatNama = main?.origin_pic_name ?? "";
@@ -256,8 +278,8 @@ function prefillFromInitial(
       originPicPhone: r.origin_pic_phone ?? "",
       destPicName: r.dest_pic_name ?? "",
       destPicPhone: r.dest_pic_phone ?? "",
-      tglETDMuat: r.etd_date ?? "", // belum ada dari API → kosong
-      tglETABongkar: r.eta_date ?? "", // belum ada dari API → kosong
+      tglETDMuat: apiToLocalIsoMinute(r.etd_date) ?? r.etd_date ?? "",
+      tglETABongkar: apiToLocalIsoMinute(r.eta_date) ?? r.eta_date ?? "", // belum ada dari API → kosong
     })
   );
 
@@ -333,16 +355,16 @@ export default function OrdersCreateForm({
     (profile as { tz?: string } | undefined)?.tz || "Asia/Jakarta";
 
   // ===== Local states =====
-  const [noJO] = useState<string>("");
-  const [customer] = useState<string>("");
+
+  const [noJO, setNoJO] = useState<string>("");
+  const [customer, setCustomer] = useState<string>("");
   const [namaPenerima, setNamaPenerima] = useState<string>("");
 
   const [kotaMuat, setKotaMuat] = useState<CityItem | null>(null);
   const [kotaBongkar, setKotaBongkar] = useState<CityItem | null>(null);
 
-  const [jenisOrder, setJenisOrder] = useState<OrderTypeItem | "">("");
-
-  const [armada, setArmada] = useState<ModaItem | "">("");
+  const [jenisOrder, setJenisOrder] = useState<OrderTypeItem | null>(null);
+  const [armada, setArmada] = useState<ModaItem | null>(null);
 
   // DateTime (ISO lokal "YYYY-MM-DDTHH:mm")
   const [tglMuat, setTglMuat] = useState<string>("");
@@ -478,19 +500,43 @@ export default function OrdersCreateForm({
     if (!initialData) return;
     const f = prefillFromInitial(initialData);
     setNamaPenerima(f.namaPenerima);
-    setJenisOrder(typeof f.jenisOrder === "string" ? "" : f.jenisOrder);
-    setArmada(typeof f.armada === "string" ? "" : f.armada);
+    setJenisOrder(f.jenisOrder);
+    setArmada(f.armada);
     // prefill langsung set kota (tanpa trigger handler reset)
     setKotaMuat(f.kotaMuat);
     setKotaBongkar(f.kotaBongkar);
+
     setTglMuat(f.tglMuat);
     setTglBongkar(f.tglBongkar);
+
     setLokMuat(f.lokMuat);
     setLokBongkar(f.lokBongkar);
+
     setPicMuatNama(f.picMuatNama);
     setPicMuatTelepon(f.picMuatTelepon);
     setPicBongkarNama(f.picBongkarNama);
     setPicBongkarTelepon(f.picBongkarTelepon);
+
+    setMuatanNama(f.muatanNama);
+    setMuatanDeskripsi(f.muatanDeskripsi);
+
+    setJenisOrder(f.jenisOrder);
+    setArmada(f.armada);
+    setCustomer(f.customer);
+    setNoJO(f.noJo);
+    setLayananLainnya(f.requirement_other);
+    setLayananKhusus((ls) => ({
+      ...ls,
+      Helm: f.requirement_helmet,
+      APAR: f.requirement_apar,
+      "Safety Shoes": f.requirement_safety_shoes,
+      Rompi: f.requirement_vest,
+      "Kaca mata": f.requirement_glasses,
+      "Sarung tangan": f.requirement_gloves,
+      Masker: f.requirement_face_mask,
+      Terpal: f.requirement_tarpaulin,
+    }));
+
     if (f.extraStops.length > 0) {
       setMultiPickupDrop(true);
       setExtraStops(f.extraStops);
@@ -530,8 +576,8 @@ export default function OrdersCreateForm({
         if (json) {
           const f = prefillFromInitial(json);
           setNamaPenerima(f.namaPenerima);
-          setJenisOrder(typeof f.jenisOrder === "string" ? "" : f.jenisOrder);
-          setArmada(typeof f.armada === "string" ? "" : f.armada);
+          setJenisOrder(f.jenisOrder);
+          setArmada(f.armada);
           setKotaMuat(f.kotaMuat);
           setKotaBongkar(f.kotaBongkar);
           setTglMuat(f.tglMuat);
@@ -542,6 +588,26 @@ export default function OrdersCreateForm({
           setPicMuatTelepon(f.picMuatTelepon);
           setPicBongkarNama(f.picBongkarNama);
           setPicBongkarTelepon(f.picBongkarTelepon);
+          setMuatanNama(f.muatanNama);
+          setMuatanDeskripsi(f.muatanDeskripsi);
+          setJenisOrder(f.jenisOrder);
+          setArmada(f.armada);
+          setCustomer(f.customer);
+          setNoJO(f.noJo);
+
+          setLayananLainnya(f.requirement_other);
+          setLayananKhusus((ls) => ({
+            ...ls,
+            Helm: f.requirement_helmet,
+            APAR: f.requirement_apar,
+            "Safety Shoes": f.requirement_safety_shoes,
+            Rompi: f.requirement_vest,
+            "Kaca mata": f.requirement_glasses,
+            "Sarung tangan": f.requirement_gloves,
+            Masker: f.requirement_face_mask,
+            Terpal: f.requirement_tarpaulin,
+          }));
+
           if (f.extraStops.length > 0) {
             setMultiPickupDrop(true);
             setExtraStops(f.extraStops);
@@ -567,7 +633,7 @@ export default function OrdersCreateForm({
     // if (!jenisOrder) e.jenisOrder = REQ;
     if (
       !jenisOrder ||
-      (typeof jenisOrder === "object" && !jenisOrder.code && !jenisOrder.name)
+      (typeof jenisOrder === "object" && !jenisOrder.id && !jenisOrder.name)
     ) {
       e.jenisOrder = REQ;
     }
@@ -631,10 +697,7 @@ export default function OrdersCreateForm({
 
   const canSubmit = useMemo(() => {
     return Boolean(
-      !!(
-        typeof jenisOrder === "object" &&
-        (jenisOrder.id || jenisOrder.name)
-      ) &&
+      jenisOrder?.id &&
         armada &&
         kotaMuat?.id &&
         kotaBongkar?.id &&
@@ -661,16 +724,6 @@ export default function OrdersCreateForm({
   /** ===================== Build Payload ===================== */
   function buildApiPayload(): ApiPayload {
     const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-
-    const extractOrderType = (ot: OrderTypeItem | ""): string => {
-      if (!ot) return "";
-      return ot.code ?? String(ot.id) ?? ot.name;
-    };
-
-    const extractModa = (m: ModaItem | ""): string => {
-      if (!m) return "";
-      return m.code ?? String(m.id) ?? m.name;
-    };
 
     const toBackendDate = (localStr: string, tz: string): string => {
       if (!localStr) return "";
@@ -719,8 +772,22 @@ export default function OrdersCreateForm({
       receipt_by: (namaPenerima ?? "").trim(),
       origin_city_id: Number(kotaMuat!.id),
       dest_city_id: Number(kotaBongkar!.id),
-      order_type: (jenisOrder as OrderTypeItem).id.toString(),
-      moda: (armada as ModaItem).id.toString(),
+      order_type_id: (jenisOrder as OrderTypeItem).id.toString(),
+      moda_id: (armada as ModaItem).id.toString(),
+
+      cargo_name: (muatanNama ?? "").trim(),
+      cargo_description: (muatanDeskripsi ?? "").trim(),
+
+      requirement_helmet: layananKhusus["Helm"] ? true : false,
+      requirement_apar: layananKhusus["APAR"] ? true : false,
+      requirement_safety_shoes: layananKhusus["Safety Shoes"] ? true : false,
+      requirement_vest: layananKhusus["Rompi"] ? true : false,
+      requirement_glasses: layananKhusus["Kaca mata"] ? true : false,
+      requirement_gloves: layananKhusus["Sarung tangan"] ? true : false,
+      requirement_face_mask: layananKhusus["Masker"] ? true : false,
+      requirement_tarpaulin: layananKhusus["Terpal"] ? true : false,
+      requirement_other: (layananLainnya ?? "").trim(),
+
       route_ids: [mainRoute, ...extraRoutes],
       // // attachments: siapkan kolom untuk backend (nanti ganti dengan IDs)
       // attachments: {
@@ -769,6 +836,8 @@ export default function OrdersCreateForm({
           url = `${POST_ORDER_URL.replace(/\/$/, "")}/${effectiveOrderId}`;
         }
       }
+
+      console.log(`[OrderSubmit] ${method} ${url}`, apiPayload);
 
       const res = await fetch(url, {
         method,
@@ -984,7 +1053,7 @@ export default function OrdersCreateForm({
     >
       {/* === Status Tracker (dinamis) === */}
       <StatusTracker
-        className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-200 shadow-sm"
+        className="sticky top-14 z-30 bg-white/80 backdrop-blur border-b border-gray-200 shadow-sm"
         i18nReady={i18nReady}
         current={statusCurrent ?? "Pending"}
         meta={{
@@ -1016,6 +1085,7 @@ export default function OrdersCreateForm({
                 errors={errors}
                 firstErrorKey={firstErrorKey}
                 firstErrorRef={firstErrorRef}
+                profile={profile}
               />
 
               {/* Info Lokasi */}

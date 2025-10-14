@@ -17,7 +17,7 @@ function isObj(v: unknown): v is Record<string, unknown> {
 
 function normalizeItem(it: unknown): OrderTypeItem | null {
   if (typeof it === "string") {
-    return { id: it, name: it, code: it };
+    return { id: it, name: it };
   }
   if (isObj(it)) {
     const idRaw =
@@ -35,7 +35,7 @@ function normalizeItem(it: unknown): OrderTypeItem | null {
     ) {
       const code =
         typeof it["code"] === "string" ? (it["code"] as string) : undefined;
-      return { id: idRaw, name: nameRaw, code };
+      return { id: idRaw, name: nameRaw };
     }
   }
   return null;
@@ -208,14 +208,12 @@ export default function OrderTypeAutocomplete({
                     setQuery(opt.name ?? "");
                     setOpen(false);
                   }}
-                  title={
-                    opt.code && opt.code !== opt.name ? opt.code : undefined
-                  }
+                  title={opt.name ?? undefined}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span>{opt.name}</span>
-                    {opt.code && opt.code !== opt.name && (
-                      <span className="text-xs text-gray-500">{opt.code}</span>
+                    {opt.name && (
+                      <span className="text-xs text-gray-500">{opt.name}</span>
                     )}
                   </div>
                 </li>

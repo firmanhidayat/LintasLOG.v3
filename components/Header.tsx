@@ -113,7 +113,7 @@ export default function Header({
 
               <ul
                 role="menu"
-                className="absolute right-0 mt-2 w-56 rounded-xl border border-gray-200 bg-white p-1 text-black shadow-lg"
+                className="absolute right-0 mt-2 w-56 rounded-xl border border-gray-200 bg-white p-1 text-black shadow-lg z-50"
               >
                 <li role="none">
                   <Link

@@ -6,6 +6,7 @@ import CityAutocomplete from "@/components/forms/orders/CityAutocomplete";
 import type { CityItem, OrderTypeItem, ModaItem } from "@/types/orders";
 import OrderTypeAutocomplete from "@/components/forms/orders/OrderTypeAutocomplete";
 import ModaAutocomplete from "./ModaAutoComplete";
+import { TmsProfile } from "@/types/tms-profile";
 
 type DivRef =
   | React.RefObject<HTMLDivElement>
@@ -19,11 +20,11 @@ type Props = {
   namaPenerima: string;
   setNamaPenerima: (v: string) => void;
 
-  jenisOrder: OrderTypeItem | "";
-  setJenisOrder: (v: OrderTypeItem | "") => void;
+  jenisOrder: OrderTypeItem | null;
+  setJenisOrder: (v: OrderTypeItem | null) => void;
 
-  armada: ModaItem | "";
-  setArmada: (v: ModaItem | "") => void;
+  armada: ModaItem | null;
+  setArmada: (v: ModaItem | null) => void;
 
   kotaMuat: CityItem | null;
   onChangeKotaMuat: (c: CityItem | null) => void;
@@ -33,6 +34,7 @@ type Props = {
   errors: Record<string, string>;
   firstErrorKey?: string;
   firstErrorRef?: DivRef;
+  profile: TmsProfile | null | undefined;
 };
 
 export default function OrderInfoCard({
@@ -52,12 +54,16 @@ export default function OrderInfoCard({
   errors,
   firstErrorKey,
   firstErrorRef,
+  profile,
 }: Props) {
   const refIf = (k: string) =>
     firstErrorKey === k
       ? (firstErrorRef as React.Ref<HTMLDivElement>)
       : undefined;
 
+  if (mode === "create") {
+    customer = profile?.name || "";
+  }
   return (
     <Card>
       <CardHeader>
@@ -105,7 +111,7 @@ export default function OrderInfoCard({
             /> */}
             <OrderTypeAutocomplete
               label={t("orders.jenis_order")}
-              value={jenisOrder === "" ? null : jenisOrder}
+              value={jenisOrder}
               onChange={(v) => {
                 setJenisOrder(v as OrderTypeItem);
               }}
@@ -147,7 +153,7 @@ export default function OrderInfoCard({
             /> */}
             <ModaAutocomplete
               label={t("orders.armada")}
-              value={armada === "" ? null : armada}
+              value={armada}
               onChange={(v) => {
                 setArmada(v as ModaItem);
               }}

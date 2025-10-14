@@ -59,7 +59,12 @@ export default function OrdersListPage() {
         sortable: true,
         sortValue: (r) => r.pickup_date_planne ?? "",
         className: "w-36",
-        cell: (r) => fmtDate(r.pickup_date_planne),
+        cell: (r) =>
+          r.route_ids.length > 0
+            ? r.route_ids[0].is_main_route
+              ? fmtDate(r.route_ids[0].etd_date)
+              : "-"
+            : "-",
       },
       {
         id: "pickup_to",
@@ -76,7 +81,12 @@ export default function OrdersListPage() {
         sortable: true,
         sortValue: (r) => r.drop_off_date_planne ?? "",
         className: "w-36",
-        cell: (r) => fmtDate(r.drop_off_date_planne),
+        cell: (r) =>
+          r.route_ids.length > 0
+            ? r.route_ids[0].is_main_route
+              ? fmtDate(r.route_ids[0].eta_date)
+              : "-"
+            : "-",
       },
       {
         id: "drop_to",
@@ -91,9 +101,9 @@ export default function OrdersListPage() {
         id: "special_request",
         label: t("orders.columns.specialRequest") || "Permintaan Khusus",
         sortable: true,
-        sortValue: (r) => (r.special_request ?? "").toLowerCase(),
+        sortValue: (r) => (r.requirement_other ?? "").toLowerCase(),
         className: "min-w-60",
-        cell: (r) => r.special_request?.trim() || "-",
+        cell: (r) => r.requirement_other?.trim() || "-",
       },
       {
         id: "price",
