@@ -11,7 +11,7 @@ import {
   type ComponentProps,
 } from "react";
 import { usePathname } from "next/navigation";
-import type React from "react";  
+import type React from "react";
 
 type NextLinkProps = ComponentProps<typeof Link>;
 type Href = NextLinkProps["href"];
@@ -26,6 +26,7 @@ type BaseProps = {
   label: string;
   icon?: IconType;
   className?: string;
+  onClick?: () => void;
 };
 
 function hrefToPath(href: Href): string {
@@ -35,7 +36,13 @@ function hrefToPath(href: Href): string {
 
 export type NavLinkProps = BaseProps & { href: Href };
 
-export function NavLink({ href, label, icon: Icon, className }: NavLinkProps) {
+export function NavLink({
+  href,
+  label,
+  icon: Icon,
+  className,
+  onClick,
+}: NavLinkProps) {
   const pathname = usePathname();
   const base = hrefToPath(href);
   const isActive =
@@ -43,9 +50,10 @@ export function NavLink({ href, label, icon: Icon, className }: NavLinkProps) {
 
   return (
     <Link
+      onClick={onClick}
       href={href}
       className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        "flex items-centergap-3 rounded-md px-2 py-1 text-md font-extrabold transition-colors",
         isActive
           ? "bg-white/20 text-white"
           : "text-white/80 hover:bg-white/10 hover:text-white",
@@ -53,7 +61,10 @@ export function NavLink({ href, label, icon: Icon, className }: NavLinkProps) {
       )}
       aria-current={isActive ? "page" : undefined}
     >
-      {Icon && <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />}
+      {Icon && (
+        <Icon className="h-6 w-6 shrink-0 text-amber-500" aria-hidden="true" />
+      )}
+      <span className="pl-3"></span>
       <span className="truncate">{label}</span>
     </Link>
   );
@@ -126,9 +137,10 @@ export function NavGroup(props: NavGroupProps) {
 
   return (
     <div className={cn("select-none", className)}>
-      <div className="group flex items-center gap-2 rounded-md px-2 py-2 hover:bg-white/10">
+      <div className="group flex items-center gap-2 rounded-md px-2 py-2">
         {href ? (
           <NavLink
+            onClick={handleToggle}
             href={href}
             label={label}
             icon={Icon}
@@ -184,7 +196,7 @@ export function NavGroup(props: NavGroupProps) {
               href={it.href}
               label={it.label}
               icon={it.icon}
-              className="px-2 py-1.5"
+              className="px-2 py-1.5 "
             />
           );
         })}
@@ -196,10 +208,10 @@ export function NavGroup(props: NavGroupProps) {
 type CollapseProps = {
   open: boolean;
   children: React.ReactNode;
-  id?: string;  
-  duration?: number;  
-  easing?: string;  
-  unmountOnExit?: boolean; 
+  id?: string;
+  duration?: number;
+  easing?: string;
+  unmountOnExit?: boolean;
   className?: string;
 };
 
@@ -233,7 +245,7 @@ export default function Collapse({
     if (!el) return;
 
     const onEnd = () => {
-      if (open) el.style.height = "auto"; 
+      if (open) el.style.height = "auto";
       el.removeEventListener("transitionend", onEnd);
     };
 

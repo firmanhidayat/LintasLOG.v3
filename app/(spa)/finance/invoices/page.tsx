@@ -9,6 +9,7 @@ import {
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link";
 import { Icon } from "@/components/icons/Icon";
+import { fmtPrice } from "@/lib/helpers";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
@@ -25,20 +26,6 @@ type InvoiceRow = {
   payment_status: TwoState; // Payment Status
   invoice_status: TwoState; // Invoice Status
 };
-
-/** ===== Helpers ===== */
-function fmtPrice(v?: number) {
-  if (v == null) return "-";
-  try {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(v);
-  } catch {
-    return String(v);
-  }
-}
 
 function Pill({ value }: { value: TwoState }) {
   const color =
@@ -167,6 +154,7 @@ export default function InvoicesListPage() {
           <div className="flex items-center gap-2">
             {it.id != null ? (
               <Link
+                data-stop-rowclick
                 href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
                 aria-label="Edit address"
@@ -176,6 +164,7 @@ export default function InvoicesListPage() {
               </Link>
             ) : (
               <button
+                data-stop-rowclick
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
                 title="Edit (unavailable)"
@@ -187,6 +176,7 @@ export default function InvoicesListPage() {
 
             {it.id != null ? (
               <button
+                data-stop-rowclick
                 type="button"
                 onClick={() => {
                   // ListTemplate kini menangani event ini & membuka modal konfirmasi
@@ -207,6 +197,7 @@ export default function InvoicesListPage() {
               </button>
             ) : (
               <button
+                data-stop-rowclick
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
                 title="Delete (unavailable)"
@@ -261,6 +252,10 @@ export default function InvoicesListPage() {
           String(row.payment_status).toLowerCase().includes(q) ||
           String(row.invoice_status).toLowerCase().includes(q)
         }
+        rowNavigateTo={(id) => ({
+          pathname: "finance/invoices/details",
+          query: { id },
+        })}
       />
     </div>
   );

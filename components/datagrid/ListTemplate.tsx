@@ -138,10 +138,20 @@ export function ListTemplate<
   staticData,
   staticSearch,
 
-  /** === Baru: dukungan row expansion (opsional) === */
+  /** === Row expansion (opsional) === */
   getRowKey,
   isRowExpanded,
   renderExpanded,
+
+  /** === NEW: Klik baris pakai ID ===
+   * Skenario A (navigate): sediakan rowNavigateTo => router.push(href)
+   * Skenario B (callback): sediakan onRowClick => Anda handle sendiri
+   * getRowId opsional jika bukan pakai field "id".
+   */
+  getRowId,
+  rowNavigateTo,
+  onRowClick,
+  rowClassName,
 }: {
   fetchBase: string;
   deleteBase: string;
@@ -163,6 +173,28 @@ export function ListTemplate<
     row: T,
     meta: { index: number }
   ) => React.ReactElement | null;
+
+  /** === NEW === */
+  getRowId?: (row: T, index: number) => string | number | undefined | null;
+  // rowNavigateTo?: (id: string | number, row: T, index: number) => string;
+  rowNavigateTo?: (
+    id: string | number,
+    row: T,
+    index: number
+  ) =>
+    | string
+    | URL
+    | {
+        pathname: string;
+        query?: Record<string, string | number | boolean | null | undefined>;
+      };
+  onRowClick?: (args: {
+    id: string | number;
+    row: T;
+    index: number;
+    event: React.MouseEvent<HTMLTableRowElement>;
+  }) => void;
+  rowClassName?: (row: T, index: number) => string | undefined;
 }) {
   const router = useRouter();
 
@@ -383,7 +415,104 @@ export function ListTemplate<
       );
   }, [sourceItems, getRowName]);
 
+  // === Helpers for clickable row ===
+  function extractRowId(row: T, index: number) {
+    const fallback = (row as { id?: string | number }).id;
+    const got = getRowId?.(row, index);
+    return got ?? fallback ?? null;
+  }
+
+  function handleRowClick(
+    event: React.MouseEvent<HTMLTableRowElement>,
+    row: T,
+    index: number
+  ) {
+    // Abaikan jika klik berasal dari elemen interaktif
+    const target = event.target as HTMLElement;
+    if (target.closest("[data-stop-rowclick]")) {
+      return;
+    }
+    const id = extractRowId(row, index);
+    if (id == null) return;
+    if (rowNavigateTo) {
+      const dest = rowNavigateTo(id, row, index);
+
+      let hrefAbs = "";
+      let hrefRel = "";
+
+      if (typeof dest === "string") {
+        // contoh: "/details?id=123" atau "details?id=123"
+        // biar aman terhadap basePath, kita bentuk URL relatif dari base env
+        const baseStr = process.env.NEXT_PUBLIC_URL_BASE || "/";
+        const baseURL = new URL(
+          baseStr,
+          typeof window !== "undefined"
+            ? window.location.origin
+            : "http://localhost"
+        );
+        if (!baseURL.pathname.endsWith("/")) baseURL.pathname += "/";
+
+        // pecah string jadi pathname + search
+        const [rawPath, rawSearch = ""] = dest.split("?");
+        const cleanPath = rawPath.replace(/^\//, ""); // buang leading slash
+        const u = new URL(cleanPath, baseURL);
+        if (rawSearch) u.search = "?" + rawSearch;
+
+        hrefAbs = u.toString();
+        hrefRel = u.pathname + u.search + u.hash;
+      } else if (dest instanceof URL) {
+        hrefAbs = dest.toString();
+        hrefRel = dest.pathname + dest.search + dest.hash;
+      } else {
+        // object: { pathname, query }
+        const baseStr = process.env.NEXT_PUBLIC_URL_BASE || "/";
+        const baseURL = new URL(
+          baseStr,
+          typeof window !== "undefined"
+            ? window.location.origin
+            : "http://localhost"
+        );
+
+        console.log({ baseStr, baseURL });
+
+        // if (!baseURL.pathname.endsWith("/")) baseURL.pathname += "/";
+
+        // IMPORTANT: jangan pakai leading slash agar /tms tidak hilang
+        const cleanPath = (dest.pathname || "").replace(/^\//, "");
+
+        console.log({ cleanPath, baseURL });
+
+        const u = new URL(cleanPath, baseURL);
+
+        console.log({ u, dest });
+
+        if (dest.query) {
+          for (const [k, v] of Object.entries(dest.query)) {
+            if (v != null) u.searchParams.set(k, String(v));
+          }
+        }
+
+        hrefAbs = u.toString();
+        hrefRel = u.pathname + u.search + u.hash;
+      }
+
+      // Kalau origin sama → pakai relative (SPA), kalau beda → absolute
+      const sameOrigin =
+        typeof window !== "undefined" &&
+        hrefAbs.startsWith(window.location.origin);
+
+      console.log({ id, dest, hrefAbs, hrefRel, sameOrigin });
+
+      router.push(sameOrigin ? hrefRel : hrefAbs);
+      return;
+    }
+
+    onRowClick?.({ id, row, index, event });
+  }
+
   const sequenceStart = (page - 1) * pageSize;
+  const rowIsClickable = Boolean(onRowClick || rowNavigateTo);
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -398,7 +527,7 @@ export function ListTemplate<
               setPage(1);
             }}
             placeholder={searchPlaceholder}
-            className="w-60 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-60 rounded-md border px-2 py-1 text-md outline-none focus:ring-2 focus:ring-primary/40"
           />
           <label className="sr-only">{rowsPerPageLabel}</label>
           <select
@@ -407,7 +536,7 @@ export function ListTemplate<
               setPageSize(Number(e.target.value));
               setPage(1);
             }}
-            className="rounded-md border px-1 py-1 text-sm"
+            className="rounded-md border px-1 py-1 text-md"
             aria-label={rowsPerPageLabel}
           >
             <option value={80}>80</option>
@@ -419,13 +548,13 @@ export function ListTemplate<
 
       {/* Table */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="min-w-full text-sm">
-          <thead className="bg-primary/20">
+        <table className="min-w-full text-md">
+          <thead className="bg-primary/20 font-bold text-md border-b-4 border-transparent">
             <tr>
-              {/* === NEW: kolom nomor urut di paling kiri */}
+              {/* kolom nomor urut */}
               <th
                 scope="col"
-                className="w-12 px-3 py-2 text-left font-medium text-xs text-gray-700"
+                className="w-12 px-3 py-2 text-left font-medium text-md text-gray-700"
                 aria-label="Row number"
                 title="#"
               >
@@ -437,7 +566,7 @@ export function ListTemplate<
                   <th
                     key={c.id}
                     scope="col"
-                    className={`px-3 py-2 text-left font-medium text-xs text-gray-700 ${
+                    className={`px-3 py-2 text-left font-medium text-md text-gray-700 ${
                       c.className ?? ""
                     }`}
                   >
@@ -449,7 +578,7 @@ export function ListTemplate<
                         aria-label={`Sort by ${c.label}`}
                       >
                         {c.label}
-                        <span className="text-xs text-gray-500">
+                        <span className="text-md text-gray-500">
                           {active ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
                         </span>
                       </button>
@@ -461,12 +590,12 @@ export function ListTemplate<
               })}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="[&_tr]:bg-white">
             {loading ? (
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="p-4 text-center text-xs text-gray-500"
+                  className="p-4 text-center text-md text-gray-500"
                 >
                   {t("common.loading")}
                 </td>
@@ -475,7 +604,7 @@ export function ListTemplate<
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="p-4 text-center text-xs text-red-600"
+                  className="p-4 text-center text-md text-red-600"
                 >
                   {error}
                 </td>
@@ -484,7 +613,7 @@ export function ListTemplate<
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="p-4 text-center text-xs text-gray-500"
+                  className="p-4 text-center text-md text-gray-500"
                 >
                   {t("common.noData")}
                 </td>
@@ -497,22 +626,41 @@ export function ListTemplate<
                     | string
                     | number);
                 const seq = sequenceStart + idx + 1;
+                const clickable = rowIsClickable;
                 return (
                   <React.Fragment key={String(key)}>
                     <tr
+                      data-rowid={String(extractRowId(row, idx) ?? "")}
+                      onClick={(e) => handleRowClick(e, row, idx)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleRowClick(
+                            e as unknown as React.MouseEvent<HTMLTableRowElement>,
+                            row,
+                            idx
+                          );
+                        }
+                      }}
+                      role={clickable ? "button" : undefined}
+                      tabIndex={clickable ? 0 : undefined}
                       className={
-                        "border-t border-gray-100 hover:bg-gray-50/60 " +
-                        (idx % 2 === 1 ? "bg-gray-50/40" : "bg-white")
+                        "border-t border-gray-100 " +
+                        (idx % 2 === 1 ? "bg-gray-50/40 " : "bg-white ") +
+                        (clickable
+                          ? "cursor-pointer select-none hover:bg-gray-50/60 focus:bg-gray-50/80 focus:outline-none "
+                          : "hover:bg-gray-50/60 ") +
+                        (rowClassName?.(row, idx) ?? "")
                       }
                     >
-                      {/* === sel nomor urut */}
-                      <td className="px-2 py-1 align-top font-medium text-xs text-gray-700 tabular-nums">
+                      {/* sel nomor urut */}
+                      <td className="px-2 py-1 align-top font-medium text-md text-gray-700 tabular-nums">
                         {seq}
                       </td>
                       {columns.map((c) => (
                         <td
                           key={c.id}
-                          className={`px-2 py-1 align-top font-light text-xs text-gray-700 ${
+                          className={`px-2 py-1 align-top font-normal text-md text-gray-700 ${
                             c.className ?? ""
                           }`}
                         >
@@ -521,9 +669,7 @@ export function ListTemplate<
                       ))}
                     </tr>
 
-                    {/* Expanded row (kalau ada). 
-                        Catatan: jika implementasi renderExpanded Anda membuat <tr><td colSpan=...>,
-                        pastikan colSpan=columns.length + 1 agar sejajar dengan kolom nomor. */}
+                    {/* Expanded row */}
                     {renderExpanded && isRowExpanded?.(row, idx)
                       ? renderExpanded(row, { index: idx })
                       : null}
@@ -537,7 +683,7 @@ export function ListTemplate<
 
       {/* Pagination */}
       <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-        <div className="text-xs text-gray-600">
+        <div className="text-md text-gray-600">
           {t("addresses.pagination.summary")
             .replace("{page}", String(page))
             .replace("{pages}", String(totalPages))
@@ -545,7 +691,7 @@ export function ListTemplate<
         </div>
         <div className="flex items-center gap-1">
           <button
-            className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
+            className="rounded-md border px-2 py-1 text-md disabled:opacity-50"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1 || loading}
             aria-label={t("common.prev")}
@@ -561,7 +707,7 @@ export function ListTemplate<
                 onClick={() => setPage(1)}
                 disabled={loading}
               />
-              <span className="px-1 text-xs text-gray-500">…</span>
+              <span className="px-1 text-md text-gray-500">…</span>
             </>
           )}
 
@@ -577,7 +723,7 @@ export function ListTemplate<
 
           {pagesToShow[pagesToShow.length - 1] < totalPages && (
             <>
-              <span className="px-1 text-xs text-gray-500">…</span>
+              <span className="px-1 text-md text-gray-500">…</span>
               <PageBtn
                 n={totalPages}
                 active={page === totalPages}
@@ -588,7 +734,7 @@ export function ListTemplate<
           )}
 
           <button
-            className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
+            className="rounded-md border px-2 py-1 text-md disabled:opacity-50"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages || loading}
             aria-label={t("common.next")}
@@ -623,7 +769,7 @@ export function ListTemplate<
   }) {
     return (
       <button
-        className={`rounded-md border px-2 py-1 text-xs ${
+        className={`rounded-md border px-2 py-1 text-md ${
           active ? "bg-primary text-white" : ""
         } disabled:opacity-50`}
         onClick={onClick}
@@ -684,3 +830,690 @@ export function ListTemplate<
     );
   }
 }
+
+// "use client";
+
+// import React, { useEffect, useMemo, useState } from "react";
+// import { useRouter } from "next/navigation";
+// import { getLang, t } from "@/lib/i18n";
+// import { goSignIn } from "@/lib/goSignIn";
+
+// export type SortDir = "asc" | "desc";
+
+// export type ColumnDef<T> = {
+//   id: string;
+//   label: string;
+//   cell: (row: T) => React.ReactNode;
+//   sortValue?: (row: T) => string;
+//   sortable?: boolean;
+//   className?: string;
+//   isAction?: boolean;
+// };
+
+// export type ListFetchParams = {
+//   page: number;
+//   pageSize: number;
+//   search: string;
+//   sortBy: string;
+//   sortDir: SortDir;
+// };
+
+// export type NormalizedList<T> = {
+//   list: T[];
+//   totalCount: number;
+// };
+
+// type ConfirmState = {
+//   open: boolean;
+//   targetId: string | number | null;
+//   targetName?: string;
+// };
+
+// type PaginationTheme = {
+//   maxPageButtons?: number; // default 7
+// };
+
+// // ===================== Hooks & Utils =====================
+// export function useDebounced<T>(value: T, delay = 400) {
+//   const [v, setV] = useState(value);
+//   useEffect(() => {
+//     const tmr = setTimeout(() => setV(value), delay);
+//     return () => clearTimeout(tmr);
+//   }, [value, delay]);
+//   return v;
+// }
+
+// function isRecord(v: unknown): v is Record<string, unknown> {
+//   return typeof v === "object" && v !== null;
+// }
+// function isArray(v: unknown): v is unknown[] {
+//   return Array.isArray(v);
+// }
+
+// export function normalizeListResponse<T = unknown>(
+//   data: unknown
+// ): NormalizedList<T> {
+//   if (isArray(data))
+//     return { list: data as T[], totalCount: (data as T[]).length };
+
+//   if (isRecord(data) && isArray((data as Record<string, unknown>).items)) {
+//     const d = data as { items: T[]; total?: number; count?: number };
+//     return {
+//       list: d.items,
+//       totalCount: Number(d.total ?? d.count ?? d.items.length),
+//     };
+//   }
+
+//   if (isRecord(data) && isArray((data as Record<string, unknown>).data)) {
+//     const d = data as { data: T[]; total?: number; count?: number };
+//     return {
+//       list: d.data,
+//       totalCount: Number(d.total ?? d.count ?? d.data.length),
+//     };
+//   }
+
+//   return { list: [], totalCount: 0 };
+// }
+
+// function compareStrings(a: string, b: string) {
+//   if (a < b) return -1;
+//   if (a > b) return 1;
+//   return 0;
+// }
+
+// function buildQueryUrl(opts: {
+//   base: string;
+//   page: number;
+//   pageSize: number;
+//   search: string;
+//   sortBy: string;
+//   sortDir: SortDir;
+// }) {
+//   const u = new URL(
+//     opts.base,
+//     typeof window !== "undefined" ? window.location.href : undefined
+//   );
+//   u.searchParams.set("page", String(opts.page));
+//   u.searchParams.set("page_size", String(opts.pageSize));
+
+//   const s = opts.search.trim();
+//   if (s) {
+//     u.searchParams.set("search", s);
+//     u.searchParams.set("q", s);
+//     u.searchParams.set("query", s);
+//   }
+
+//   u.searchParams.set("sort", `${opts.sortBy}:${opts.sortDir}`);
+//   u.searchParams.set("sort_by", opts.sortBy);
+//   u.searchParams.set("order", opts.sortDir);
+
+//   return u.toString();
+// }
+
+// // ===================== Reusable List Template =====================
+// export function ListTemplate<
+//   T extends { id?: string | number; name?: string }
+// >({
+//   fetchBase,
+//   deleteBase,
+//   columns,
+//   searchPlaceholder,
+//   rowsPerPageLabel,
+//   leftHeader,
+//   getRowName = (row) => row.name ?? "",
+//   initialPageSize = 80,
+//   initialSort = {
+//     by: columns.find((c) => c.sortable)?.id ?? "name",
+//     dir: "asc" as SortDir,
+//   },
+//   paginationTheme = { maxPageButtons: 7 } as PaginationTheme,
+//   postFetchTransform,
+//   staticData,
+//   staticSearch,
+
+//   /** === Baru: dukungan row expansion (opsional) === */
+//   getRowKey,
+//   isRowExpanded,
+//   renderExpanded,
+// }: {
+//   fetchBase: string;
+//   deleteBase: string;
+//   columns: ColumnDef<T>[];
+//   searchPlaceholder: string;
+//   rowsPerPageLabel: string;
+//   leftHeader?: React.ReactNode;
+//   getRowName?: (row: T) => string;
+//   initialPageSize?: number;
+//   initialSort?: { by: string; dir: SortDir };
+//   paginationTheme?: PaginationTheme;
+//   postFetchTransform?: (list: T[]) => T[];
+//   staticData?: T[];
+//   staticSearch?: (row: T, q: string) => boolean;
+
+//   getRowKey?: (row: T, index: number) => string | number;
+//   isRowExpanded?: (row: T, index: number) => boolean;
+//   renderExpanded?: (
+//     row: T,
+//     meta: { index: number }
+//   ) => React.ReactElement | null;
+// }) {
+//   const router = useRouter();
+
+//   const [items, setItems] = useState<T[]>([]);
+//   const [total, setTotal] = useState<number>(0);
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState<string>("");
+
+//   const [page, setPage] = useState(1);
+//   const [pageSize, setPageSize] = useState(initialPageSize);
+//   const [search, setSearch] = useState("");
+//   const [sortBy, setSortBy] = useState(initialSort.by);
+//   const [sortDir, setSortDir] = useState<SortDir>(initialSort.dir);
+
+//   const debouncedSearch = useDebounced(search, 400);
+
+//   const [confirm, setConfirm] = useState<ConfirmState>({
+//     open: false,
+//     targetId: null,
+//   });
+
+//   const [localStatic, setLocalStatic] = useState<T[] | null>(null);
+//   useEffect(() => {
+//     if (staticData) setLocalStatic(staticData);
+//   }, [staticData]);
+
+//   const sourceItems: T[] = staticData ? localStatic ?? [] : items;
+
+//   const filteredItems = useMemo(() => {
+//     if (!staticData) return sourceItems;
+//     const q = debouncedSearch.trim().toLowerCase();
+//     if (!q) return sourceItems;
+//     const pred =
+//       staticSearch ??
+//       ((row: T, query: string) =>
+//         JSON.stringify(row).toLowerCase().includes(query));
+//     return sourceItems.filter((row) => pred(row, q));
+//   }, [sourceItems, debouncedSearch, staticData, staticSearch]);
+
+//   const sortedItems = useMemo(() => {
+//     const col = columns.find((c) => c.id === sortBy);
+//     if (!col || !col.sortable || !col.sortValue) return filteredItems;
+//     const mul = sortDir === "asc" ? 1 : -1;
+//     const arr = [...filteredItems];
+//     arr.sort(
+//       (a, b) => compareStrings(col.sortValue!(a), col.sortValue!(b)) * mul
+//     );
+//     return arr;
+//   }, [filteredItems, sortBy, sortDir, columns]);
+
+//   const effectiveTotal = staticData ? sortedItems.length : total;
+//   const totalPages = Math.max(1, Math.ceil(effectiveTotal / pageSize));
+//   const viewItems = useMemo(() => {
+//     if (!staticData) return sortedItems;
+//     const start = (page - 1) * pageSize;
+//     return sortedItems.slice(start, start + pageSize);
+//   }, [sortedItems, staticData, page, pageSize]);
+
+//   // ================== Fetch (server mode) ==================
+//   useEffect(() => {
+//     if (staticData) return;
+//     let aborted = false;
+
+//     async function fetchList() {
+//       setLoading(true);
+//       setError("");
+//       try {
+//         const url = buildQueryUrl({
+//           base: fetchBase,
+//           page,
+//           pageSize,
+//           search: debouncedSearch,
+//           sortBy,
+//           sortDir,
+//         });
+
+//         const res = await fetch(url, {
+//           method: "GET",
+//           headers: {
+//             "Accept-Language": getLang(),
+//             "Content-Type": "application/json",
+//             Accept: "application/json",
+//           },
+//           credentials: "include",
+//         });
+//         if (res.status === 401) {
+//           goSignIn({ routerReplace: router.replace });
+//           return;
+//         }
+//         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+//         const raw: unknown = await res.json();
+//         if (aborted) return;
+
+//         const { list, totalCount } = normalizeListResponse<T>(raw);
+//         const finalList = postFetchTransform ? postFetchTransform(list) : list;
+
+//         setItems(finalList);
+//         setTotal(totalCount ?? finalList.length);
+//       } catch (e) {
+//         if (aborted) return;
+//         console.error("[list fetch]", e);
+//         setError(e instanceof Error ? e.message : "Gagal memuat data");
+//         setItems([]);
+//         setTotal(0);
+//       } finally {
+//         if (!aborted) setLoading(false);
+//       }
+//     }
+
+//     fetchList();
+//     return () => {
+//       aborted = true;
+//     };
+//   }, [
+//     staticData,
+//     fetchBase,
+//     page,
+//     pageSize,
+//     debouncedSearch,
+//     sortBy,
+//     sortDir,
+//     router.replace,
+//     postFetchTransform,
+//   ]);
+
+//   useEffect(() => {
+//     if (page > totalPages) setPage(1);
+//   }, [totalPages, page]);
+
+//   function onSort(colId: string) {
+//     if (sortBy === colId) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+//     else {
+//       setSortBy(colId);
+//       setSortDir("asc");
+//     }
+//   }
+
+//   async function handleDelete(id: string | number | null) {
+//     if (id == null) return;
+//     try {
+//       setLoading(true);
+
+//       if (staticData) {
+//         setLocalStatic((prev) =>
+//           prev
+//             ? prev.filter(
+//                 (x) =>
+//                   String((x as { id?: string | number }).id ?? "") !==
+//                   String(id)
+//               )
+//             : prev
+//         );
+//         return;
+//       }
+
+//       const url = `${deleteBase}/${encodeURIComponent(String(id))}`;
+//       const res = await fetch(url, {
+//         method: "DELETE",
+//         headers: {
+//           "Accept-Language": getLang(),
+//           "Content-Type": "application/json",
+//           Accept: "application/json",
+//         },
+//         credentials: "include",
+//       });
+//       if (res.status === 401) {
+//         goSignIn({ routerReplace: router.replace });
+//         return;
+//       }
+//       if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+//       setItems((prev) =>
+//         prev.filter(
+//           (x) => String((x as { id?: string | number }).id ?? "") !== String(id)
+//         )
+//       );
+//       setTotal((prev) => Math.max(0, prev - 1));
+//     } catch (e) {
+//       console.error("[delete]", e);
+//       alert(
+//         t("common.error") + ": " + (e instanceof Error ? e.message : "Failed")
+//       );
+//     } finally {
+//       setConfirm({ open: false, targetId: null, targetName: "" });
+//       setLoading(false);
+//     }
+//   }
+
+//   const pagesToShow = useMemo(() => {
+//     const maxBtns = paginationTheme.maxPageButtons ?? 7;
+//     const half = Math.floor(maxBtns / 2);
+//     let start = Math.max(1, page - half);
+//     const end = Math.min(totalPages, start + maxBtns - 1);
+//     if (end - start + 1 < maxBtns) start = Math.max(1, end - maxBtns + 1);
+//     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+//   }, [page, totalPages, paginationTheme.maxPageButtons]);
+
+//   useEffect(() => {
+//     function onOpen(e: Event) {
+//       const d = (e as CustomEvent).detail as {
+//         id?: string | number;
+//         name?: string;
+//       };
+//       const id = d.id ?? null;
+//       if (id == null) return;
+
+//       const row = (sourceItems || []).find(
+//         (r) => String((r as { id?: string | number }).id ?? "") === String(id)
+//       );
+//       const displayName = d.name ?? (row ? getRowName(row) : undefined);
+
+//       setConfirm({ open: true, targetId: id, targetName: displayName });
+//     }
+//     window.addEventListener("llog.openDeleteConfirm", onOpen as EventListener);
+//     return () =>
+//       window.removeEventListener(
+//         "llog.openDeleteConfirm",
+//         onOpen as EventListener
+//       );
+//   }, [sourceItems, getRowName]);
+
+//   const sequenceStart = (page - 1) * pageSize;
+//   return (
+//     <div className="space-y-4">
+//       {/* Header */}
+//       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+//         <div className="flex items-center gap-3">{leftHeader}</div>
+
+//         <div className="flex items-center gap-2">
+//           <input
+//             value={search}
+//             onChange={(e) => {
+//               setSearch(e.target.value);
+//               setPage(1);
+//             }}
+//             placeholder={searchPlaceholder}
+//             className="w-60 rounded-md border px-2 py-1 text-md outline-none focus:ring-2 focus:ring-primary/40"
+//           />
+//           <label className="sr-only">{rowsPerPageLabel}</label>
+//           <select
+//             value={pageSize}
+//             onChange={(e) => {
+//               setPageSize(Number(e.target.value));
+//               setPage(1);
+//             }}
+//             className="rounded-md border px-1 py-1 text-md"
+//             aria-label={rowsPerPageLabel}
+//           >
+//             <option value={80}>80</option>
+//             <option value={100}>100</option>
+//             <option value={200}>200</option>
+//           </select>
+//         </div>
+//       </div>
+
+//       {/* Table */}
+//       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+//         <table className="min-w-full text-md">
+//           <thead className="bg-primary/20 font-bold text-md border-b-4 border-transparent">
+//             <tr>
+//               {/* === NEW: kolom nomor urut di paling kiri */}
+//               <th
+//                 scope="col"
+//                 className="w-12 px-3 py-2 text-left font-medium text-md text-gray-700"
+//                 aria-label="Row number"
+//                 title="#"
+//               >
+//                 #
+//               </th>
+//               {columns.map((c) => {
+//                 const active = sortBy === c.id;
+//                 return (
+//                   <th
+//                     key={c.id}
+//                     scope="col"
+//                     className={`px-3 py-2 text-left font-medium text-md text-gray-700 ${
+//                       c.className ?? ""
+//                     }`}
+//                   >
+//                     {c.sortable ? (
+//                       <button
+//                         type="button"
+//                         onClick={() => onSort(c.id)}
+//                         className="inline-flex items-center gap-1 hover:underline"
+//                         aria-label={`Sort by ${c.label}`}
+//                       >
+//                         {c.label}
+//                         <span className="text-md text-gray-500">
+//                           {active ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
+//                         </span>
+//                       </button>
+//                     ) : (
+//                       <span>{c.label}</span>
+//                     )}
+//                   </th>
+//                 );
+//               })}
+//             </tr>
+//           </thead>
+//           <tbody className="[&_tr]:bg-white">
+//             {loading ? (
+//               <tr>
+//                 <td
+//                   colSpan={columns.length + 1}
+//                   className="p-4 text-center text-md text-gray-500"
+//                 >
+//                   {t("common.loading")}
+//                 </td>
+//               </tr>
+//             ) : error ? (
+//               <tr>
+//                 <td
+//                   colSpan={columns.length + 1}
+//                   className="p-4 text-center text-md text-red-600"
+//                 >
+//                   {error}
+//                 </td>
+//               </tr>
+//             ) : viewItems.length === 0 ? (
+//               <tr>
+//                 <td
+//                   colSpan={columns.length + 1}
+//                   className="p-4 text-center text-md text-gray-500"
+//                 >
+//                   {t("common.noData")}
+//                 </td>
+//               </tr>
+//             ) : (
+//               viewItems.map((row, idx) => {
+//                 const key =
+//                   getRowKey?.(row, idx) ??
+//                   (String((row as { id?: string | number }).id ?? idx) as
+//                     | string
+//                     | number);
+//                 const seq = sequenceStart + idx + 1;
+//                 return (
+//                   <React.Fragment key={String(key)}>
+//                     <tr
+//                       className={
+//                         "border-t border-gray-100 hover:bg-gray-50/60 " +
+//                         (idx % 2 === 1 ? "bg-gray-50/40" : "bg-white")
+//                       }
+//                     >
+//                       {/* === sel nomor urut */}
+//                       <td className="px-2 py-1 align-top font-medium text-md text-gray-700 tabular-nums">
+//                         {seq}
+//                       </td>
+//                       {columns.map((c) => (
+//                         <td
+//                           key={c.id}
+//                           className={`px-2 py-1 align-top font-normal text-md text-gray-700 ${
+//                             c.className ?? ""
+//                           }`}
+//                         >
+//                           {c.cell(row)}
+//                         </td>
+//                       ))}
+//                     </tr>
+
+//                     {/* Expanded row (kalau ada).
+//                         Catatan: jika implementasi renderExpanded Anda membuat <tr><td colSpan=...>,
+//                         pastikan colSpan=columns.length + 1 agar sejajar dengan kolom nomor. */}
+//                     {renderExpanded && isRowExpanded?.(row, idx)
+//                       ? renderExpanded(row, { index: idx })
+//                       : null}
+//                   </React.Fragment>
+//                 );
+//               })
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       {/* Pagination */}
+//       <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+//         <div className="text-md text-gray-600">
+//           {t("addresses.pagination.summary")
+//             .replace("{page}", String(page))
+//             .replace("{pages}", String(totalPages))
+//             .replace("{total}", String(effectiveTotal))}
+//         </div>
+//         <div className="flex items-center gap-1">
+//           <button
+//             className="rounded-md border px-2 py-1 text-md disabled:opacity-50"
+//             onClick={() => setPage((p) => Math.max(1, p - 1))}
+//             disabled={page <= 1 || loading}
+//             aria-label={t("common.prev")}
+//           >
+//             {t("common.prev")}
+//           </button>
+
+//           {pagesToShow[0] > 1 && (
+//             <>
+//               <PageBtn
+//                 n={1}
+//                 active={page === 1}
+//                 onClick={() => setPage(1)}
+//                 disabled={loading}
+//               />
+//               <span className="px-1 text-md text-gray-500">…</span>
+//             </>
+//           )}
+
+//           {pagesToShow.map((n) => (
+//             <PageBtn
+//               key={n}
+//               n={n}
+//               active={page === n}
+//               onClick={() => setPage(n)}
+//               disabled={loading}
+//             />
+//           ))}
+
+//           {pagesToShow[pagesToShow.length - 1] < totalPages && (
+//             <>
+//               <span className="px-1 text-md text-gray-500">…</span>
+//               <PageBtn
+//                 n={totalPages}
+//                 active={page === totalPages}
+//                 onClick={() => setPage(totalPages)}
+//                 disabled={loading}
+//               />
+//             </>
+//           )}
+
+//           <button
+//             className="rounded-md border px-2 py-1 text-md disabled:opacity-50"
+//             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+//             disabled={page >= totalPages || loading}
+//             aria-label={t("common.next")}
+//           >
+//             {t("common.next")}
+//           </button>
+//         </div>
+//       </div>
+
+//       {/* Confirm Dialog */}
+//       {confirm.open && (
+//         <ConfirmDeleteDialog
+//           name={confirm.targetName}
+//           loading={loading}
+//           onCancel={() => setConfirm({ open: false, targetId: null })}
+//           onOk={() => handleDelete(confirm.targetId)}
+//         />
+//       )}
+//     </div>
+//   );
+
+//   function PageBtn({
+//     n,
+//     active,
+//     onClick,
+//     disabled,
+//   }: {
+//     n: number;
+//     active: boolean;
+//     onClick: () => void;
+//     disabled?: boolean;
+//   }) {
+//     return (
+//       <button
+//         className={`rounded-md border px-2 py-1 text-md ${
+//           active ? "bg-primary text-white" : ""
+//         } disabled:opacity-50`}
+//         onClick={onClick}
+//         disabled={disabled}
+//         aria-current={active ? "page" : undefined}
+//       >
+//         {n}
+//       </button>
+//     );
+//   }
+
+//   function ConfirmDeleteDialog({
+//     name,
+//     onCancel,
+//     onOk,
+//     loading: isLoading,
+//   }: {
+//     name?: string;
+//     onCancel: () => void;
+//     onOk: () => void;
+//     loading?: boolean;
+//   }) {
+//     return (
+//       <div
+//         className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+//         role="dialog"
+//         aria-modal="true"
+//       >
+//         <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl">
+//           <h3 className="mb-2 text-base font-semibold text-gray-800">
+//             {t("common.confirm")}
+//           </h3>
+//           <p className="mb-4 text-sm text-gray-700">
+//             {t("common.areYouSure")}{" "}
+//             <span className="font-medium">{name || t("addresses.item")}</span>{" "}
+//             {t("common.toDelete")}?
+//           </p>
+//           <div className="flex justify-end gap-2">
+//             <button
+//               type="button"
+//               onClick={onCancel}
+//               className="rounded-md border px-3 py-1.5 text-sm"
+//               disabled={isLoading}
+//             >
+//               {t("common.cancel")}
+//             </button>
+//             <button
+//               type="button"
+//               onClick={onOk}
+//               className="rounded-md bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+//               disabled={isLoading}
+//             >
+//               {isLoading ? t("common.loading") : "OK"}
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     );
+//   }
+// }

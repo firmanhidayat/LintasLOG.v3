@@ -111,6 +111,7 @@ export default function AddressesListPage() {
         <div className="flex items-center gap-2">
           {it.id != null ? (
             <Link
+              data-stop-rowclick
               href={`/orders/addresses/details?id=${encodeURIComponent(
                 String(it.id)
               )}`}
@@ -122,6 +123,7 @@ export default function AddressesListPage() {
             </Link>
           ) : (
             <button
+              data-stop-rowclick
               type="button"
               className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
               title="Edit (unavailable)"
@@ -133,6 +135,7 @@ export default function AddressesListPage() {
 
           {it.id != null ? (
             <button
+              data-stop-rowclick
               type="button"
               onClick={() => {
                 // ListTemplate kini menangani event ini & membuka modal konfirmasi
@@ -153,6 +156,7 @@ export default function AddressesListPage() {
             </button>
           ) : (
             <button
+              data-stop-rowclick
               type="button"
               className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
               title="Delete (unavailable)"
@@ -191,6 +195,10 @@ export default function AddressesListPage() {
         initialPageSize={80}
         initialSort={{ by: "name", dir: "asc" }}
         postFetchTransform={(list) => list}
+        rowNavigateTo={(id) => ({
+          pathname: "orders/addresses/details",
+          query: { id },
+        })}
       />
     </div>
   );

@@ -7,6 +7,20 @@ import { NavGroup, NavLink } from "@/components/NavLink";
 import lintaslogo from "@/images/lintaslog-logo.png";
 
 import { t, getLang, onLangChange, type Lang } from "@/lib/i18n";
+import { OpenMap, SectionKey } from "@/types/sidebar";
+import {
+  IconDashboard,
+  IconSummary,
+  IconClaims,
+  IconDocs,
+  IconDownPayment,
+  IconFinance,
+  IconInvoice,
+  IconList,
+  IconOrders,
+  IconTracking,
+  IconVendorBill,
+} from "./icons/Icon";
 
 export default function Sidebar({
   open = false,
@@ -61,132 +75,8 @@ export default function Sidebar({
   );
 }
 
-type SectionKey =
-  | "dashboard"
-  | "orders"
-  | "claims"
-  | "finance"
-  | "downpayment"
-  | "vendorbill";
-
 const STORAGE_KEY = "sidebar.openGroups.v1";
 const ACCORDION = true;
-
-const IconDashboard = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path
-      d="M3 13h8V3H3v10zm10 8h8V3h-8v18zM3 21h8v-6H3v6z"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-const IconOrders = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path
-      d="M3 7h18M3 12h18M3 17h18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-const IconClaims = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path d="M5 5h14v14H5z" fill="none" stroke="currentColor" strokeWidth="2" />
-    <path d="M9 9h6v6H9z" fill="none" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
-const IconFinance = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path
-      d="M12 1v22M5 5h14a2 2 0 0 1 0 4H5a2 2 0 0 1 0-4zm0 10h14a2 2 0 0 1 0 4H5a2 2 0 0 1 0-4z"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-const IconDocs = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path
-      d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm9 0v5h5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-
-const IconSummary = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path
-      d="M4 6h16M4 12h16M4 18h10"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-const IconTracking = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <circle
-      cx="12"
-      cy="12"
-      r="10"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-    <path d="M12 6v6l4 2" fill="none" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
-const IconList = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path
-      d="M4 6h16M4 12h16M4 18h16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-const IconInvoice = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path d="M6 2h12v20H6z" fill="none" stroke="currentColor" strokeWidth="2" />
-    <path
-      d="M9 6h6M9 10h6M9 14h6"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-const IconDownPayment = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path d="M4 4h16v12H4z" fill="none" stroke="currentColor" strokeWidth="2" />
-    <path
-      d="M8 20h8M10 16v4M14 16v4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-const IconVendorBill = (p: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" {...p}>
-    <path d="M6 2h12v20H6z" fill="none" stroke="currentColor" strokeWidth="2" />
-    <path
-      d="M8 7h8M8 11h8M8 15h6"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-
-type OpenMap = Record<SectionKey, boolean>;
 
 const DEFAULT_OPEN: OpenMap = {
   dashboard: true,
@@ -302,7 +192,7 @@ const SidebarContent = memo(function SidebarContent() {
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
         <NavGroup
-          href="/"
+          href="#"
           label={t("nav.dashboard.title")}
           icon={IconDashboard}
           items={[
@@ -324,7 +214,7 @@ const SidebarContent = memo(function SidebarContent() {
         />
 
         <NavGroup
-          href="/orders"
+          href="#"
           label={t("nav.orders.title")}
           icon={IconOrders}
           items={[
@@ -346,7 +236,7 @@ const SidebarContent = memo(function SidebarContent() {
         />
 
         <NavGroup
-          href="/claims"
+          href="#"
           label={t("nav.claims.title")}
           icon={IconClaims}
           items={[
@@ -363,7 +253,7 @@ const SidebarContent = memo(function SidebarContent() {
         />
 
         <NavGroup
-          href="/finance"
+          href="#"
           label={t("nav.finance.title")}
           icon={IconFinance}
           items={[
@@ -385,7 +275,7 @@ const SidebarContent = memo(function SidebarContent() {
         />
 
         <NavGroup
-          href="/downpayment"
+          href="#"
           label={t("nav.downpayment.title")}
           icon={IconDownPayment}
           items={[
@@ -402,7 +292,7 @@ const SidebarContent = memo(function SidebarContent() {
         />
 
         <NavGroup
-          href="/vendorbill"
+          href="#"
           label={t("nav.vendorbill.title")}
           icon={IconVendorBill}
           items={[
@@ -424,7 +314,7 @@ const SidebarContent = memo(function SidebarContent() {
           href="/docs"
           label={t("nav.docs")}
           icon={IconDocs}
-          className="inline-flex w-full items-center justify-center rounded-md bg-white/10 px-3 py-2 text-sm font-medium hover:bg-white/20"
+          className="inline-flex w-full items-center justify-center rounded-md  px-2 py-2 text-md font-extrabold "
         />
       </div>
     </div>

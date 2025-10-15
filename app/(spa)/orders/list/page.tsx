@@ -132,6 +132,7 @@ export default function OrdersListPage() {
           <div className="flex items-center gap-2">
             {it.id != null ? (
               <Link
+                data-stop-rowclick
                 href={`/orders/details?id=${encodeURIComponent(String(it.id))}`}
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
                 aria-label="Edit address"
@@ -141,6 +142,7 @@ export default function OrdersListPage() {
               </Link>
             ) : (
               <button
+                data-stop-rowclick
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
                 title="Edit (unavailable)"
@@ -152,6 +154,7 @@ export default function OrdersListPage() {
 
             {it.id != null ? (
               <button
+                data-stop-rowclick
                 type="button"
                 onClick={() => {
                   // ListTemplate kini menangani event ini & membuka modal konfirmasi
@@ -172,6 +175,7 @@ export default function OrdersListPage() {
               </button>
             ) : (
               <button
+                data-stop-rowclick
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
                 title="Delete (unavailable)"
@@ -207,7 +211,7 @@ export default function OrdersListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<OrderRow>
-        key={activeLang} // reset state internal ListTemplate jika ganti bahasa
+        key={"orders-" + (t("lang") || "id")}
         fetchBase={`${GET_ORDERS_URL}`}
         deleteBase={`${GET_ORDERS_URL}`}
         columns={columns}
@@ -215,6 +219,7 @@ export default function OrdersListPage() {
         rowsPerPageLabel={t("orders.rowsPerPage")}
         initialPageSize={80}
         leftHeader={leftHeader}
+        rowNavigateTo={(id) => ({ pathname: "orders/details", query: { id } })}
       />
     </div>
   );

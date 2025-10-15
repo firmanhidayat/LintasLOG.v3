@@ -400,6 +400,7 @@ export default function DownPaymentListPage() {
           <div className="flex items-center gap-2">
             {it.id != null ? (
               <Link
+                data-stop-rowclick
                 href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
                 aria-label="Edit address"
@@ -409,6 +410,7 @@ export default function DownPaymentListPage() {
               </Link>
             ) : (
               <button
+                data-stop-rowclick
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
                 title="Edit (unavailable)"
@@ -420,6 +422,7 @@ export default function DownPaymentListPage() {
 
             {it.id != null ? (
               <button
+                data-stop-rowclick
                 type="button"
                 onClick={() => {
                   // ListTemplate kini menangani event ini & membuka modal konfirmasi
@@ -440,6 +443,7 @@ export default function DownPaymentListPage() {
               </button>
             ) : (
               <button
+                data-stop-rowclick
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
                 title="Delete (unavailable)"
@@ -498,6 +502,10 @@ export default function DownPaymentListPage() {
             .includes(q) ||
           String(row.status).toLowerCase().includes(q)
         }
+        rowNavigateTo={(id) => ({
+          pathname: "downpayment/details",
+          query: { id },
+        })}
       />
 
       {/* ===== Modal Create DP ===== */}

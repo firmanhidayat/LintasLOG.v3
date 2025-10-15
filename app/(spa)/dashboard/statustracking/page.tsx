@@ -12,6 +12,7 @@ import {
   onLangChange,
   type Lang,
 } from "@/lib/i18n";
+import StatusDelivery from "@/components/ui/StatusDelivery";
 
 /** ===== Types ===== */
 export type StatusStep = { label: string; timeISO: string };
@@ -292,7 +293,7 @@ export default function StatusTrackingPage({
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
+                    className="absolute text-md right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
                   >
                     <MenuItem onClick={() => alert(`Lihat Order: ${id}`)}>
                       {t("statustracking.menu.viewOrder")}
@@ -304,9 +305,9 @@ export default function StatusTrackingPage({
                       {t("statustracking.menu.viewInvoice")}
                     </MenuItem>
                     <div className="h-px bg-gray-100" />
-                    <MenuItem onClick={() => alert(`Buat Order Serupa: ${id}`)}>
+                    {/* <MenuItem onClick={() => alert(`Buat Order Serupa: ${id}`)}>
                       {t("statustracking.menu.duplicateOrder")}
-                    </MenuItem>
+                    </MenuItem> */}
                   </div>
                 )}
               </div>
@@ -361,24 +362,20 @@ export default function StatusTrackingPage({
                     aria-hidden
                     className="absolute left-1 top-1 bottom-1 w-px bg-gray-200"
                   />
-                  <ol className="space-y-3">
+                  <ol className="space-y-0">
                     {row.statusPath.map((s, i) => {
                       const sty = stepStyles(s.label);
                       return (
-                        <li key={`${id}-step-${i}`} className="relative">
-                          <span
-                            className={`absolute -left-1.5 top-1 inline-flex h-3 w-3 rounded-full ${sty.dot}`}
-                          />
-                          <div className="flex flex-wrap items-center gap-x-2">
-                            <span className={sty.chip}>
-                              <span className="text-current">{sty.icon}</span>
-                              {s.label}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {fmt(s.timeISO)}
-                            </span>
-                          </div>
-                        </li>
+                        <StatusDelivery
+                          key={`${id}-step-${i}`}
+                          items={[{ label: s.label, datetime: s.timeISO }]}
+                          maxVisible={1}
+                          className="!pl-0 !pb-0"
+                          color={"green"}
+                          size="sm"
+                          showAllText="Show Me"
+                          hideToggle={false}
+                        />
                       );
                     })}
                   </ol>
