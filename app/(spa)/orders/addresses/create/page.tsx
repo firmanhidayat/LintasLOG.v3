@@ -19,15 +19,16 @@ export default function CreateAddressesPage() {
   }
 
   return (
-    <div className="max-auto" data-lang={activeLang}>
-      <h1 className="mb-4 text-xl font-semibold">
-        {t("addr.page.createTitle")}
-      </h1>
-      <AddressForm
-        onSuccess={() => {
-          router.push("/orders/addresses/list");
-        }}
-      />
-    </div>
+    // <div className="max-auto" data-lang={activeLang}>
+    //   <h1 className="mb-4 text-xl font-semibold">
+    //     {t("addr.page.createTitle")}
+    //   </h1>
+    <AddressForm
+      mode="create"
+      onSuccess={() => {
+        router.push("/orders/addresses/list");
+      }}
+    />
+    // </div>
   );
 }

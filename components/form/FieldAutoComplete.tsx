@@ -2,20 +2,21 @@
 import React, { useEffect, useMemo, useRef, useId } from "react";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import clsx from "clsx";
+import { RecordItem } from "@/types/recorditem";
 
-export type AutoItem = { id: number; name: string };
+// export type AutoItem = { id: number; name: string };
 
 type Props = {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   ariaLabel?: string;
-  options: AutoItem[];
+  options: RecordItem[];
   loading?: boolean;
   open: boolean;
   setOpen: (v: boolean) => void;
-  selected?: AutoItem | null;
-  onPick: (item: AutoItem) => void;
+  selected?: RecordItem | null;
+  onPick: (item: RecordItem) => void;
   error?: string;
   touched?: boolean;
   onBlurValidate?: () => void;

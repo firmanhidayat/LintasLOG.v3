@@ -42,7 +42,7 @@
             "placeholder": "user@example.com"
         },
         "district": {
-            "placeholder": "Pick/Choose Kecamatan-Kota/Kab - Propinsi",
+            "placeholder": "Pick / Choose Kecamatan-Kota / Kab - Propinsi",
             "aria": "District"
         },
         "zip": {
@@ -57,6 +57,7 @@
         "actions": {
             "saving": "Saving…",
             "update": "Update Address",
+            "save": "Save",
             "create": "Create Address",
             "confirm": "Continue ?"
         },

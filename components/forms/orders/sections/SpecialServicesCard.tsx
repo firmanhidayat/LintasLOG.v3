@@ -1,7 +1,7 @@
 import React from "react";
 import { t } from "@/lib/i18n";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
-import { FieldTextarea } from "@/components/form/FieldTextarea";
+import { Field } from "@/components/form/FieldInput";
 
 type Props<L extends string> = {
   layananPreset: readonly L[];
@@ -47,12 +47,11 @@ export default function SpecialServicesCard<L extends string>({
           ))}
         </div>
         <div className="mt-4">
-          <FieldTextarea
-            label={t("orders.layanan_lainnya")}
-            value={layananLainnya}
-            onChange={setLayananLainnya}
-            rows={4}
-          />
+          <Field.Root value={layananLainnya} onChange={setLayananLainnya}>
+            <Field.Label>{t("orders.layanan_lainnya")}</Field.Label>
+            <Field.Textarea rows={4}></Field.Textarea>
+            <Field.Error></Field.Error>
+          </Field.Root>
         </div>
       </CardBody>
     </Card>

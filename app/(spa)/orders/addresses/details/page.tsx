@@ -30,7 +30,7 @@ export default function AddressDetailsPage() {
 
   const { i18nReady, activeLang } = useI18nReady();
 
-  const [initial, setInitial] = useState<AddressFormProps["initialValue"]>();
+  const [initial, setInitial] = useState<AddressFormProps["initialData"]>();
   const [loading, setLoading] = useState<boolean>(Boolean(addressId));
   const [err, setErr] = useState<string>("");
 
@@ -100,13 +100,6 @@ export default function AddressDetailsPage() {
     <div className="max-auto" data-lang={activeLang}>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{title}</h1>
-        {/* <button
-          type="button"
-          onClick={() => router.back()}
-          className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-        >
-          {t("common.back")}
-        </button> */}
       </div>
 
       {loading ? (
@@ -119,8 +112,9 @@ export default function AddressDetailsPage() {
         </div>
       ) : (
         <AddressForm
+          mode="edit"
           {...(addressId ? { addressId } : {})}
-          initialValue={initial}
+          initialData={initial}
           onSuccess={() => router.push("/orders/addresses/list")}
         />
       )}
@@ -134,7 +128,7 @@ function isDistrictObj(v: unknown): v is { id?: number; name?: string } {
 
 function toInitialValue(
   d: AddressDetailResponse
-): AddressFormProps["initialValue"] {
+): AddressFormProps["initialData"] {
   let idCandidate: number | undefined;
   let nameCandidate: string | undefined;
 

@@ -222,12 +222,12 @@ export default function MultiFileUpload({
 
   return (
     <div className={clsx(className)}>
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <label className="block text-sm font-extrabold text-black">{label}</label>
 
       {/* Picker + DnD */}
       <div
         className={clsx(
-          "mt-2 rounded-2xl border-2 border-dashed bg-white transition"
+          "mt-2 rounded-2xl border-2 border-dashed font-extrabold bg-primary/10 transition"
         )}
       >
         <input
@@ -251,6 +251,69 @@ export default function MultiFileUpload({
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           className={clsx(
+            "flex items-start justify-between gap-3 px-4 py-3 rounded-2xl", // items-start ok
+            droppable && !disabled && "hover:bg-gray-50 active:scale-[0.99]",
+            isDragging && "border-primary bg-primary/5",
+            disabled && "cursor-not-allowed opacity-60"
+          )}
+          aria-disabled={disabled}
+        >
+          {/* KIRI */}
+          <div className="flex flex-1 min-w-0 items-start gap-3">
+            <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-300">
+              <PaperclipIcon className="h-4 w-4" />
+            </div>
+
+            {/* ⬇️ ganti w-min-0 -> min-w-0 */}
+            <div className="min-w-0 w-full">
+              <div className="text-sm font-medium text-gray-800 break-words">
+                {disabled
+                  ? "Upload dimatikan"
+                  : "Klik untuk pilih atau tarik file ke sini"}
+              </div>
+              <div className="text-xs font-extralight text-gray-500 break-words">
+                {hint || "Maks. 10 MB per file."}
+                {accept && (
+                  <>
+                    &nbsp;•&nbsp; Tipe:{" "}
+                    <span className="break-all">{accept}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* KANAN */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-gray-500 truncate max-w-[10rem]">
+              {filesCountInfo}
+            </span>
+            {!!value.length && (
+              <button
+                type="button"
+                onClick={clearAll}
+                disabled={disabled}
+                className="inline-flex items-center rounded-xl border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100"
+                title="Hapus semua"
+              >
+                <XIcon className="mr-1 h-3.5 w-3.5" />
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* <div
+          role="button"
+          tabIndex={0}
+          onClick={openPicker}
+          onKeyDown={(e) =>
+            e.key === "Enter" || e.key === " " ? openPicker() : null
+          }
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+          className={clsx(
             "flex cursor-pointer items-center justify-between gap-3 px-4 py-3",
             "rounded-2xl",
             droppable && !disabled && "hover:bg-gray-50 active:scale-[0.99]",
@@ -263,13 +326,13 @@ export default function MultiFileUpload({
             <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-300">
               <PaperclipIcon className="h-4 w-4" />
             </div>
-            <div>
-              <div className="text-sm font-medium text-gray-800">
+            <div className="min-w-0 w-full">
+              <div className="text-sm font-medium text-gray-800 break-words">
                 {disabled
                   ? "Upload dimatikan"
                   : "Klik untuk pilih atau tarik file ke sini"}
               </div>
-              <div className="text-xs font-extralight text-gray-500">
+              <div className="text-xs font-extralight text-gray-500 break-words">
                 {hint || "Maks. 10 MB per file."}
                 {accept && <> &nbsp;•&nbsp; Tipe: {accept}</>}
               </div>
@@ -291,7 +354,7 @@ export default function MultiFileUpload({
               </button>
             )}
           </div>
-        </div>
+        </div> */}
 
         {/* List files */}
         <div className="px-3 pb-3">

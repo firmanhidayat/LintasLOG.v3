@@ -5,15 +5,13 @@ import { t, getLang } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 
 import { Form, FormActions } from "@/components/form/Form";
-import {
-  FieldAutocomplete,
-  type AutoItem,
-} from "@/components/form/FieldAutoComplete";
+import { FieldAutocomplete } from "@/components/form/FieldAutoComplete";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import MultiFileUpload from "@/components/form/MultiFileUpload";
 // import { type DateValueType } from "react-tailwindcss-datepicker";
 import DateTimePickerTW from "@/components/form/DateTimePickerTW";
+import { RecordItem } from "@/types/recorditem";
 
 /** ===== ENV (sesuaikan) ===== */
 const ORDERS_SEARCH_URL =
@@ -76,9 +74,9 @@ export default function InvoiceSubmitForm() {
 
   // --- FieldAutocomplete (No. JO) state (sesuai komponenmu)
   const [joText, setJoText] = useState(""); // value string pada input
-  const [joOptions, setJoOptions] = useState<AutoItem[]>([]);
+  const [joOptions, setJoOptions] = useState<RecordItem[]>([]);
   const [joOpen, setJoOpen] = useState(false);
-  const [joSelected, setJoSelected] = useState<AutoItem | null>(null);
+  const [joSelected, setJoSelected] = useState<RecordItem | null>(null);
   const [joLoading, setJoLoading] = useState(false);
   const joInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -117,7 +115,7 @@ export default function InvoiceSubmitForm() {
         if (!res.ok) throw new Error("search failed");
         const rows: Array<{ id: number; jo_no: string; customer?: string }> =
           await res.json();
-        const opt: AutoItem[] = rows.map((r) => ({
+        const opt: RecordItem[] = rows.map((r) => ({
           id: r.id,
           name: `${r.jo_no}${r.customer ? " — " + r.customer : ""}`,
         }));
@@ -212,7 +210,7 @@ export default function InvoiceSubmitForm() {
   };
 
   /** onPick dari FieldAutocomplete (selaraskan dgn komponenmu) */
-  const onPickJo = (item: AutoItem) => {
+  const onPickJo = (item: RecordItem) => {
     setJoSelected(item);
     setJoText(item.name);
     setJoOpen(false);

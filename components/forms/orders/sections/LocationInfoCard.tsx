@@ -3,11 +3,13 @@ import { t } from "@/lib/i18n";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import DateTimePickerTW from "@/components/form/DateTimePickerTW";
 import AddressAutocomplete from "@/components/forms/orders/AddressAutocomplete";
-import { FieldText } from "@/components/form/FieldText";
 import type { AddressItem, CityItem } from "@/types/orders";
-import MultiPickupDropSection from "./MultiPickupDropSection";
+import MultiPickupDropSection from "../MultiPickupDropSection";
 import type { ExtraStop } from "./ExtraStopCard";
-import FieldPhone from "@/components/form/FieldPhone";
+import { cn } from "@/lib/cn";
+import { AddressSidePanel } from "@/components/ui/AddressSidePanel";
+import { fmtDate } from "@/lib/helpers";
+import { Field } from "@/components/form/FieldInput";
 
 type DivRef =
   | React.RefObject<HTMLDivElement>
@@ -15,6 +17,7 @@ type DivRef =
   | null;
 
 type Props = {
+  isReadOnly: boolean;
   tglMuat: string;
   setTglMuat: (v: string) => void;
   tglBongkar: string;
@@ -36,6 +39,22 @@ type Props = {
   picBongkarTelepon: string;
   setPicBongkarTelepon: (v: string) => void;
 
+  originAddressName: string;
+  originStreet: string;
+  originStreet2: string;
+  originDistrictName: string;
+  originZipCode: string;
+  originLatitude: string;
+  originLongitude: string;
+
+  destAddressName: string;
+  destStreet: string;
+  destStreet2: string;
+  destDistrictName: string;
+  destZipCode: string;
+  destLatitude: string;
+  destLongitude: string;
+
   multiPickupDrop: boolean;
   setMultiPickupDrop: (v: boolean) => void;
   extraStops: ExtraStop[];
@@ -48,6 +67,7 @@ type Props = {
 };
 
 export default function LocationInfoCard({
+  isReadOnly,
   tglMuat,
   setTglMuat,
   tglBongkar,
@@ -66,6 +86,20 @@ export default function LocationInfoCard({
   setPicBongkarNama,
   picBongkarTelepon,
   setPicBongkarTelepon,
+  originAddressName,
+  originStreet,
+  originStreet2,
+  originDistrictName,
+  originZipCode,
+  originLatitude,
+  originLongitude,
+  destAddressName,
+  destStreet,
+  destStreet2,
+  destDistrictName,
+  destZipCode,
+  destLatitude,
+  destLongitude,
   multiPickupDrop,
   setMultiPickupDrop,
   extraStops,
@@ -82,6 +116,39 @@ export default function LocationInfoCard({
       ? (firstErrorRef as React.Ref<HTMLDivElement>)
       : undefined;
 
+  const origin = {
+    name: originAddressName,
+    street1: originStreet,
+    street2: originStreet2,
+    districtLine: originDistrictName,
+    province: "",
+    postCode: originZipCode,
+    mobile: "-",
+    email: "-",
+    lat: originLatitude,
+    lng: originLongitude,
+    picName: picMuatNama,
+    picPhone: picMuatTelepon,
+    timeLabel: "ETD",
+    timeValue: fmtDate(tglMuat),
+  };
+
+  const destination = {
+    name: destAddressName,
+    street1: destStreet,
+    street2: destStreet2,
+    districtLine: destDistrictName,
+    province: "",
+    postCode: destZipCode,
+    mobile: "-",
+    email: "-",
+    lat: destLatitude,
+    lng: destLongitude,
+    picName: picBongkarNama,
+    picPhone: picBongkarTelepon,
+    timeLabel: "ETA",
+    timeValue: fmtDate(tglBongkar),
+  };
   return (
     <Card>
       <CardHeader>
@@ -91,8 +158,8 @@ export default function LocationInfoCard({
       </CardHeader>
       <CardBody>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Kolom 1 */}
-          <div className="space-y-4">
+          {/* Kolom 1 - Editable */}
+          <div className={cn("space-y-4", isReadOnly && "hidden")}>
             <div ref={refIf("tglMuat")}>
               <DateTimePickerTW
                 label={t("orders.tgl_muat")}
@@ -103,7 +170,6 @@ export default function LocationInfoCard({
                 displayFormat="DD-MM-YYYY"
               />
             </div>
-
             <div ref={refIf("lokMuat")}>
               <AddressAutocomplete
                 label={t("orders.lokasi_muat")}
@@ -119,29 +185,24 @@ export default function LocationInfoCard({
               )}
             </div>
 
-            <FieldText
-              label={t("orders.pic_muat_name") ?? "PIC Muat - Nama"}
-              value={picMuatNama}
-              onChange={setPicMuatNama}
-            />
-            {/* <FieldText
-              label={t("orders.pic_muat_phone") ?? "PIC Muat - Telepon"}
+            <Field.Root value={picMuatNama} onChange={setPicMuatNama}>
+              <Field.Label>{t("orders.pic_muat_name")}</Field.Label>
+              <Field.Input></Field.Input>
+              <Field.Error></Field.Error>
+            </Field.Root>
+            <Field.Root
+              type="tel"
               value={picMuatTelepon}
               onChange={setPicMuatTelepon}
-              inputMode="tel"
-              pattern={ID_PHONE_PATTERN}
-            /> */}
-            <FieldPhone
-              label={t("orders.pic_muat_phone") ?? "PIC Muat - Telepon"}
-              value={picMuatTelepon}
-              onChange={setPicMuatTelepon}
-              kind="mobile"
-              placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
-            />
+              placeholder={t("placeholders.phone")}
+            >
+              <Field.Label>{t("orders.pic_muat_phone")}</Field.Label>
+              <Field.Input></Field.Input>
+              <Field.Error></Field.Error>
+            </Field.Root>
           </div>
-
-          {/* Kolom 2 */}
-          <div className="space-y-4">
+          {/* Kolom 2 - Editable */}
+          <div className={cn("space-y-4", isReadOnly && "hidden")}>
             <div ref={refIf("tglBongkar")}>
               <DateTimePickerTW
                 label={t("orders.tgl_bongkar")}
@@ -152,7 +213,6 @@ export default function LocationInfoCard({
                 displayFormat="DD-MM-YYYY"
               />
             </div>
-
             <div ref={refIf("lokBongkar")}>
               <AddressAutocomplete
                 label={t("orders.lokasi_bongkar")}
@@ -168,30 +228,44 @@ export default function LocationInfoCard({
               )}
             </div>
 
-            <FieldText
-              label={t("orders.pic_bongkar_name") ?? "PIC Bongkar - Nama"}
-              value={picBongkarNama}
-              onChange={setPicBongkarNama}
+            <Field.Root value={picBongkarNama} onChange={setPicBongkarNama}>
+              <Field.Label>{t("orders.pic_bongkar_name")}</Field.Label>
+              <Field.Input></Field.Input>
+              <Field.Error></Field.Error>
+            </Field.Root>
+            <Field.Root
+              type="tel"
+              value={picBongkarTelepon}
+              onChange={setPicBongkarTelepon}
+              placeholder={t("placeholders.phone")}
+            >
+              <Field.Label>{t("orders.pic_bongkar_phone")}</Field.Label>
+              <Field.Input></Field.Input>
+              <Field.Error></Field.Error>
+            </Field.Root>
+          </div>
+
+          {/** Readonly Information origin _address _name*/}
+          <div className={cn("space-y-4", !isReadOnly && "hidden")}>
+            <AddressSidePanel
+              title="Origin Address"
+              labelPrefix="Origin"
+              info={origin}
             />
-            {/* <FieldText
-              label={t("orders.pic_bongkar_phone") ?? "PIC Bongkar - Telepon"}
-              value={picBongkarTelepon}
-              onChange={setPicBongkarTelepon}
-              inputMode="tel"
-              pattern={ID_PHONE_PATTERN}
-            /> */}
-            <FieldPhone
-              label={t("orders.pic_bongkar_phone") ?? "PIC Bongkar - Telepon"}
-              value={picBongkarTelepon}
-              onChange={setPicBongkarTelepon}
-              kind="mobile"
-              placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
+          </div>
+          {/** Readonly Information destination _address _name*/}
+          <div className={cn("space-y-4", !isReadOnly && "hidden")}>
+            <AddressSidePanel
+              title="Destination Address"
+              labelPrefix="Destination"
+              info={destination}
             />
           </div>
         </div>
 
         {/* ==== Multi Pickup/Drop (dipisah ke komponen) ==== */}
         <MultiPickupDropSection
+          isReadOnly={isReadOnly}
           multiPickupDrop={multiPickupDrop}
           setMultiPickupDrop={setMultiPickupDrop}
           extraStops={extraStops}

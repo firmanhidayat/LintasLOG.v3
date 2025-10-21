@@ -87,7 +87,7 @@ export default function DateTimePickerTW({
       </label>
 
       {/* Satu border utk date & time */}
-      <div className="flex items-stretch rounded-md border border-gray-300 focus-within:ring-2 focus-within:ring-primary">
+      <div className="flex items-stretch rounded-md border-1 outline-none ">
         {/* Date */}
         <div className="min-w-0 flex-1">
           <Datepicker
@@ -102,12 +102,12 @@ export default function DateTimePickerTW({
             asSingle
             useRange={false}
             displayFormat={displayFormat} // << TAMPILAN ke user
-            primaryColor="blue"
+            primaryColor={"green"}
             showShortcuts={false}
             showFooter={false}
             popoverDirection="down"
-            containerClassName="relative w-full overflow-visible [&_.absolute]:left-0 [&_.absolute]:z-50 [&_.absolute]:min-w-[18rem] sm:[&_.absolute]:min-w-[20rem]"
-            inputClassName="w-full rounded-none border-0 bg-transparent px-3 py-2 text-sm focus:!ring-0 focus:!outline-none"
+            containerClassName="relative w-full overflow-visible [&_.absolute]:left-0 [&_.absolute]:z-50 [&_.absolute]:min-w-[18rem] sm:[&_.absolute]:min-w-[20rem] "
+            inputClassName="w-full rounded-md !border-0 px-3 py-2 text-sm "
             toggleClassName="hidden"
           />
         </div>

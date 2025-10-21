@@ -9,37 +9,12 @@ import {
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link";
 import { Icon } from "@/components/icons/Icon";
-import { OrderRow, OrderStatus } from "@/types/orders";
+import { OrderRow } from "@/types/orders";
 import { fmtDate, fmtPrice } from "@/lib/helpers";
+// import { StatusStep } from "@/types/status-delivery";
+import { GetStatesInLine } from "@/components/ui/DeliveryState";
 
 const GET_ORDERS_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
-
-function StatusPill({ value }: { value: OrderStatus }) {
-  const color =
-    value === "Pending"
-      ? "bg-gray-100 text-gray-700 border-gray-200"
-      : value === "Accepted"
-      ? "bg-blue-100 text-blue-700 border-blue-200"
-      : value === "On Preparation"
-      ? "bg-indigo-100 text-indigo-700 border-indigo-200"
-      : value === "Pickup"
-      ? "bg-amber-100 text-amber-700 border-amber-200"
-      : value === "On Delivery"
-      ? "bg-cyan-100 text-cyan-700 border-cyan-200"
-      : value === "Received"
-      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-      : value === "On Review"
-      ? "bg-violet-100 text-violet-700 border-violet-200"
-      : "bg-green-100 text-green-700 border-green-200"; // Done
-
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}
-    >
-      {value}
-    </span>
-  );
-}
 
 export default function OrdersListPage() {
   const { i18nReady, activeLang } = useI18nReady();
@@ -109,19 +84,27 @@ export default function OrdersListPage() {
         id: "price",
         label: t("orders.columns.price") || "Harga",
         sortable: true,
-        sortValue: (r) => String(r.price ?? ""),
+        sortValue: (r) => String(r.amount_total ?? ""),
         className: "w-36 text-right",
-        cell: (r) => <span className="tabular-nums">{fmtPrice(r.price)}</span>,
+        cell: (r) => (
+          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
+        ),
       },
       {
         id: "status",
         label: t("orders.columns.status") || "Status",
         sortable: true,
-        sortValue: (r) => r.status,
+        sortValue: (r) => r.states.find((s) => s.is_current)?.key || "unknown",
         className: "w-44",
-        cell: (r) => <StatusPill value={r.status} />,
-        // jika menambahkan filter di ListTemplate, bisa aktifkan:
-        // filter: { type: "select", options: STATUS_ORDER.map(s => ({ label: s, value: s })) },
+        cell: (r) =>
+          r.states.find((s) => s.is_current)?.is_current ? (
+            <GetStatesInLine
+              value={r.states.find((s) => s.is_current)?.key || "unknown"}
+              label={r.states.find((s) => s.is_current)?.label || "unknown"}
+            />
+          ) : (
+            <GetStatesInLine value="unknown" label="unknown" />
+          ),
       },
       {
         id: "actions",
@@ -218,6 +201,7 @@ export default function OrdersListPage() {
         searchPlaceholder={t("orders.search.placeholder")}
         rowsPerPageLabel={t("orders.rowsPerPage")}
         initialPageSize={80}
+        initialSort={{ by: "id", dir: "desc" }}
         leftHeader={leftHeader}
         rowNavigateTo={(id) => ({ pathname: "orders/details", query: { id } })}
       />

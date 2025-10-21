@@ -24,7 +24,7 @@ export default function ShippingDocumentsCard({
         </h3>
       </CardHeader>
       <CardBody>
-        <div className="space-y-4">
+        <div>
           <MultiFileUpload
             label={t("orders.lampiran_dokumen")}
             value={dokumenFiles}
@@ -37,7 +37,7 @@ export default function ShippingDocumentsCard({
               "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
             }
             onReject={(msgs) => console.warn("[Dokumen] rejected:", msgs)}
-            className="grid grid-cols-1 gap-4"
+            className="mb-10 gap-3 justify-end"
           />
           <MultiFileUpload
             label={t("orders.lampiran_sj_pod")}
@@ -51,7 +51,7 @@ export default function ShippingDocumentsCard({
               "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
             }
             onReject={(msgs) => console.warn("[SJ/POD] rejected:", msgs)}
-            className="grid grid-cols-1 gap-4"
+            className="gap-3 justify-end"
             showImagePreview
           />
         </div>

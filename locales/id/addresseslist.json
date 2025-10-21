@@ -57,6 +57,7 @@
         "actions": {
             "saving": "Simpan",
             "update": "Pembaharuan Alamat",
+            "save": "Simpan",
             "create": "Buat Alamat",
             "confirm": "Lanjut ?"
         },

@@ -12,38 +12,32 @@ import { Icon } from "@/components/icons/Icon";
 import { CityItem, ModaItem, OrderTypeItem } from "@/types/orders";
 import { fmtDate, fmtPrice } from "@/lib/helpers";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+const PL_URL = process.env.NEXT_PUBLIC_TMS_PRICELIST_URL ?? "";
 
 type PriceListRow = {
   id: number | string;
+  name: string;
   order_type: OrderTypeItem;
   moda: ModaItem;
   origin_district: CityItem;
   dest_district: CityItem;
+  min_quantity: number | string;
+  price: number;
   date_start: string;
   date_end: string;
-  price: number;
 };
 const DEMO_PRICELIST: PriceListRow[] = [
   {
     id: 1,
+    name: "Jasa Pengiriman TLS",
     order_type: { id: 1, name: "LTL" },
     moda: { id: 1, name: "Truck" },
     origin_district: { id: 1, name: "Jakarta" },
     dest_district: { id: 2, name: "Bandung" },
+    min_quantity: 0,
+    price: 1500000,
     date_start: "2024-01-01",
     date_end: "2024-12-31",
-    price: 1500000,
-  },
-  {
-    id: 2,
-    order_type: { id: 2, name: "FTL" },
-    moda: { id: 2, name: "Train" },
-    origin_district: { id: 3, name: "Surabaya" },
-    dest_district: { id: 4, name: "Yogyakarta" },
-    date_start: "2024-02-01",
-    date_end: "2024-11-30 ",
-    price: 2500000,
   },
 ];
 export default function FinancePriceListPage() {
@@ -57,6 +51,14 @@ export default function FinancePriceListPage() {
         sortable: true,
         sortValue: (info) => String(info.id ?? ""),
         cell: (info) => info.id,
+        className: "w-44",
+      },
+      {
+        id: "name",
+        label: t("Name"),
+        sortable: true,
+        sortValue: (info) => String(info.name ?? ""),
+        cell: (info) => info.name,
         className: "w-44",
       },
       {
@@ -107,6 +109,15 @@ export default function FinancePriceListPage() {
         cell: (info) => fmtDate(info.date_end as string),
         className: "w-44",
       },
+
+      {
+        id: "min_quantity",
+        label: t("Price"),
+        sortable: true,
+        sortValue: (info) => String(info.min_quantity ?? ""),
+        cell: (info) => fmtPrice(info.min_quantity as number),
+        className: "w-44",
+      },
       {
         id: "price",
         label: t("Price"),
@@ -125,6 +136,7 @@ export default function FinancePriceListPage() {
           <div className="flex items-center gap-2">
             {it.id != null ? (
               <Link
+                hidden
                 data-stop-rowclick
                 href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
@@ -135,6 +147,7 @@ export default function FinancePriceListPage() {
               </Link>
             ) : (
               <button
+                hidden
                 data-stop-rowclick
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
@@ -147,6 +160,7 @@ export default function FinancePriceListPage() {
 
             {it.id != null ? (
               <button
+                hidden
                 data-stop-rowclick
                 type="button"
                 onClick={() => {
@@ -168,6 +182,7 @@ export default function FinancePriceListPage() {
               </button>
             ) : (
               <button
+                hidden
                 data-stop-rowclick
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
@@ -191,8 +206,8 @@ export default function FinancePriceListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<PriceListRow>
-        fetchBase={`${API_BASE}/api-tms/finance/price-list`} // diabaikan saat staticData dipakai
-        deleteBase={`${API_BASE}/api-tms/finance/price-list`} // diabaikan saat staticData dipakai
+        fetchBase={`${PL_URL}`} // diabaikan saat staticData dipakai
+        deleteBase={`${PL_URL}`} // diabaikan saat staticData dipakai
         columns={columns}
         searchPlaceholder={t("invoices.search.placeholder")}
         rowsPerPageLabel={t("invoices.rowsPerPage")}
@@ -205,10 +220,10 @@ export default function FinancePriceListPage() {
           (row.moda.name ?? "").toLowerCase().includes(q) ||
           row.origin_district.name.toLowerCase().includes(q)
         }
-        rowNavigateTo={(id) => ({
-          pathname: "finance/pricelist/details",
-          query: { id },
-        })}
+        // rowNavigateTo={(id) => ({
+        //   pathname: "finance/pricelist/details",
+        //   query: { id },
+        // })}
       />
     </div>
   );

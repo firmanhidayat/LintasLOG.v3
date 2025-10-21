@@ -1,8 +1,7 @@
 import React from "react";
 import { t } from "@/lib/i18n";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
-import { FieldText } from "@/components/form/FieldText";
-import { FieldTextarea } from "@/components/form/FieldTextarea";
+import { Field } from "@/components/form/FieldInput";
 
 type DivRef =
   | React.RefObject<HTMLDivElement>
@@ -43,22 +42,51 @@ export default function CargoInfoCard({
       <CardBody>
         <div className="grid grid-cols-1 gap-4">
           <div ref={refIf("muatanNama")}>
-            <FieldText
+            {/* <FieldText
               label={t("orders.muatan_nama")}
               value={muatanNama}
               onChange={setMuatanNama}
               error={errors.muatanNama}
               touched={Boolean(errors.muatanNama)}
             />
+             */}
+            <Field.Root
+              value={muatanNama}
+              onChange={setMuatanNama}
+              error={errors.muatanNama}
+              touched={Boolean(errors.muatanNama)}
+              className="flex-auto"
+            >
+              <Field.Label>{t("orders.muatan_nama")}</Field.Label>
+              <Field.Control>
+                <Field.Input className="w-full"></Field.Input>
+                <Field.Error></Field.Error>
+              </Field.Control>
+            </Field.Root>
           </div>
+
           <div ref={refIf("muatanDeskripsi")}>
-            <FieldTextarea
+            {/* <FieldTextarea
               label={t("orders.muatan_deskripsi")}
               value={muatanDeskripsi}
               error={errors.muatanDeskripsi}
               onChange={setMuatanDeskripsi}
               rows={4}
-            />
+            /> */}
+            <Field.Root
+              type="text"
+              value={muatanDeskripsi}
+              onChange={setMuatanDeskripsi}
+              error={errors.muatanDeskripsi}
+              touched={Boolean(errors.muatanDeskripsi)}
+              rows={4}
+            >
+              <Field.Label>{t("orders.muatan_deskripsi")}</Field.Label>
+              <Field.Control>
+                <Field.Textarea className="w-full"></Field.Textarea>
+                <Field.Error></Field.Error>
+              </Field.Control>
+            </Field.Root>
           </div>
         </div>
       </CardBody>

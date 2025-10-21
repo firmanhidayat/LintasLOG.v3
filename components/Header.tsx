@@ -18,16 +18,18 @@ const ICON_BTN = `${ICON_BTN_BASE} h-8 w-8`;
 
 export default function Header({
   onToggleSidebar,
+  sidebarOpen,
 }: {
   onToggleSidebar?: () => void;
+  sidebarOpen?: boolean; // NEW
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  //const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [activeLang, setActiveLang] = useState<Lang>(() => getLang());
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
     return () => off?.();
-  }, [activeLang]);
+  }, []);
 
   useEffect(() => {
     const handler = () => {
@@ -47,12 +49,16 @@ export default function Header({
             <button
               type="button"
               className={`${ICON_BTN} md:hidden`}
+              // className={`${ICON_BTN} hidden md:inline-flex`}
               aria-label="Toggle sidebar"
-              aria-pressed={sidebarOpen}
-              onClick={() => {
-                setSidebarOpen((v) => !v);
-                onToggleSidebar?.();
-              }}
+              aria-controls="main-sidebar" // NEW
+              aria-pressed={!!sidebarOpen} // NEW
+              aria-expanded={!!sidebarOpen} // NEW
+              onClick={() => onToggleSidebar?.()}
+              // onClick={() => {
+              //   setSidebarOpen((v) => !v);
+              //   onToggleSidebar?.();
+              // }}
             >
               <svg
                 viewBox="0 0 24 24"

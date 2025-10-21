@@ -1,39 +1,34 @@
+import { StatusStep } from "./status-delivery";
+
+/// Item untuk dropdown city, address, etc.
 export interface CityItem {
   id: number | string;
   name: string;
 }
-
+/// Item untuk dropdown address
 export interface AddressItem {
   id: number | string;
   name: string;
 }
-
+// Item untuk dropdown order type
 export type OrderTypeItem = {
   id: number | string;
   name: string;
   // code?: string;
 };
-
+// Item untuk dropdown moda
 export type ModaItem = {
   id: number | string;
   name: string;
   // code?: string;
 };
+// Item untuk dropdown partner/customer
 export type PartnerItem = {
   id: number | string;
   name: string;
 };
 
-export type OrderStatus =
-  | "Pending"
-  | "Accepted"
-  | "On Preparation"
-  | "Pickup"
-  | "On Delivery"
-  | "Received"
-  | "On Review"
-  | "Done";
-
+// Row type untuk datagrid orders
 export type OrderRow = {
   id: number | string;
   name?: string;
@@ -42,11 +37,12 @@ export type OrderRow = {
   drop_off_date_planne?: RoutePayload["eta_date"];
   dest_city?: { id: number; name: string };
   requirement_other?: string;
-  price?: number;
-  status: OrderStatus;
+  amount_total?: number;
+  states: StatusStep[];
   route_ids: RoutePayload[];
 };
 
+// Payload untuk create / edit order
 export type RoutePayload = {
   is_main_route: boolean;
   origin_address_id: number;
@@ -58,6 +54,8 @@ export type RoutePayload = {
   etd_date: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
   eta_date: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
 };
+
+// Payload utama untuk API create/edit order
 export type ApiPayload = {
   receipt_by: string;
   origin_city_id: number;
@@ -116,9 +114,6 @@ export interface CreateOrderPayload {
   requirement_tarpaulin: boolean;
   requirement_other: string;
 
-  // layanan_khusus: string[];
-  // layanan_lainnya?: string;
-
   // Informasi Muatan
   muatan_nama: string;
   muatan_deskripsi: string;
@@ -160,12 +155,36 @@ export type OrdersCreateFormProps = {
     requirement_other: string;
     pickup_date_planne: string; // "YYYY-MM-DD HH:mm:ss" or ISO
     drop_off_date_planne: string; // same format
+
+    amount_shipping: string | number;
+    amount_shipping_multi_charge: string | number;
+    amount_tax: string | number;
+    amount_total: string | number;
+    states: StatusStep[];
+
     origin_city?: CityItem;
     dest_city?: CityItem;
 
     // 🔥 Tambahan (top-level) untuk prefill alamat dari API
     origin_address?: AddressItem;
     dest_address?: AddressItem;
+
+    // readonly
+    origin_address_name: string;
+    origin_street: string;
+    origin_street2: string;
+    origin_district?: CityItem;
+    origin_zip: string;
+    origin_latitude: string;
+    origin_longitude: string;
+    // readonly
+    dest_address_name: string;
+    dest_street: string;
+    dest_street2: string;
+    dest_district?: CityItem;
+    dest_zip: string;
+    dest_latitude: string;
+    dest_longitude: string;
 
     route_ids?: Array<{
       is_main_route: boolean;
@@ -180,10 +199,27 @@ export type OrdersCreateFormProps = {
       origin_address?: AddressItem;
       dest_address?: AddressItem;
 
+      // readonly
+      origin_address_name: string;
+      origin_street: string;
+      origin_street2: string;
+      origin_district: CityItem;
+      origin_zip: string;
+      origin_latitude: string;
+      origin_longitude: string;
+      // readonly
+      dest_address_name: string;
+      dest_street: string;
+      dest_street2: string;
+      dest_district: CityItem;
+      dest_zip: string;
+      dest_latitude: string;
+      dest_longitude: string;
+
       etd_date?: string;
       eta_date?: string;
     }>;
-    status?: OrderStatus;
+    idReadOnly?: boolean;
   }>;
   /** Callback opsional setelah sukses submit */
   onSuccess?: (result?: unknown) => void;

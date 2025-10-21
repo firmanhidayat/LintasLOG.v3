@@ -186,6 +186,7 @@ export default function AddressesListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<AddressItem>
+        key={"addresses-" + (t("lang") || "id")}
         fetchBase={`${USER_ADDRESS_URL}`}
         deleteBase={`${USER_ADDRESS_URL}`}
         columns={columns}
@@ -193,7 +194,7 @@ export default function AddressesListPage() {
         rowsPerPageLabel={t("addresses.rowsPerPage")}
         leftHeader={leftHeader}
         initialPageSize={80}
-        initialSort={{ by: "name", dir: "asc" }}
+        initialSort={{ by: "id", dir: "desc" }}
         postFetchTransform={(list) => list}
         rowNavigateTo={(id) => ({
           pathname: "orders/addresses/details",

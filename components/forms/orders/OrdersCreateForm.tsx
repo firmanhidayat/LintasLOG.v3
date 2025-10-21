@@ -5,39 +5,37 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { t, getLang, onLangChange } from "@/lib/i18n";
 import { goSignIn } from "@/lib/goSignIn";
 import { useI18nReady } from "@/hooks/useI18nReady";
-import { Card, CardHeader, CardBody } from "@/components/ui/Card";
+import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FieldTextarea } from "@/components/form/FieldTextarea";
-import OrderInfoCard from "@/components/forms/orders/OrderInfoCard";
-import LocationInfoCard from "@/components/forms/orders/LocationInfoCard";
-import SpecialServicesCard from "@/components/forms/orders/SpecialServicesCard";
-import CargoInfoCard from "@/components/forms/orders/CargoInfoCard";
-import CostDetailsCard from "@/components/forms/orders/CostDetailsCard";
-import ShippingDocumentsCard from "@/components/forms/orders/ShippingDocumentsCard";
+import OrderInfoCard from "@/components/forms/orders/sections/OrderInfoCard";
+import LocationInfoCard from "@/components/forms/orders/sections/LocationInfoCard";
+import SpecialServicesCard from "@/components/forms/orders/sections/SpecialServicesCard";
+import CargoInfoCard from "@/components/forms/orders/sections/CargoInfoCard";
+import CostDetailsCard from "@/components/forms/orders/sections/CostDetailsCard";
+import ShippingDocumentsCard from "@/components/forms/orders/sections/ShippingDocumentsCard";
 import { tzDateToUtcISO } from "@/lib/tz";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { Megaphone } from "lucide-react";
 
 import type {
   AddressItem,
   OrderTypeItem,
   ModaItem,
   ApiPayload,
-  OrderStatus,
   CityItem,
   OrdersCreateFormProps,
   PartnerItem,
 } from "@/types/orders";
 
-// === parsing bantuan untuk prefill dari API ===
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
-dayjs.extend(customParseFormat);
 import {
   apiToLocalIsoMinute,
   buildDetailUrl,
   pathJoin,
 } from "@/components/shared/Helper";
-import StatusTracker from "@/components/ui/StatusTracker";
+import StatusDeliveryImage from "@/components/ui/DeliveryState";
+import { StatusStep } from "@/types/status-delivery";
+import { ExtraStop } from "./sections/ExtraStopCard";
 
 /** ENV */
 const POST_ORDER_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL!;
@@ -45,25 +43,6 @@ const POST_CHAT_URL = process.env.NEXT_PUBLIC_TMS_ORDER_CHAT_URL ?? "";
 const DETAIL_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const UPDATE_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const APP_BASE_PATH = process.env.NEXT_PUBLIC_URL_BASE ?? "";
-
-// /* === Optional metadata untuk Tiba/Keluar per step === */
-// type StatusMeta = Partial<
-//   Record<OrderStatus, { arrive?: string; depart?: string }>
-// >;
-
-/** ExtraStop seragam dengan mainRoute (akan dikirim sebagai bagian dari route_ids) */
-type ExtraStop = {
-  lokMuat: AddressItem | null;
-  lokBongkar: AddressItem | null;
-  /** PIC di origin (lokasi muat) */
-  originPicName: string;
-  originPicPhone: string;
-  /** PIC di destination (lokasi bongkar) */
-  destPicName: string;
-  destPicPhone: string;
-  tglETDMuat: string;
-  tglETABongkar: string;
-};
 
 /* === Lightweight Modal/Dialog === */
 function Modal({
@@ -186,26 +165,49 @@ function addrFromRoute(
   return id ? ({ id } as AddressItem) : null;
 }
 
+function normalizeKey(s: unknown): string {
+  return String(s ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/[\s_-]+/g, ""); // "On Review" -> "onreview"
+}
+
+type AnyStep =
+  | {
+      key?: string;
+      label?: string;
+      is_current?: boolean;
+      code?: string;
+      name?: string;
+      title?: string;
+      status?: string;
+      current?: boolean;
+      active?: boolean;
+    }
+  | string;
+
+function extractApiSteps(
+  d: NonNullable<OrdersCreateFormProps["initialData"]>
+): StatusStep[] {
+  const items = (d.states ?? []) as StatusStep[]; // ← tanpa any
+
+  return items.map((it): StatusStep => {
+    if (typeof it === "string") {
+      return { key: normalizeKey(it), label: it, is_current: false };
+    }
+    const key = normalizeKey(it.key ?? it.label);
+    const label = it.label ?? it.key ?? "";
+    return { key, label, is_current: Boolean(it.is_current) };
+  });
+}
+
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>
 ) {
-  // type Maybe<T> = T | null | undefined;
-
-  // const toOrderTypeItem = (
-  //   v: Maybe<string | OrderTypeItem>
-  // ): OrderTypeItem | null => {
-  //   if (!v) return null;
-  //   return typeof v === "string" ? { id: v, name: v } : v;
-  // };
-
-  // const toModaItem = (v: Maybe<string | ModaItem>): ModaItem | null => {
-  //   if (!v) return null;
-  //   return typeof v === "string" ? { id: v, name: v } : v;
-  // };
-
-  // console.log("data edit form (prefill):", data);
+  console.log("data:", data);
 
   const form = {
+    states: data.states ? extractApiSteps(data) : ([] as StatusStep[]),
     noJo: data.name ?? "",
     customer: (data.partner as PartnerItem)?.name ?? "",
     namaPenerima: data.receipt_by ?? "",
@@ -226,6 +228,24 @@ function prefillFromInitial(
     tglBongkar: apiToLocalIsoMinute(data.drop_off_date_planne, "08:00"),
     lokMuat: null as AddressItem | null,
     lokBongkar: null as AddressItem | null,
+
+    // readonly
+    origin_address_name: "",
+    origin_street: "",
+    origin_street2: "",
+    origin_district_name: "",
+    origin_zip: "",
+    origin_latitude: "",
+    origin_longitude: "",
+    // readonly
+    dest_address_name: "",
+    dest_street: "",
+    dest_street2: "",
+    dest_district_name: "",
+    dest_zip: "",
+    dest_latitude: "",
+    dest_longitude: "",
+
     muatanNama: data.cargo_name ?? "",
     muatanDeskripsi: data.cargo_description ?? "",
     requirement_helmet: Boolean(data.requirement_helmet),
@@ -237,14 +257,19 @@ function prefillFromInitial(
     requirement_face_mask: Boolean(data.requirement_face_mask),
     requirement_tarpaulin: Boolean(data.requirement_tarpaulin),
     requirement_other: data.requirement_other ?? "",
+    amount_shipping: data.amount_shipping ?? "",
+    amount_shipping_multi_charge: data.amount_shipping_multi_charge ?? "",
+    amount_tax: data.amount_tax ?? "",
+    amount_total: data.amount_total ?? "",
     picMuatNama: "",
     picMuatTelepon: "",
     picBongkarNama: "",
     picBongkarTelepon: "",
     extraStops: [] as ExtraStop[],
+    isReadOnly: false,
   };
 
-  // console.log("form:", form);
+  console.log("form before:", form);
 
   const routes: RouteItem[] = Array.isArray(data.route_ids)
     ? (data.route_ids as RouteItem[])
@@ -262,11 +287,34 @@ function prefillFromInitial(
   form.picBongkarNama = main?.dest_pic_name ?? "";
   form.picBongkarTelepon = main?.dest_pic_phone ?? "";
 
+  // readonly
+  form.origin_address_name = main?.origin_address_name ?? "";
+  form.origin_street = main?.origin_street ?? "";
+  form.origin_street2 = main?.origin_street2 ?? "";
+  form.origin_district_name = main?.origin_district.name ?? "";
+  form.origin_zip = main?.origin_zip ?? "";
+  form.origin_latitude = main?.origin_latitude ?? "";
+  form.origin_longitude = main?.origin_longitude ?? "";
+  // readonly
+  form.dest_address_name = main?.dest_address_name ?? "";
+  form.dest_street = main?.dest_street ?? "";
+  form.dest_street2 = main?.dest_street2 ?? "";
+  form.dest_district_name = main?.dest_district.name ?? "";
+  form.dest_zip = main?.dest_zip ?? "";
+  form.dest_latitude = main?.dest_latitude ?? "";
+  form.dest_longitude = main?.dest_longitude ?? "";
+
   // Fallback: kalau tidak ada route main, coba dari top-level origin/dest_address
   if (!form.lokMuat)
     form.lokMuat = (data.origin_address as AddressItem) ?? null;
   if (!form.lokBongkar)
     form.lokBongkar = (data.dest_address as AddressItem) ?? null;
+
+  // Amount Details readonly
+  form.amount_shipping = data.amount_shipping ?? "";
+  form.amount_shipping_multi_charge = data.amount_shipping_multi_charge ?? "";
+  form.amount_tax = data.amount_tax ?? "";
+  form.amount_total = data.amount_total ?? "";
 
   // Extra routes
   const extras: RouteItem[] = routes.filter((r) => !r.is_main_route);
@@ -279,9 +327,31 @@ function prefillFromInitial(
       destPicName: r.dest_pic_name ?? "",
       destPicPhone: r.dest_pic_phone ?? "",
       tglETDMuat: apiToLocalIsoMinute(r.etd_date) ?? r.etd_date ?? "",
-      tglETABongkar: apiToLocalIsoMinute(r.eta_date) ?? r.eta_date ?? "", // belum ada dari API → kosong
+      tglETABongkar: apiToLocalIsoMinute(r.eta_date) ?? r.eta_date ?? "",
+      originAddressName: r.origin_address_name ?? "",
+      originStreet: r.origin_street ?? "",
+      originStreet2: r.origin_street2 ?? "",
+      originDistrictName: r.origin_district.name ?? "",
+      originZipCode: r.origin_zip ?? "",
+      originLatitude: r.origin_latitude ?? "",
+      originLongitude: r.origin_longitude ?? "",
+
+      destAddressName: r.dest_address_name ?? "",
+      destStreet: r.dest_street ?? "",
+      destStreet2: r.dest_street2 ?? "",
+      destDistrictName: r.dest_district.name ?? "",
+      destZipCode: r.dest_zip ?? "",
+      destLatitude: r.dest_latitude ?? "",
+      destLongitude: r.dest_longitude ?? "",
     })
   );
+
+  const current = data.states?.find((s) => s.is_current);
+  form.isReadOnly = current
+    ? !["draft", "pending"].includes(current.key)
+    : false;
+
+  console.log("form results:", form);
 
   return form;
 }
@@ -373,6 +443,21 @@ export default function OrdersCreateForm({
   const [lokMuat, setLokMuat] = useState<AddressItem | null>(null);
   const [lokBongkar, setLokBongkar] = useState<AddressItem | null>(null);
 
+  const [originAddressName, setOriginAddressName] = useState<string>("");
+  const [originStreet, setOriginStreet] = useState<string>("");
+  const [originStreet2, setOriginStreet2] = useState<string>("");
+  const [originDistrictName, setOriginDistrictName] = useState<string>("");
+  const [originZipCode, setOriginZipCode] = useState<string>("");
+  const [originLatitude, setOriginLatitude] = useState<string>("");
+  const [originLongitude, setOriginLongitude] = useState<string>("");
+  const [destAddressName, setDestAddressName] = useState<string>("");
+  const [destStreet, setDestStreet] = useState<string>("");
+  const [destStreet2, setDestStreet2] = useState<string>("");
+  const [destDistrictName, setDestDistrictName] = useState<string>("");
+  const [destZipCode, setDestZipCode] = useState<string>("");
+  const [destLatitude, setDestLatitude] = useState<string>("");
+  const [destLongitude, setDestLongitude] = useState<string>("");
+
   // Kontak utama (PIC)
   const [picMuatNama, setPicMuatNama] = useState<string>("");
   const [picMuatTelepon, setPicMuatTelepon] = useState<string>("");
@@ -389,8 +474,22 @@ export default function OrdersCreateForm({
       originPicPhone: "",
       destPicName: "",
       destPicPhone: "",
-      tglETDMuat: "", // ⬅️ baru
-      tglETABongkar: "", // ⬅️ baru
+      tglETDMuat: "",
+      tglETABongkar: "",
+      originAddressName: "",
+      originStreet: "",
+      originStreet2: "",
+      originDistrictName: "",
+      originZipCode: "",
+      originLatitude: "",
+      originLongitude: "",
+      destAddressName: "",
+      destStreet: "",
+      destStreet2: "",
+      destDistrictName: "",
+      destZipCode: "",
+      destLatitude: "",
+      destLongitude: "",
     },
     {
       lokMuat: null,
@@ -401,6 +500,20 @@ export default function OrdersCreateForm({
       destPicPhone: "",
       tglETDMuat: "",
       tglETABongkar: "",
+      originAddressName: "",
+      originStreet: "",
+      originStreet2: "",
+      originDistrictName: "",
+      originZipCode: "",
+      originLatitude: "",
+      originLongitude: "",
+      destAddressName: "",
+      destStreet: "",
+      destStreet2: "",
+      destDistrictName: "",
+      destZipCode: "",
+      destLatitude: "",
+      destLongitude: "",
     },
   ]);
 
@@ -409,10 +522,12 @@ export default function OrdersCreateForm({
   const [sjPodFiles, setSjPodFiles] = useState<File[]>([]);
 
   // Amount placeholders
-  const biayaKirimLabel = "-";
-  const biayaLayananTambahanLabel = "-";
-  const taxLabel = "-";
-  const totalHargaLabel = "-";
+  const [biayaKirimLabel, setAmountShipping] = useState<number | string>();
+  const [biayaLayananTambahanLabel, setAmountShippingMultiCharge] = useState<
+    number | string
+  >("");
+  const [taxLabel, setAmountTax] = useState<number | string>("");
+  const [totalHargaLabel, setAmountTotal] = useState<number | string>("");
 
   // Errors & refs
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -447,15 +562,24 @@ export default function OrdersCreateForm({
     string | number | undefined
   >(undefined);
 
-  // Tracker status (create: Pending; edit: dari data)
-  const [statusCurrent, setStatusCurrent] = useState<OrderStatus | undefined>(
-    initialData?.status
-  );
+  // const [statusCurrent, setStatusCurrent] = useState<StatusStep | undefined>(
+  //   initialData?.states
+  //     ? (initialData.states as unknown as StatusStep | undefined)
+  //     : undefined
+  // );
+
+  const [statusCurrent, setStatusCurrent] = useState<string | undefined>("");
+  const [isReadOnly, setIsReadOnly] = useState<boolean>(false);
+
+  const [steps, setSteps] = useState<StatusStep[]>([]);
 
   // ===================== Prefill untuk Edit =====================
   const [loadingDetail, setLoadingDetail] = useState<boolean>(
     mode === "edit" && !initialData ? true : false
   );
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const canShowChat = isReadOnly || respIsSuccess; // sama dengan: hidden={isReadOnly ? false : !respIsSuccess}
 
   // ❌ HAPUS efek reset otomatis yang mengosongkan prefill
   // useEffect(() => { setLokMuat(null); }, [kotaMuat?.id]);
@@ -497,6 +621,8 @@ export default function OrdersCreateForm({
 
   // Jika ada initialData, langsung prefill
   useEffect(() => {
+    console.log("initialData changed:", initialData);
+
     if (!initialData) return;
     const f = prefillFromInitial(initialData);
     setNamaPenerima(f.namaPenerima);
@@ -537,11 +663,28 @@ export default function OrdersCreateForm({
       Terpal: f.requirement_tarpaulin,
     }));
 
+    setAmountShipping(f.amount_shipping);
+    setAmountShippingMultiCharge(f.amount_shipping_multi_charge);
+    setAmountTax(f.amount_tax);
+    setAmountTotal(f.amount_total);
+
     if (f.extraStops.length > 0) {
       setMultiPickupDrop(true);
       setExtraStops(f.extraStops);
     }
-    if (initialData.status) setStatusCurrent(initialData.status);
+
+    console.log("initialData.states:", initialData.states);
+    console.log("extracted steps:", extractApiSteps(initialData));
+    console.log("prefilled steps:", f.states);
+
+    setSteps(f.states);
+    setStatusCurrent(f.states.find((s) => s.is_current)?.key);
+
+    console.log(
+      "prefilled current step:",
+      f.states.find((s) => s.is_current)
+    );
+
     setLoadingDetail(false);
   }, [initialData]);
 
@@ -588,12 +731,34 @@ export default function OrdersCreateForm({
           setPicMuatTelepon(f.picMuatTelepon);
           setPicBongkarNama(f.picBongkarNama);
           setPicBongkarTelepon(f.picBongkarTelepon);
+
+          setOriginAddressName(f.origin_address_name);
+          setOriginStreet(f.origin_street);
+          setOriginStreet2(f.origin_street2);
+          setOriginDistrictName(f.origin_district_name);
+          setOriginZipCode(f.origin_zip);
+          setOriginLatitude(f.origin_latitude);
+          setOriginLongitude(f.origin_longitude);
+
+          setDestAddressName(f.dest_address_name);
+          setDestStreet(f.dest_street);
+          setDestStreet2(f.dest_street2);
+          setDestDistrictName(f.dest_district_name);
+          setDestZipCode(f.dest_zip);
+          setDestLatitude(f.dest_latitude);
+          setDestLongitude(f.dest_longitude);
+
           setMuatanNama(f.muatanNama);
           setMuatanDeskripsi(f.muatanDeskripsi);
           setJenisOrder(f.jenisOrder);
           setArmada(f.armada);
           setCustomer(f.customer);
           setNoJO(f.noJo);
+
+          setAmountShipping(f.amount_shipping);
+          setAmountShippingMultiCharge(f.amount_shipping_multi_charge);
+          setAmountTax(f.amount_tax);
+          setAmountTotal(f.amount_total);
 
           setLayananLainnya(f.requirement_other);
           setLayananKhusus((ls) => ({
@@ -612,7 +777,10 @@ export default function OrdersCreateForm({
             setMultiPickupDrop(true);
             setExtraStops(f.extraStops);
           }
-          if (json?.status) setStatusCurrent(json.status);
+          setSteps(f.states);
+          setStatusCurrent(f.states.find((s) => s.is_current)?.key);
+
+          setIsReadOnly(f.isReadOnly);
         }
       } catch (err) {
         console.error("[OrderDetail] fetch error:", err);
@@ -630,7 +798,6 @@ export default function OrdersCreateForm({
 
     if (!kotaMuat) e.kotaMuat = REQ;
     if (!kotaBongkar) e.kotaBongkar = REQ;
-    // if (!jenisOrder) e.jenisOrder = REQ;
     if (
       !jenisOrder ||
       (typeof jenisOrder === "object" && !jenisOrder.id && !jenisOrder.name)
@@ -1042,6 +1209,16 @@ export default function OrdersCreateForm({
     );
   }
 
+  function mapApiSteps(
+    items: Array<{ key: string; label: string; is_current?: boolean }>
+  ): StatusStep[] {
+    return items.map(({ key, label, is_current }) => ({
+      key: key.toLowerCase(), // ← penting: seragamkan
+      label,
+      is_current: !!is_current,
+    }));
+  }
+
   function safeJoin(base: string, path: string): string {
     return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
   }
@@ -1052,21 +1229,26 @@ export default function OrdersCreateForm({
       className="mx-auto space-y-1 p-1"
     >
       {/* === Status Tracker (dinamis) === */}
-      <StatusTracker
-        className="sticky top-14 z-30 bg-white/80 backdrop-blur border-b border-gray-200 shadow-sm"
-        i18nReady={i18nReady}
-        current={statusCurrent ?? "Pending"}
-        meta={{
-          Pickup: { arrive: "-", depart: "-" },
-          Received: { arrive: "-", depart: "-" },
-          "On Review": { arrive: "-", depart: "-" },
-        }}
-      />
+      {steps.length > 0 && (
+        <StatusDeliveryImage
+          className="sticky top-14 z-30 bg-white/80 backdrop-blur border-b border-gray-200 shadow-sm"
+          steps={steps}
+          meta={{
+            pickup: { arrive: "-", depart: "-" },
+            received: { arrive: "-", depart: "-" },
+            review: { arrive: "-", depart: "-" },
+          }}
+          width={1200}
+          height={160}
+        />
+      )}
+
       <Card className="!border-0">
         <CardBody>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* <div className="grid grid-cols-1 gap-4 md:grid-cols-2"> */}
+          <div className="flex flex-col sm:flex-row gap-6">
             {/* ===== Left Column ===== */}
-            <div className="space-y-4">
+            <div className="md:basis-2/3  min-w-0 space-y-4">
               {/* Info Order */}
               <OrderInfoCard
                 mode={mode}
@@ -1090,6 +1272,7 @@ export default function OrdersCreateForm({
 
               {/* Info Lokasi */}
               <LocationInfoCard
+                isReadOnly={isReadOnly}
                 tglMuat={tglMuat}
                 setTglMuat={setTglMuat}
                 tglBongkar={tglBongkar}
@@ -1109,6 +1292,20 @@ export default function OrdersCreateForm({
                 setPicBongkarNama={setPicBongkarNama}
                 picBongkarTelepon={picBongkarTelepon}
                 setPicBongkarTelepon={setPicBongkarTelepon}
+                originAddressName={originAddressName}
+                originStreet={originStreet}
+                originStreet2={originStreet2}
+                originDistrictName={originDistrictName}
+                originZipCode={originZipCode}
+                originLatitude={originLatitude}
+                originLongitude={originLongitude}
+                destAddressName={destAddressName}
+                destStreet={destStreet}
+                destStreet2={destStreet2}
+                destDistrictName={destDistrictName}
+                destZipCode={destZipCode}
+                destLatitude={destLatitude}
+                destLongitude={destLongitude}
                 multiPickupDrop={multiPickupDrop}
                 setMultiPickupDrop={setMultiPickupDrop}
                 extraStops={extraStops}
@@ -1130,7 +1327,7 @@ export default function OrdersCreateForm({
             </div>
 
             {/* ===== Right Column ===== */}
-            <div className="space-y-4">
+            <div className="md:basis-1/3  min-w-0 space-y-4">
               {/* Info Muatan */}
               <CargoInfoCard
                 muatanNama={muatanNama}
@@ -1159,65 +1356,100 @@ export default function OrdersCreateForm({
               />
             </div>
 
-            {/* === Button Submit and Discard === */}
-            <div className="flex items-center justify-start gap-3 pt-3">
-              <Button type="button" variant="outline" onClick={handleDiscard}>
-                {t("common.discard")}
-              </Button>
-              <Button
-                type="submit"
-                disabled={submitLoading || !canSubmit}
-                variant="primary"
-              >
-                {submitLoading
-                  ? t("common.sending") ?? "Mengirim…"
-                  : mode === "edit"
-                  ? t("common.update") ?? "Update"
-                  : t("common.save")}
-              </Button>
+            {/* === Button Submit and Discard STICKY BOTTOM alias Bottom ActionBar === */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur border-gray-400 p-3 z-50">
+              <div className="flex items-center justify-between">
+                {/* LEFT: Chat button (hanya muncul saat canShowChat) */}
+                <div className="flex items-center gap-3">
+                  {canShowChat && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      className="gap-2 rounded-xl border border-primary/30 bg-amber-600 px-3 py-2 hover:bg-primary/10 hover:shadow hover:border-2 hover:border-amber-950"
+                      onClick={() => setChatOpen(true)}
+                      aria-label={
+                        t("orders.chat_broadcast") ?? "Chat / Broadcast Message"
+                      }
+                      title={
+                        t("orders.chat_broadcast") ?? "Chat / Broadcast Message"
+                      }
+                    >
+                      <Megaphone className="h-4 w-4" />
+                      <span>
+                        {t("orders.chat_broadcast") ??
+                          "Chat / Broadcast Message"}
+                      </span>
+                      <span
+                        className="ml-1 inline-flex h-2 w-2 rounded-full bg-emerald-200 animate-pulse"
+                        aria-hidden
+                      />
+                    </Button>
+                  )}
+                </div>
+
+                {/* RIGHT: Discard & Submit */}
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDiscard}
+                  >
+                    {t("common.discard")}
+                  </Button>
+                  <Button
+                    hidden={isReadOnly}
+                    type="submit"
+                    disabled={submitLoading || !canSubmit}
+                    variant="primary"
+                  >
+                    {submitLoading
+                      ? t("common.sending") ?? "Mengirim…"
+                      : mode === "edit"
+                      ? t("common.update") ?? "Update"
+                      : t("common.save")}
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            {/* ==== Chat / Broadcast Message - Full Width ==== */}
-            {/* Muncul setelah submit sukses */}
-            <div className="md:col-span-2" hidden={!respIsSuccess}>
-              <Card>
-                <CardHeader>
-                  <h3 className="text-3xl font-semibold text-gray-800">
-                    {t("orders.chat_broadcast") ?? "Chat / Broadcast Message"}
-                  </h3>
-                </CardHeader>
-                <CardBody>
-                  <div className="space-y-3">
-                    <FieldTextarea
-                      label={t("orders.message") ?? "Message"}
-                      value={chatMsg}
-                      onChange={setChatMsg}
-                      rows={3}
-                      placeholder={
-                        t("orders.type_message") ??
-                        "Tulis pesan untuk broadcast ke server…"
-                      }
-                    />
-                    <div className="flex justify-start items-center">
-                      <Button
-                        type="button"
-                        onClick={handleSendChat}
-                        disabled={chatSending || !chatMsg.trim()}
-                        variant="primary"
-                      >
-                        {chatSending
-                          ? t("common.sending") ?? "Sending…"
-                          : t("common.send") ?? "Send"}
-                      </Button>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            </div>
+            {/* <div className="flex items-center justify-start gap-3 pt-3"></div> */}
           </div>
         </CardBody>
       </Card>
 
+      {/* === Chat Dialog (Popup) === */}
+      <Modal open={chatOpen && canShowChat} onClose={() => setChatOpen(false)}>
+        <div className="space-y-3">
+          <h4 className="text-lg font-semibold text-gray-800">
+            {t("orders.chat_broadcast") ?? "Chat / Broadcast Message"}
+          </h4>
+          <FieldTextarea
+            label={t("orders.message") ?? "Message"}
+            value={chatMsg}
+            onChange={setChatMsg}
+            rows={3}
+            placeholder={
+              t("orders.type_message") ??
+              "Tulis pesan untuk broadcast ke server…"
+            }
+          />
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => setChatOpen(false)}>
+              {t("common.cancel") ?? "Batal"}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSendChat}
+              disabled={chatSending || !chatMsg.trim()}
+              variant="primary"
+            >
+              {chatSending
+                ? t("common.sending") ?? "Sending…"
+                : t("common.send") ?? "Send"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
       {/* === Dialogs === */}
       <ConfirmSubmitDialog
         open={confirmOpen}

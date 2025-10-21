@@ -21,11 +21,11 @@ export function Button({
   // mapping varian (primary === solid)
   const variantCls =
     variant === "outline"
-      ? "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+      ? "border-1 border-gray-800 bg-white font-extrabold text-black hover:bg-primary/10 disabled:opacity-50"
       : variant === "ghost"
-      ? "bg-primary/10 text-gray-700 hover:bg-primary/20 disabled:opacity-50"
+      ? "border-1 border-gray-800 bg-primary/10 text-gray-700 font-extrabold hover:bg-primary/20 disabled:opacity-50"
       : // solid / primary
-        "bg-primary text-white shadow-sm hover:brightness-110 disabled:opacity-50";
+        "border-1 border-gray-800 bg-primary font-extrabold text-white shadow-sm hover:brightness-110 disabled:opacity-50";
 
   return (
     <button

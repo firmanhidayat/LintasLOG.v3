@@ -1,8 +1,10 @@
 import React from "react";
 import { t } from "@/lib/i18n";
-import ExtraStopCard, { ExtraStop } from "./ExtraStopCard";
+import ExtraStopCard, { ExtraStop } from "./sections/ExtraStopCard";
+import { cn } from "@/lib/cn";
 
 type Props = {
+  isReadOnly: boolean;
   multiPickupDrop: boolean;
   setMultiPickupDrop: (v: boolean) => void;
 
@@ -21,6 +23,7 @@ type Props = {
 };
 
 export default function MultiPickupDropSection({
+  isReadOnly,
   multiPickupDrop,
   setMultiPickupDrop,
   extraStops,
@@ -43,20 +46,29 @@ export default function MultiPickupDropSection({
 
   return (
     <div className="mt-6 space-y-3">
-      <label className="inline-flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          className="h-4 w-4 rounded border-gray-300"
-          checked={multiPickupDrop}
-          onChange={(e) => setMultiPickupDrop(e.target.checked)}
-        />
-        <span>{t("orders.multi_pickdrop") ?? "Multi Pickup/Drop"}</span>
-      </label>
+      <div className={cn()}>
+        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            disabled={isReadOnly}
+            className={cn(
+              "h-4 w-4 shrink-0 align-middle rounded border-gray-300",
+              `input ${isReadOnly ? "opacity-50 cursor-not-allowed" : ""} `
+            )}
+            checked={multiPickupDrop}
+            onChange={(e) => setMultiPickupDrop(e.target.checked)}
+          />
+          <span className="text-sm leading-none whitespace-nowrap">
+            {t("orders.multi_pickdrop") ?? "Multi Pickup/Drop"}
+          </span>
+        </label>
+      </div>
 
       {multiPickupDrop && (
         <div className="space-y-4">
           {extraStops.map((stop, idx) => (
             <ExtraStopCard
+              isReadOnly={isReadOnly}
               key={idx}
               ref={(el) => {
                 const list = extraRefs?.current;

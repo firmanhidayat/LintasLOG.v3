@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import clsx from "clsx";
+import { fieldClasses, FieldStyleOptions } from "@/utils/field-classes";
 
 type Props = {
   label?: string;
@@ -43,7 +44,38 @@ type Props = {
   /** OPTIONAL: batasi panjang textarea/input */
   maxLength?: number;
 };
-
+function useFieldClasses(
+  disabled: boolean,
+  readOnly: boolean,
+  isInvalid: boolean
+) {
+  // const ctx = useFieldCtx();
+  // // const base =
+  // //   "rounded-md border-1 outline-none border-gray-600 focus:ring-1 focus:ring-primary focus:bg-primary/5 transition font-sans";
+  // // const inv = ctx.isInvalid
+  // //   ? "border-red-500 border-1 border-dotted focus:ring-red-500"
+  // //   : "";
+  // // const state = ctx.disabled
+  // //   ? "bg-gray-100 text-gray-500 cursor-not-allowed !border-gray-300 !text-gray-800"
+  // //   : ctx.readOnly
+  // //   ? "bg-gray-50 text-gray-700"
+  // //   : "bg-white text-gray-900";
+  // // const size = sizeClasses[ctx.size];
+  // // const cutLeft = ctx.hasPrefix ? "rounded-l-none border-l-0" : "";
+  // // const cutRight = ctx.hasSuffix ? "rounded-r-none border-r-0" : "";
+  // // const peerCls = ctx.layout === "floating" ? "peer" : "";
+  // // return clsx(base, size, inv, state, cutLeft, cutRight, peerCls);
+  const opts: FieldStyleOptions = {
+    disabled: disabled,
+    readOnly: readOnly,
+    isInvalid: isInvalid,
+    hasPrefix: false,
+    hasSuffix: false,
+    size: undefined,
+    layout: undefined,
+  };
+  return fieldClasses(opts);
+}
 export const FieldText = React.memo(function FieldText({
   label,
   labelClassName,
@@ -74,12 +106,13 @@ export const FieldText = React.memo(function FieldText({
 }: Props) {
   const isInvalid = Boolean(touched && error);
 
-  const baseClasses =
-    "rounded-md border text-sm px-3 py-2 outline-none border-gray-300 focus-within:ring-2 focus-within:ring-primary/40";
-  const invalidClasses = isInvalid ? "border-red-400 focus:ring-red-200" : "";
-  const disabledClasses = disabled
-    ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-    : "";
+  const classes = useFieldClasses(disabled, disabled, isInvalid);
+  // const baseClasses =
+  //   "rounded-md border text-sm px-3 py-2 outline-none border-gray-300 focus-within:ring-2 focus-within:ring-primary/40";
+  // const invalidClasses = isInvalid ? "border-red-400 focus:ring-red-200" : "";
+  // const disabledClasses = disabled
+  //   ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+  //   : "";
 
   return (
     <div className="grid gap-1">
@@ -95,9 +128,10 @@ export const FieldText = React.memo(function FieldText({
           ref={textareaRef}
           name={name}
           className={clsx(
-            baseClasses,
-            invalidClasses,
-            disabledClasses,
+            // baseClasses,
+            // invalidClasses,
+            // disabledClasses,
+            classes,
             valueClassName
           )}
           value={value}
@@ -121,9 +155,10 @@ export const FieldText = React.memo(function FieldText({
           name={name}
           type={type}
           className={clsx(
-            baseClasses,
-            invalidClasses,
-            disabledClasses,
+            // baseClasses,
+            // invalidClasses,
+            // disabledClasses,
+            classes,
             valueClassName
           )}
           value={value}
