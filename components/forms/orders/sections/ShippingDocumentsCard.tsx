@@ -17,45 +17,60 @@ export default function ShippingDocumentsCard({
   setSjPodFiles,
 }: Props) {
   return (
-    <Card>
-      <CardHeader>
-        <h3 className="text-3xl font-semibold text-gray-800">
-          {t("orders.dok_pengiriman")}
-        </h3>
-      </CardHeader>
-      <CardBody>
-        <div>
-          <MultiFileUpload
-            label={t("orders.lampiran_dokumen")}
-            value={dokumenFiles}
-            onChange={setDokumenFiles}
-            accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
-            maxFileSizeMB={10}
-            maxFiles={10}
-            hint={
-              t("orders.upload_hint_10mb") ??
-              "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
-            }
-            onReject={(msgs) => console.warn("[Dokumen] rejected:", msgs)}
-            className="mb-10 gap-3 justify-end"
-          />
-          <MultiFileUpload
-            label={t("orders.lampiran_sj_pod")}
-            value={sjPodFiles}
-            onChange={setSjPodFiles}
-            accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
-            maxFileSizeMB={10}
-            maxFiles={10}
-            hint={
-              t("orders.upload_hint_10mb") ??
-              "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
-            }
-            onReject={(msgs) => console.warn("[SJ/POD] rejected:", msgs)}
-            className="gap-3 justify-end"
-            showImagePreview
-          />
-        </div>
-      </CardBody>
-    </Card>
+    <div className="space-y-4">
+      <div>
+        <Card>
+          <CardHeader>
+            <h4 className="text-3xl font-semibold text-gray-800">
+              {t("orders.dok_pengiriman")}
+            </h4>
+          </CardHeader>
+          <CardBody>
+            <div>
+              <MultiFileUpload
+                label={t("orders.lampiran_dokumen")}
+                value={dokumenFiles}
+                onChange={setDokumenFiles}
+                accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
+                maxFileSizeMB={10}
+                maxFiles={10}
+                hint={
+                  t("orders.upload_hint_10mb") ??
+                  "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
+                }
+                onReject={(msgs) => console.warn("[Dokumen] rejected:", msgs)}
+                className="mb-10 gap-3 justify-end"
+              />
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+      <div>
+        <Card>
+          <CardHeader>
+            <h4 className="text-3xl font-semibold text-gray-800">
+              {t("orders.dok_sjpo")}
+            </h4>
+          </CardHeader>
+          <CardBody>
+            <MultiFileUpload
+              label={t("orders.lampiran_sj_pod")}
+              value={sjPodFiles}
+              onChange={setSjPodFiles}
+              accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
+              maxFileSizeMB={10}
+              maxFiles={10}
+              hint={
+                t("orders.upload_hint_10mb") ??
+                "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
+              }
+              onReject={(msgs) => console.warn("[SJ/POD] rejected:", msgs)}
+              className="gap-3 justify-end"
+              showImagePreview
+            />
+          </CardBody>
+        </Card>
+      </div>
+    </div>
   );
 }

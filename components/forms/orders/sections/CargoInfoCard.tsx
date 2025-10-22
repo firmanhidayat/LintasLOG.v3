@@ -35,44 +35,57 @@ export default function CargoInfoCard({
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-3xl font-semibold text-gray-800">
+        <h4 className="text-3xl font-semibold text-gray-800">
           {t("orders.info_muatan")}
-        </h3>
+        </h4>
       </CardHeader>
       <CardBody>
-        <div className="grid grid-cols-1 gap-4">
-          <div ref={refIf("muatanNama")}>
-            {/* <FieldText
-              label={t("orders.muatan_nama")}
-              value={muatanNama}
-              onChange={setMuatanNama}
-              error={errors.muatanNama}
-              touched={Boolean(errors.muatanNama)}
-            />
-             */}
-            <Field.Root
-              value={muatanNama}
-              onChange={setMuatanNama}
-              error={errors.muatanNama}
-              touched={Boolean(errors.muatanNama)}
-              className="flex-auto"
-            >
-              <Field.Label>{t("orders.muatan_nama")}</Field.Label>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <div ref={refIf("muatanNama")}>
+              <Field.Root
+                value={muatanNama}
+                onChange={setMuatanNama}
+                error={errors.muatanNama}
+                touched={Boolean(errors.muatanNama)}
+                className="flex-auto"
+              >
+                <Field.Label>{t("orders.muatan_nama")}</Field.Label>
+                <Field.Control>
+                  <Field.Input className="w-full"></Field.Input>
+                  <Field.Error></Field.Error>
+                </Field.Control>
+              </Field.Root>
+              <Field.Root value="" onChange={() => {}} className="flex-auto">
+                <Field.Label>Jenis Muatan</Field.Label>
+                <Field.Control>
+                  <Field.Input className="w-full"></Field.Input>
+                  <Field.Error></Field.Error>
+                </Field.Control>
+              </Field.Root>
+            </div>
+          </div>
+          {/** KOLOM 2 */}
+          <div>
+            <Field.Root value="" onChange={() => {}} className="flex-auto">
+              <Field.Label>Dimensi CBM</Field.Label>
               <Field.Control>
                 <Field.Input className="w-full"></Field.Input>
                 <Field.Error></Field.Error>
               </Field.Control>
             </Field.Root>
+            <Field.Root value="" onChange={() => {}} className="flex-auto">
+              <Field.Label>Jumlah Muatan</Field.Label>
+              <Field.Control>
+                <Field.Input className="w-full"></Field.Input>
+                <Field.Suffix>Kg</Field.Suffix>
+                <Field.Error></Field.Error>
+              </Field.Control>
+            </Field.Root>
           </div>
-
+        </div>
+        <div className="grid grid-cols-1 gap-4">
           <div ref={refIf("muatanDeskripsi")}>
-            {/* <FieldTextarea
-              label={t("orders.muatan_deskripsi")}
-              value={muatanDeskripsi}
-              error={errors.muatanDeskripsi}
-              onChange={setMuatanDeskripsi}
-              rows={4}
-            /> */}
             <Field.Root
               type="text"
               value={muatanDeskripsi}

@@ -1259,27 +1259,74 @@ export default function OrdersCreateForm({
   function safeJoin(base: string, path: string): string {
     return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
   }
+
+  const stp = [
+    {
+      key: "pending",
+      label: "Pending",
+      is_current: false,
+    },
+    {
+      key: "accepted",
+      label: "Accepted",
+      is_current: false,
+    },
+    {
+      key: "preparation",
+      label: "On Preparation",
+      is_current: true,
+    },
+    {
+      key: "pickup",
+      label: "Pickup",
+      is_current: false,
+    },
+    {
+      key: "delivery",
+      label: "On Delivery",
+      is_current: false,
+    },
+    {
+      key: "received",
+      label: "Received",
+      is_current: false,
+    },
+    {
+      key: "review",
+      label: "On Review",
+      is_current: false,
+    },
+    {
+      key: "done",
+      label: "Done",
+      is_current: false,
+    },
+  ];
+
   return (
     <form
       // key={activeLang}
       onSubmit={handleSubmit}
-      className="mx-auto space-y-1 p-1"
+      className="mx-auto space-y-4 p-1"
     >
       {/* === Status Tracker (dinamis) === */}
-      {steps.length > 0 && (
-        <StatusDeliveryImage
-          className="sticky top-14 z-30 bg-white/80 backdrop-blur border-b border-gray-200 shadow-sm"
-          steps={steps}
-          meta={{
-            pickup: { arrive: "-", depart: "-" },
-            received: { arrive: "-", depart: "-" },
-            review: { arrive: "-", depart: "-" },
-          }}
-          width={1200}
-          height={160}
-        />
-      )}
 
+      {steps.length > 0 && (
+        <Card className="sticky top-14 z-30">
+          <CardBody>
+            <StatusDeliveryImage
+              steps={steps}
+              meta={{
+                pickup: { arrive: "-", depart: "-" },
+                received: { arrive: "-", depart: "-" },
+                review: { arrive: "-", depart: "-" },
+              }}
+              width={1200}
+              height={90}
+            />
+          </CardBody>
+        </Card>
+      )}
       <Card className="!border-0">
         <CardBody>
           {/* <div className="grid grid-cols-1 gap-4 md:grid-cols-2"> */}
@@ -1456,7 +1503,6 @@ export default function OrdersCreateForm({
           </div>
         </CardBody>
       </Card>
-
       {/* === Chat Dialog (Popup) === */}
       <Modal open={chatOpen && canShowChat} onClose={() => setChatOpen(false)}>
         <div className="space-y-3">

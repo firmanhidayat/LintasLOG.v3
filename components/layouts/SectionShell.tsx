@@ -183,14 +183,29 @@ export default function SectionShell({
 
   return (
     <div className="flex min-h-dvh">
-      {/* NEW: bungkus Sidebar dengan container ber-id untuk aria-controls */}
-      <div id="main-sidebar" className="contents">
-        {showSidebar && (
+      {/* SIDEBAR: fixed, full-height, scroll sendiri */}
+      {showSidebar && (
+        <aside
+          id="main-sidebar"
+          className={[
+            // posisi & ukuran
+            "fixed inset-y-0 left-0 z-40 w-70  bg-white ",
+            "h-dvh overflow-y-auto",
+            // transisi & responsif (overlay di mobile, selalu terlihat di md+)
+            "transition-transform duration-200 ease-out",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full",
+            "md:translate-x-0",
+          ].join(" ")}
+          aria-controls="main-sidebar"
+          aria-expanded={sidebarOpen}
+          aria-label="Sidebar"
+        >
           <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        )}
-      </div>
+        </aside>
+      )}
 
-      <div className="flex flex-1 flex-col">
+      {/* AREA KONTEN: sisihkan ruang selebar sidebar di md+ */}
+      <div className="flex flex-1 flex-col md:pl-70 pb-16">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-black focus:shadow"
@@ -211,28 +226,61 @@ export default function SectionShell({
         >
           {children}
         </main>
-
-        {/* NEW: Tombol floating Show/Hide Sidebar (opsional & non-breaking) */}
-        {/* {showSidebar && showSidebarToggleButton && (
-          <button
-            type="button"
-            onClick={() => setSidebarOpen((v) => !v)}
-            aria-controls="main-sidebar"
-            aria-expanded={sidebarOpen}
-            aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-            className="
-              fixed bottom-4 left-4 z-40
-              inline-flex items-center gap-2 rounded-full border border-gray-300
-              bg-white/90 backdrop-blur px-4 py-2 shadow-md
-              hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary
-            "
-          >
-            <span className="text-sm font-medium">
-              {sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
-            </span>
-          </button>
-        )} */}
       </div>
     </div>
   );
+  // return (
+  //   <div className="flex min-h-dvh pb-16">
+  //     {/* NEW: bungkus Sidebar dengan container ber-id untuk aria-controls */}
+  //     <div id="main-sidebar" className="contents">
+  //       {showSidebar && (
+  //         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+  //       )}
+  //     </div>
+
+  //     <div className="flex flex-1 flex-col">
+  //       <a
+  //         href="#main-content"
+  //         className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-black focus:shadow"
+  //       >
+  //         Skip to content
+  //       </a>
+
+  //       {showHeader && (
+  //         <Header
+  //           sidebarOpen={sidebarOpen}
+  //           onToggleSidebar={() => setSidebarOpen((v) => !v)}
+  //         />
+  //       )}
+
+  //       <main
+  //         id="main-content"
+  //         className={`mx-auto w-full ${contentMaxWidthClassName} ${contentPaddingClassName} space-y-6`}
+  //       >
+  //         {children}
+  //       </main>
+
+  //       {/* NEW: Tombol floating Show/Hide Sidebar (opsional & non-breaking) */}
+  //       {/* {showSidebar && showSidebarToggleButton && (
+  //         <button
+  //           type="button"
+  //           onClick={() => setSidebarOpen((v) => !v)}
+  //           aria-controls="main-sidebar"
+  //           aria-expanded={sidebarOpen}
+  //           aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+  //           className="
+  //             fixed bottom-4 left-4 z-40
+  //             inline-flex items-center gap-2 rounded-full border border-gray-300
+  //             bg-white/90 backdrop-blur px-4 py-2 shadow-md
+  //             hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary
+  //           "
+  //         >
+  //           <span className="text-sm font-medium">
+  //             {sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
+  //           </span>
+  //         </button>
+  //       )} */}
+  //     </div>
+  //   </div>
+  // );
 }

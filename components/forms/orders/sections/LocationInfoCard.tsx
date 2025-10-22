@@ -158,9 +158,9 @@ export default function LocationInfoCard({
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-3xl font-semibold text-gray-800">
+        <h4 className="text-3xl font-semibold text-gray-800">
           {t("orders.info_lokasi")}
-        </h3>
+        </h4>
       </CardHeader>
       <CardBody>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

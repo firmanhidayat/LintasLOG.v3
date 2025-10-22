@@ -20,9 +20,9 @@ export default function CostDetailsCard({
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-3xl font-semibold text-gray-800">
+        <h4 className="text-3xl font-semibold text-gray-800">
           {t("orders.detail_amount")}
-        </h3>
+        </h4>
       </CardHeader>
       <CardBody>
         <div className="space-y-3 text-sm">

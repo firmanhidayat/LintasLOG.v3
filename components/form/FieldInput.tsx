@@ -469,7 +469,7 @@ function Prefix({ className, ...rest }: AdornProps) {
 function Suffix({ className, ...rest }: AdornProps) {
   const ctx = useFieldCtx();
   const cls = clsx(
-    "inline-flex items-center border border-gray-300 rounded-r-md border-l-0",
+    "inline-flex items-center border border-gray-600 rounded-r-md border-l-0",
     ctx.isInvalid && "border-red-400",
     ctx.disabled ? "bg-gray-100 text-gray-500" : "bg-gray-50 text-gray-700",
     addonSizeClasses[ctx.size],

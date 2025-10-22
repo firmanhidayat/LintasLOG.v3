@@ -67,11 +67,11 @@ export default function OrderInfoCard({
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-3xl font-semibold text-gray-800">
+        <h4 className="text-3xl font-semibold text-gray-800">
           {mode === "edit"
             ? t("orders.edit.info_order") ?? "Edit - Info Order"
             : t("orders.create.info_order")}
-        </h3>
+        </h4>
       </CardHeader>
       <CardBody>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -87,14 +87,6 @@ export default function OrderInfoCard({
               <Field.Input className="w-full"></Field.Input>
             </Field.Control>
           </Field.Root>
-          <Field.Root value={namaPenerima || ""} onChange={setNamaPenerima}>
-            <Field.Label>{t("orders.nama_penerima")}</Field.Label>
-            <Field.Control>
-              <Field.Input className="w-full"></Field.Input>
-              <Field.Error></Field.Error>
-            </Field.Control>
-          </Field.Root>
-
           <div ref={refIf("jenisOrder")}>
             <LookupAutocomplete
               label={t("orders.jenis_order")}
@@ -116,6 +108,31 @@ export default function OrderInfoCard({
                 // },
               }}
               cacheNamespace="order-types"
+              prefetchQuery=""
+            />
+          </div>
+          <div ref={refIf("armada")}>
+            <LookupAutocomplete
+              label={t("orders.armada")}
+              placeholder={t("orders.search_moda")}
+              value={armada}
+              onChange={setArmada}
+              error={errors.armada}
+              endpoint={{
+                url: process.env.NEXT_PUBLIC_TMS_OMODA_FORM_URL ?? "",
+                method: "GET",
+                queryParam: "query",
+                pageParam: "page",
+                pageSizeParam: "page_size",
+                page: 1,
+                pageSize: 80,
+                // headers: { Authorization: `Bearer ${token}` }, // jika perlu
+                mapResults: normalizeResults, // default juga sudah ini
+                onUnauthorized: () => {
+                  /* return true jika mau override goSignIn */
+                },
+              }}
+              cacheNamespace="moda-types"
               prefetchQuery=""
             />
           </div>
@@ -170,31 +187,13 @@ export default function OrderInfoCard({
             />
           </div>
 
-          <div ref={refIf("armada")}>
-            <LookupAutocomplete
-              label={t("orders.armada")}
-              placeholder={t("orders.search_moda")}
-              value={armada}
-              onChange={setArmada}
-              error={errors.armada}
-              endpoint={{
-                url: process.env.NEXT_PUBLIC_TMS_OMODA_FORM_URL ?? "",
-                method: "GET",
-                queryParam: "query",
-                pageParam: "page",
-                pageSizeParam: "page_size",
-                page: 1,
-                pageSize: 80,
-                // headers: { Authorization: `Bearer ${token}` }, // jika perlu
-                mapResults: normalizeResults, // default juga sudah ini
-                onUnauthorized: () => {
-                  /* return true jika mau override goSignIn */
-                },
-              }}
-              cacheNamespace="moda-types"
-              prefetchQuery=""
-            />
-          </div>
+          <Field.Root value={namaPenerima || ""} onChange={setNamaPenerima}>
+            <Field.Label>{t("orders.nama_penerima")}</Field.Label>
+            <Field.Control>
+              <Field.Input className="w-full"></Field.Input>
+              <Field.Error></Field.Error>
+            </Field.Control>
+          </Field.Root>
         </div>
       </CardBody>
     </Card>
