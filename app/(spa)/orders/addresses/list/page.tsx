@@ -6,6 +6,8 @@ import { t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import { ListTemplate, ColumnDef } from "@/components/datagrid/ListTemplate";
 import { Icon } from "@/components/icons/Icon";
+import { Button } from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
 const USER_ADDRESS_URL = process.env.NEXT_PUBLIC_TMS_USER_ADDRESS_URL!;
 
 // ============ Types (tetap sama) ============
@@ -32,6 +34,7 @@ function renderDistrict(it: AddressItem) {
 }
 
 export default function AddressesListPage() {
+  const router = useRouter();
   const { i18nReady, activeLang } = useI18nReady();
 
   if (!i18nReady) {
@@ -175,12 +178,16 @@ export default function AddressesListPage() {
   ];
 
   const leftHeader = (
-    <Link
-      href="/orders/addresses/create"
-      className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-white hover:opacity-90"
-    >
-      {t("addresses.create")}
-    </Link>
+    <div className="flex items-center gap-2">
+      <Button
+        size="md"
+        onClick={() => router.push("/orders/addresses/create")}
+        aria-label="Create Order"
+        title={t("addresses.create")}
+      >
+        {t("addresses.create")}
+      </Button>
+    </div>
   );
 
   return (
