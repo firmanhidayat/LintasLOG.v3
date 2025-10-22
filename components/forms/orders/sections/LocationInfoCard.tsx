@@ -11,6 +11,8 @@ import { AddressSidePanel } from "@/components/ui/AddressSidePanel";
 import { fmtDate } from "@/lib/helpers";
 import { Field } from "@/components/form/FieldInput";
 
+type ExtraStopWithId = ExtraStop & { uid: string };
+
 type DivRef =
   | React.RefObject<HTMLDivElement>
   | React.Ref<HTMLDivElement>
@@ -57,13 +59,15 @@ type Props = {
 
   multiPickupDrop: boolean;
   setMultiPickupDrop: (v: boolean) => void;
-  extraStops: ExtraStop[];
-  setExtraStops: (fn: (prev: ExtraStop[]) => ExtraStop[]) => void;
+  extraStops: ExtraStopWithId[];
+  setExtraStops: (fn: (prev: ExtraStopWithId[]) => ExtraStopWithId[]) => void;
 
   errors: Record<string, string>;
   firstErrorKey?: string;
   firstErrorRef?: DivRef;
-  extraRefs?: React.RefObject<HTMLDivElement[]>; // ⬅️ sebelumnya MutableRefObject
+
+  // map by uid —> konsisten dengan MultiPickupDropSection
+  extraRefs?: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
 };
 
 export default function LocationInfoCard({
@@ -111,6 +115,7 @@ export default function LocationInfoCard({
 }: Props) {
   const lokasiMuatDisabled = !kotaMuat;
   const lokasiBongkarDisabled = !kotaBongkar;
+
   const refIf = (k: string) =>
     firstErrorKey === k
       ? (firstErrorRef as React.Ref<HTMLDivElement>)
@@ -149,6 +154,7 @@ export default function LocationInfoCard({
     timeLabel: "ETA",
     timeValue: fmtDate(tglBongkar),
   };
+
   return (
     <Card>
       <CardHeader>
@@ -170,13 +176,14 @@ export default function LocationInfoCard({
                 displayFormat="DD-MM-YYYY"
               />
             </div>
+
             <div ref={refIf("lokMuat")}>
               <AddressAutocomplete
                 label={t("orders.lokasi_muat")}
                 cityId={kotaMuat?.id ?? null}
                 value={lokMuat}
                 onChange={setLokMuat}
-                disabled={!!lokasiMuatDisabled}
+                disabled={lokasiMuatDisabled}
               />
               {errors.lokMuat && (
                 <div className="mt-1 text-xs text-red-600">
@@ -187,9 +194,10 @@ export default function LocationInfoCard({
 
             <Field.Root value={picMuatNama} onChange={setPicMuatNama}>
               <Field.Label>{t("orders.pic_muat_name")}</Field.Label>
-              <Field.Input></Field.Input>
-              <Field.Error></Field.Error>
+              <Field.Input />
+              <Field.Error />
             </Field.Root>
+
             <Field.Root
               type="tel"
               value={picMuatTelepon}
@@ -197,10 +205,11 @@ export default function LocationInfoCard({
               placeholder={t("placeholders.phone")}
             >
               <Field.Label>{t("orders.pic_muat_phone")}</Field.Label>
-              <Field.Input></Field.Input>
-              <Field.Error></Field.Error>
+              <Field.Input />
+              <Field.Error />
             </Field.Root>
           </div>
+
           {/* Kolom 2 - Editable */}
           <div className={cn("space-y-4", isReadOnly && "hidden")}>
             <div ref={refIf("tglBongkar")}>
@@ -213,13 +222,14 @@ export default function LocationInfoCard({
                 displayFormat="DD-MM-YYYY"
               />
             </div>
+
             <div ref={refIf("lokBongkar")}>
               <AddressAutocomplete
                 label={t("orders.lokasi_bongkar")}
                 cityId={kotaBongkar?.id ?? null}
                 value={lokBongkar}
                 onChange={setLokBongkar}
-                disabled={!!lokasiBongkarDisabled}
+                disabled={lokasiBongkarDisabled}
               />
               {errors.lokBongkar && (
                 <div className="mt-1 text-xs text-red-600">
@@ -230,9 +240,10 @@ export default function LocationInfoCard({
 
             <Field.Root value={picBongkarNama} onChange={setPicBongkarNama}>
               <Field.Label>{t("orders.pic_bongkar_name")}</Field.Label>
-              <Field.Input></Field.Input>
-              <Field.Error></Field.Error>
+              <Field.Input />
+              <Field.Error />
             </Field.Root>
+
             <Field.Root
               type="tel"
               value={picBongkarTelepon}
@@ -240,12 +251,12 @@ export default function LocationInfoCard({
               placeholder={t("placeholders.phone")}
             >
               <Field.Label>{t("orders.pic_bongkar_phone")}</Field.Label>
-              <Field.Input></Field.Input>
-              <Field.Error></Field.Error>
+              <Field.Input />
+              <Field.Error />
             </Field.Root>
           </div>
 
-          {/** Readonly Information origin _address _name*/}
+          {/* Readonly panels */}
           <div className={cn("space-y-4", !isReadOnly && "hidden")}>
             <AddressSidePanel
               title="Origin Address"
@@ -253,7 +264,7 @@ export default function LocationInfoCard({
               info={origin}
             />
           </div>
-          {/** Readonly Information destination _address _name*/}
+
           <div className={cn("space-y-4", !isReadOnly && "hidden")}>
             <AddressSidePanel
               title="Destination Address"
@@ -274,8 +285,8 @@ export default function LocationInfoCard({
           extraRefs={extraRefs}
           cityIdMuat={kotaMuat?.id ?? null}
           cityIdBongkar={kotaBongkar?.id ?? null}
-          lokasiMuatDisabled={!!lokasiMuatDisabled}
-          lokasiBongkarDisabled={!!lokasiBongkarDisabled}
+          lokasiMuatDisabled={lokasiMuatDisabled}
+          lokasiBongkarDisabled={lokasiBongkarDisabled}
         />
       </CardBody>
     </Card>

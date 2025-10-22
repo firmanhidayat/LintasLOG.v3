@@ -32,7 +32,9 @@
         "sending": "Submitting...",
         "no": "No",
         "yes": "Yes",
-        "error": "Error"
+        "error": "Error",
+        "add": "Add",
+        "remove": "Remove"
     },
     "form": {
         "required": "required",

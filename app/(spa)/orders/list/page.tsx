@@ -7,17 +7,20 @@ import {
   ListTemplate,
   type ColumnDef,
 } from "@/components/datagrid/ListTemplate";
-import Link from "next/link";
+import Link from "next/link"; // ⟵ dihapus, diganti Button
 import { Icon } from "@/components/icons/Icon";
 import { OrderRow } from "@/types/orders";
 import { fmtDate, fmtPrice } from "@/lib/helpers";
-// import { StatusStep } from "@/types/status-delivery";
 import { GetStatesInLine } from "@/components/ui/DeliveryState";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 
 const GET_ORDERS_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 
 export default function OrdersListPage() {
+  const router = useRouter();
   const { i18nReady, activeLang } = useI18nReady();
+
   const columns = useMemo<ColumnDef<OrderRow>[]>(
     () => [
       {
@@ -182,12 +185,14 @@ export default function OrdersListPage() {
 
   const leftHeader = (
     <div className="flex items-center gap-2">
-      <Link
-        href="/orders/create"
-        className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-white hover:opacity-90"
+      <Button
+        size="md"
+        onClick={() => router.push("/orders/create")}
+        aria-label="Create Order"
+        title={t("orders.create.title")}
       >
         {t("orders.create.title")}
-      </Link>
+      </Button>
     </div>
   );
 

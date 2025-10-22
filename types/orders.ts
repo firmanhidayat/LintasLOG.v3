@@ -9,6 +9,7 @@ export interface CityItem {
 export interface AddressItem {
   id: number | string;
   name: string;
+  mobile: string;
 }
 // Item untuk dropdown order type
 export type OrderTypeItem = {

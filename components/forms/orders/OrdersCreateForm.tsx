@@ -36,6 +36,36 @@ import {
 import StatusDeliveryImage from "@/components/ui/DeliveryState";
 import { StatusStep } from "@/types/status-delivery";
 import { ExtraStop } from "./sections/ExtraStopCard";
+type ExtraStopWithId = ExtraStop & { uid: string };
+// === Chat impulse hook (no top-level hooks usage violations) ===
+type ChatImpulseDetail = { active?: boolean; unread?: number };
+
+function useChatImpulseChannel(channel: string = "orders:chat-impulse") {
+  const [hasChatImpulse, setHasChatImpulse] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<ChatImpulseDetail>).detail;
+      const next = Boolean(detail?.active ?? (detail?.unread ?? 0) > 0);
+      setHasChatImpulse(next);
+    };
+
+    window.addEventListener(channel, handler as EventListener);
+    return () => window.removeEventListener(channel, handler as EventListener);
+  }, [channel]);
+
+  return { hasChatImpulse, setHasChatImpulse };
+}
+
+const genUid = (): string =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `uid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+const withUid = (stops: ExtraStop[]): ExtraStopWithId[] =>
+  stops.map((s) => ({ ...s, uid: genUid() }));
 
 /** ENV */
 const POST_ORDER_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL!;
@@ -265,6 +295,7 @@ function prefillFromInitial(
     picMuatTelepon: "",
     picBongkarNama: "",
     picBongkarTelepon: "",
+    // extraStops: [] as ExtraStopWithId[],
     extraStops: [] as ExtraStop[],
     isReadOnly: false,
   };
@@ -414,6 +445,7 @@ export default function OrdersCreateForm({
 
   // i18n// i18n
   const { ready: i18nReady } = useI18nReady();
+  const { hasChatImpulse, setHasChatImpulse } = useChatImpulseChannel();
   // pakai reducer utk trigger re-render tanpa state variabel yang unused
   const forceRerender = React.useReducer((x: number) => x + 1, 0)[1];
   useEffect(() => {
@@ -466,56 +498,60 @@ export default function OrdersCreateForm({
 
   // Multi Pickup/Drop
   const [multiPickupDrop, setMultiPickupDrop] = useState<boolean>(false);
-  const [extraStops, setExtraStops] = useState<ExtraStop[]>([
-    {
-      lokMuat: null,
-      lokBongkar: null,
-      originPicName: "",
-      originPicPhone: "",
-      destPicName: "",
-      destPicPhone: "",
-      tglETDMuat: "",
-      tglETABongkar: "",
-      originAddressName: "",
-      originStreet: "",
-      originStreet2: "",
-      originDistrictName: "",
-      originZipCode: "",
-      originLatitude: "",
-      originLongitude: "",
-      destAddressName: "",
-      destStreet: "",
-      destStreet2: "",
-      destDistrictName: "",
-      destZipCode: "",
-      destLatitude: "",
-      destLongitude: "",
-    },
-    {
-      lokMuat: null,
-      lokBongkar: null,
-      originPicName: "",
-      originPicPhone: "",
-      destPicName: "",
-      destPicPhone: "",
-      tglETDMuat: "",
-      tglETABongkar: "",
-      originAddressName: "",
-      originStreet: "",
-      originStreet2: "",
-      originDistrictName: "",
-      originZipCode: "",
-      originLatitude: "",
-      originLongitude: "",
-      destAddressName: "",
-      destStreet: "",
-      destStreet2: "",
-      destDistrictName: "",
-      destZipCode: "",
-      destLatitude: "",
-      destLongitude: "",
-    },
-  ]);
+  const [extraStops, setExtraStops] = useState<ExtraStopWithId[]>(() =>
+    (
+      [
+        {
+          lokMuat: null,
+          lokBongkar: null,
+          originPicName: "",
+          originPicPhone: "",
+          destPicName: "",
+          destPicPhone: "",
+          tglETDMuat: "",
+          tglETABongkar: "",
+          originAddressName: "",
+          originStreet: "",
+          originStreet2: "",
+          originDistrictName: "",
+          originZipCode: "",
+          originLatitude: "",
+          originLongitude: "",
+          destAddressName: "",
+          destStreet: "",
+          destStreet2: "",
+          destDistrictName: "",
+          destZipCode: "",
+          destLatitude: "",
+          destLongitude: "",
+        },
+        {
+          lokMuat: null,
+          lokBongkar: null,
+          originPicName: "",
+          originPicPhone: "",
+          destPicName: "",
+          destPicPhone: "",
+          tglETDMuat: "",
+          tglETABongkar: "",
+          originAddressName: "",
+          originStreet: "",
+          originStreet2: "",
+          originDistrictName: "",
+          originZipCode: "",
+          originLatitude: "",
+          originLongitude: "",
+          destAddressName: "",
+          destStreet: "",
+          destStreet2: "",
+          destDistrictName: "",
+          destZipCode: "",
+          destLatitude: "",
+          destLongitude: "",
+        },
+      ] as ExtraStop[]
+    ).map((s) => ({ ...s, uid: genUid() }))
+  );
 
   // Upload lists (MultiFileUpload controlled) — belum dikirim (UI only)
   const [dokumenFiles, setDokumenFiles] = useState<File[]>([]);
@@ -532,7 +568,7 @@ export default function OrdersCreateForm({
   // Errors & refs
   const [errors, setErrors] = useState<Record<string, string>>({});
   const firstErrorRef = useRef<HTMLDivElement | null>(null);
-  const extraRefs = useRef<HTMLDivElement[]>([]);
+  const extraRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const firstErrorKey = useMemo(() => {
     const order = [
@@ -670,7 +706,7 @@ export default function OrdersCreateForm({
 
     if (f.extraStops.length > 0) {
       setMultiPickupDrop(true);
-      setExtraStops(f.extraStops);
+      setExtraStops(withUid(f.extraStops));
     }
 
     console.log("initialData.states:", initialData.states);
@@ -775,7 +811,7 @@ export default function OrdersCreateForm({
 
           if (f.extraStops.length > 0) {
             setMultiPickupDrop(true);
-            setExtraStops(f.extraStops);
+            setExtraStops(withUid(f.extraStops));
           }
           setSteps(f.states);
           setStatusCurrent(f.states.find((s) => s.is_current)?.key);
@@ -1144,7 +1180,8 @@ export default function OrdersCreateForm({
             .filter((k) => k.startsWith("extra_"))
             .map((k) => Number(k.split("_")[1]))
             .sort((a, b) => a - b)[0];
-          const ex = extraRefs.current[firstExtraIdx];
+          const firstUid = extraStops[firstExtraIdx]?.uid;
+          const ex = firstUid ? extraRefs.current[firstUid] : undefined;
           if (ex) {
             ex.scrollIntoView({ behavior: "smooth", block: "center" });
           }
@@ -1356,17 +1393,26 @@ export default function OrdersCreateForm({
               />
             </div>
 
-            {/* === Button Submit and Discard STICKY BOTTOM alias Bottom ActionBar === */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur border-gray-400 p-3 z-50">
-              <div className="flex items-center justify-between">
-                {/* LEFT: Chat button (hanya muncul saat canShowChat) */}
-                <div className="flex items-center gap-3">
+            {/* === Bottom Action Bar — match AddressesForm + Chat Impulse === */}
+            <div
+              className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/70"
+              role="region"
+              aria-label="Form actions"
+            >
+              <div className="mx-auto max-w-screen-xl px-4 py-3 flex items-center justify-between gap-2">
+                {/* LEFT: Chat / Broadcast (dengan IMPULSE) */}
+                <div className="flex items-center gap-2">
                   {canShowChat && (
                     <Button
                       type="button"
-                      variant="primary"
-                      className="gap-2 rounded-xl border border-primary/30 bg-amber-600 px-3 py-2 hover:bg-primary/10 hover:shadow hover:border-2 hover:border-amber-950"
-                      onClick={() => setChatOpen(true)}
+                      variant="outline"
+                      onClick={() => {
+                        setChatOpen(true);
+                        setHasChatImpulse(false); // buka chat = anggap sudah dibaca
+                      }}
+                      className={`relative pr-8 ${
+                        hasChatImpulse ? "motion-safe:animate-pulse" : ""
+                      }`}
                       aria-label={
                         t("orders.chat_broadcast") ?? "Chat / Broadcast Message"
                       }
@@ -1374,39 +1420,33 @@ export default function OrdersCreateForm({
                         t("orders.chat_broadcast") ?? "Chat / Broadcast Message"
                       }
                     >
-                      <Megaphone className="h-4 w-4" />
-                      <span>
-                        {t("orders.chat_broadcast") ??
-                          "Chat / Broadcast Message"}
-                      </span>
-                      <span
-                        className="ml-1 inline-flex h-2 w-2 rounded-full bg-emerald-200 animate-pulse"
-                        aria-hidden
-                      />
+                      {t("orders.chat_broadcast") ?? "Chat / Broadcast Message"}
+                      {hasChatImpulse && (
+                        <span className="pointer-events-none absolute right-2 top-2 inline-flex">
+                          <span className="motion-safe:animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+                        </span>
+                      )}
                     </Button>
                   )}
                 </div>
 
                 {/* RIGHT: Discard & Submit */}
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleDiscard}
-                  >
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="ghost" onClick={handleDiscard}>
                     {t("common.discard")}
                   </Button>
                   <Button
                     hidden={isReadOnly}
                     type="submit"
                     disabled={submitLoading || !canSubmit}
-                    variant="primary"
+                    variant="solid"
                   >
                     {submitLoading
                       ? t("common.sending") ?? "Mengirim…"
                       : mode === "edit"
                       ? t("common.update") ?? "Update"
-                      : t("common.save")}
+                      : t("common.save") ?? "Save"}
                   </Button>
                 </div>
               </div>

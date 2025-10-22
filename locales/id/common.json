@@ -32,7 +32,9 @@
         "sending": "Mengirimkan...",
         "no": "Tidak",
         "yes": "Ya",
-        "error": "Kesalahan"
+        "error": "Kesalahan",
+        "add": "Tambah",
+        "remove": "Hapus"
     },
     "form": {
         "required": "wajib diisi",

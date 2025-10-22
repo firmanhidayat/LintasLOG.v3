@@ -21,6 +21,9 @@ type AddressDetailResponse = {
   district?: { id?: number; name?: string } | string | null;
   district_id?: number;
   district_name?: string;
+  latitude: number;
+  longitude: number;
+  map_description: string;
 };
 
 export default function AddressDetailsPage() {
@@ -157,5 +160,8 @@ function toInitialValue(
     email: d.email ?? "",
     mobile: d.mobile ?? d.phone ?? "",
     district,
+    longitude: d.longitude,
+    latitude: d.latitude,
+    map_description: d.map_description,
   };
 }

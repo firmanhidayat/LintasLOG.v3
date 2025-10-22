@@ -10,12 +10,14 @@ import { useRouter } from "next/navigation";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import { Button } from "@/components/ui/Button";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { Alert } from "@/components/feedback/Alert"; // ⟵ pakai Alert.tsx dari kamu
 
 const ADDRESS_POST_URL = process.env.NEXT_PUBLIC_TMS_USER_ADDRESS_URL ?? "";
 const LOCATION_DISTRIC_URL =
   process.env.NEXT_PUBLIC_TMS_LOCATIONS_DISTRICT_URL ?? "";
 const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
+// ===== Types =====
 export type AddressFormProps = {
   mode?: "create" | "edit";
   addressId?: number | string;
@@ -27,14 +29,17 @@ export type AddressFormProps = {
     email: string;
     mobile: string;
     district: RecordItem | null;
-    latitude: number;
-    longitude: number;
+    latitude: number | string | null;
+    longitude: number | string | null;
+    lat: number | string | null;
+    lng: number | string | null;
+    lon: number | string | null;
+    long: number | string | null; // alias lain yg sering dipakai API
+    map_description: string | null;
   }>;
   onSuccess?: (data: unknown) => void;
   className?: string;
 };
-
-type LatLng = { lat: number; lng: number };
 
 type AddressPayload = {
   name: string;
@@ -48,6 +53,35 @@ type AddressPayload = {
   longitude?: number;
   map_description?: string;
 };
+
+// ===== Helpers =====
+function toNumOrUndef(v: unknown): number | undefined {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v.trim());
+    return Number.isFinite(n) ? n : undefined;
+  }
+  return undefined;
+}
+type CoordSource = Partial<{
+  latitude: number | string | null;
+  longitude: number | string | null;
+  lat: number | string | null;
+  lng: number | string | null;
+  lon: number | string | null;
+  long: number | string | null; // alias umum
+}>;
+
+function pickLat(src: unknown): number | undefined {
+  if (!src || typeof src !== "object") return undefined;
+  const o = src as CoordSource;
+  return toNumOrUndef(o.latitude ?? o.lat);
+}
+function pickLng(src: unknown): number | undefined {
+  if (!src || typeof src !== "object") return undefined;
+  const o = src as CoordSource;
+  return toNumOrUndef(o.longitude ?? o.lng ?? o.lon ?? o.long);
+}
 
 export default function AddressForm({
   mode = "create",
@@ -81,7 +115,38 @@ export default function AddressForm({
     district?: boolean;
   }>({});
 
-  // Prefill effect (run when initialData changes only)
+  // ===== Map & geocode state =====
+  const [lat, setLat] = useState<number | undefined>(() =>
+    pickLat(initialData)
+  );
+  const [lng, setLng] = useState<number | undefined>(() =>
+    pickLng(initialData)
+  );
+  const [mapDesc, setMapDesc] = useState<string>(
+    () => initialData?.map_description ?? ""
+  );
+
+  // Pesan hasil "Compute" (pakai Alert.tsx)
+  const [computeMsg, setComputeMsg] = useState<string>("");
+
+  const [mapSearch, setMapSearch] = useState<string>("");
+  const [copyState, setCopyState] = useState<"idle" | "ok" | "err">("idle");
+
+  // ===== Map refs =====
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapObj = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+  const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+  const mapsReadyRef = useRef(false);
+  const mapListeners = useRef<google.maps.MapsEventListener[]>([]);
+
+  // Load Google Maps
+  const { ready: mapsReady, error: mapsError } = useGoogleMaps(GOOGLE_KEY, [
+    "places",
+  ]);
+
+  // ===== Effects =====
+  // Prefill dari initialData
   useEffect(() => {
     if (!initialData) return;
     setName(initialData.name ?? "");
@@ -91,137 +156,16 @@ export default function AddressForm({
     setZip(initialData.zip ?? "");
     setEmail(initialData.email ?? "");
     setMobile(initialData.mobile ?? "");
-    setLat(
-      typeof initialData.latitude === "number"
-        ? initialData.latitude
-        : undefined
-    );
-    setLng(
-      typeof initialData.longitude === "number"
-        ? initialData.longitude
-        : undefined
-    );
+    setLat(pickLat(initialData));
+    setLng(pickLng(initialData));
+    setMapDesc(initialData.map_description ?? ""); // ⟵ pastikan selalu terisi
   }, [initialData]);
 
-  function markTouched(field: "name" | "street" | "district") {
-    setTouched((p) => ({ ...p, [field]: true }));
-  }
-
-  function onChangeDistrict(d: RecordItem | null) {
-    setDistrict(d);
-    if (touched.district) {
-      setErrors((p) => ({
-        ...p,
-        district: d?.id ? undefined : t("addr.validation.districtRequired"),
-      }));
-    }
-  }
-
-  // ===== Map state =====
-  const [lat, setLat] = useState<number | undefined>(initialData?.latitude);
-  const [lng, setLng] = useState<number | undefined>(initialData?.longitude);
-  const [mapDesc, setMapDesc] = useState<string | undefined>(undefined);
-  const [mapSearch, setMapSearch] = useState<string>("");
-  const [copyState, setCopyState] = useState<"idle" | "ok" | "err">("idle");
-
-  // Google Maps refs
-  const mapRef = useRef<HTMLDivElement | null>(null);
-  const mapObj = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
-  const geocoderRef = useRef<google.maps.Geocoder | null>(null);
-  const mapsReadyRef = useRef(false);
-  const mapListeners = useRef<google.maps.MapsEventListener[]>([]);
-
-  const { ready: mapsReady, error: mapsError } = useGoogleMaps(GOOGLE_KEY, [
-    "places",
-  ]);
-
-  // Helpers
-  function updateCoords(newLat: number, newLng: number) {
-    const EPS = 1e-7;
-    setLat((prev) =>
-      prev == null || Math.abs(prev - newLat) > EPS ? newLat : prev
-    );
-    setLng((prev) =>
-      prev == null || Math.abs(prev - newLng) > EPS ? newLng : prev
-    );
-  }
-
-  function geocodeReq(request: google.maps.GeocoderRequest) {
-    const geocoder = geocoderRef.current!;
-    return new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-      geocoder.geocode(request, (results, status) => {
-        if (status === google.maps.GeocoderStatus.OK && results)
-          resolve(results);
-        else reject(new Error(`Geocode failed: ${status}`));
-      });
-    });
-  }
-
-  async function reverseGeocodeToDesc(latV: number, lngV: number) {
-    if (!geocoderRef.current) return;
-    try {
-      const results = await geocodeReq({ location: { lat: latV, lng: lngV } });
-      if (results.length > 0)
-        setMapDesc(results[0].formatted_address ?? undefined);
-    } catch {
-      /* noop */
-    }
-  }
-
-  async function geocodeText(text: string) {
-    if (!geocoderRef.current) return;
-    const q = text.trim();
-    if (!q) return;
-    try {
-      const results = await geocodeReq({ address: q });
-      if (results.length > 0) {
-        const best = results[0];
-        const loc = best.geometry.location;
-        const newLat = loc.lat();
-        const newLng = loc.lng();
-        updateCoords(newLat, newLng);
-        setMapDesc(best.formatted_address ?? undefined);
-        if (mapObj.current) {
-          mapObj.current.panTo(loc);
-          mapObj.current.setZoom(16);
-        }
-        setMapSearch("");
-      }
-    } catch {
-      /* noop */
-    }
-  }
-
-  async function handleCopyMapDesc() {
-    if (!mapDesc) return;
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(mapDesc);
-      } else {
-        const ta = document.createElement("textarea");
-        ta.value = mapDesc;
-        ta.setAttribute("readonly", "");
-        ta.style.position = "absolute";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-      }
-      setCopyState("ok");
-    } catch {
-      setCopyState("err");
-    } finally {
-      setTimeout(() => setCopyState("idle"), 1500);
-    }
-  }
-
-  // Init / refresh map
+  // Init / refresh map saat Google ready
   useEffect(() => {
     if (!mapRef.current) return;
-    if (!GOOGLE_KEY) return; // no key configured
-    if (mapsError) return; // surface via UI below
+    if (!GOOGLE_KEY) return;
+    if (mapsError) return;
     if (!mapsReady) return;
 
     // Cleanup previous
@@ -261,38 +205,36 @@ export default function AddressForm({
       draggable: true,
     });
 
-    // Drag pin => update lat/lng + reverse geocode
+    // Drag pin => update lat/lng + update mapDesc
     mapListeners.current.push(
-      google.maps.event.addListener(markerRef.current, "dragend", async () => {
-        const pos = markerRef.current!.getPosition();
-        if (!pos) return;
-        const newLat = pos.lat();
-        const newLng = pos.lng();
-        updateCoords(newLat, newLng);
-        await reverseGeocodeToDesc(newLat, newLng);
+      google.maps.event.addListener(markerRef.current!, "dragend", () => {
+        const pos = markerRef.current?.getPosition();
+        if (pos) {
+          updateCoords(pos.lat(), pos.lng());
+          void reverseGeocodeToDesc(pos.lat(), pos.lng());
+        }
       })
     );
 
-    // Click map => move marker
+    // Click map => move marker + update mapDesc
     mapListeners.current.push(
       google.maps.event.addListener(
         mapObj.current!,
         "click",
-        async (e: google.maps.MapMouseEvent) => {
-          if (!e.latLng || !markerRef.current || !mapObj.current) return;
-          markerRef.current.setPosition(e.latLng);
-          mapObj.current.panTo(e.latLng);
-          const newLat = e.latLng.lat();
-          const newLng = e.latLng.lng();
-          updateCoords(newLat, newLng);
-          await reverseGeocodeToDesc(newLat, newLng);
+        (e: google.maps.MapMouseEvent) => {
+          const ll = e.latLng;
+          if (ll) {
+            updateCoords(ll.lat(), ll.lng());
+            markerRef.current?.setPosition(ll);
+            void reverseGeocodeToDesc(ll.lat(), ll.lng());
+          }
         }
       )
     );
 
     mapsReadyRef.current = true;
 
-    // Force resize after mount to avoid blank tiles
+    // Force resize setelah mount
     setTimeout(() => {
       if (mapObj.current) {
         google.maps.event.trigger(mapObj.current, "resize");
@@ -320,7 +262,7 @@ export default function AddressForm({
     };
   }, [mapsReady, mapsError, GOOGLE_KEY]);
 
-  // Sync marker when lat/lng changes from state (e.g., initialData load)
+  // Sync marker saat lat/lng state berubah
   useEffect(() => {
     if (!mapsReadyRef.current || !markerRef.current || !mapObj.current) return;
     if (typeof lat === "number" && typeof lng === "number") {
@@ -330,10 +272,196 @@ export default function AddressForm({
     }
   }, [lat, lng]);
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  // ===== Map helpers =====
+  function updateCoords(newLat: number, newLng: number) {
+    const EPS = 1e-7;
+    setLat((prev) =>
+      prev == null || Math.abs(prev - newLat) > EPS ? newLat : prev
+    );
+    setLng((prev) =>
+      prev == null || Math.abs(prev - newLng) > EPS ? newLng : prev
+    );
+  }
 
-  // ===== Validation & Submit =====
+  function geocodeReq(request: google.maps.GeocoderRequest) {
+    return new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+      if (!geocoderRef.current) return reject(new Error("Geocoder not ready"));
+      geocoderRef.current.geocode(request, (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK && results)
+          resolve(results);
+        else reject(new Error(status));
+      });
+    });
+  }
+
+  async function reverseGeocodeToDesc(latV: number, lngV: number) {
+    if (!geocoderRef.current) return;
+    try {
+      const results = await geocodeReq({ location: { lat: latV, lng: lngV } });
+      if (results.length > 0) setMapDesc(results[0].formatted_address ?? "");
+    } catch {
+      /* noop */
+    }
+  }
+
+  async function geocodeText(text: string) {
+    const q = text.trim();
+    if (!geocoderRef.current || !q) return;
+
+    try {
+      const results = await geocodeReq({ address: q });
+      if (!results.length) return;
+
+      const best = results[0];
+      const loc = best.geometry?.location;
+      if (!loc) return;
+
+      const newLat = loc.lat();
+      const newLng = loc.lng();
+
+      updateCoords(newLat, newLng);
+      setMapDesc(best.formatted_address ?? "");
+
+      mapObj.current?.panTo(loc);
+      mapObj.current?.setZoom(16);
+
+      setMapSearch("");
+    } catch {
+      /* noop */
+    }
+  }
+
+  // Pastikan tombol Refresh selalu bekerja (auto-init bila belum ada map)
+  function refreshMap() {
+    if (!mapObj.current && mapsReady && mapRef.current) {
+      // init minimal
+      const center = new google.maps.LatLng(
+        typeof lat === "number" ? lat : -6.1753924,
+        typeof lng === "number" ? lng : 106.8271528
+      );
+      mapObj.current = new google.maps.Map(mapRef.current, {
+        center,
+        zoom: typeof lat === "number" && typeof lng === "number" ? 16 : 12,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true,
+      });
+      markerRef.current = new google.maps.Marker({
+        position: center,
+        map: mapObj.current,
+        draggable: true,
+      });
+      // listener dasar
+      mapListeners.current.push(
+        google.maps.event.addListener(markerRef.current!, "dragend", () => {
+          const pos = markerRef.current?.getPosition();
+          if (pos) {
+            updateCoords(pos.lat(), pos.lng());
+            void reverseGeocodeToDesc(pos.lat(), pos.lng());
+          }
+        })
+      );
+      mapListeners.current.push(
+        google.maps.event.addListener(
+          mapObj.current!,
+          "click",
+          (e: google.maps.MapMouseEvent) => {
+            const ll = e.latLng;
+            if (ll) {
+              updateCoords(ll.lat(), ll.lng());
+              markerRef.current?.setPosition(ll);
+              void reverseGeocodeToDesc(ll.lat(), ll.lng());
+            }
+          }
+        )
+      );
+      geocoderRef.current = geocoderRef.current ?? new google.maps.Geocoder();
+      mapsReadyRef.current = true;
+    }
+
+    if (!mapObj.current) {
+      // fallback terakhir
+      window.alert("Map belum siap.");
+      return;
+    }
+
+    google.maps.event.trigger(mapObj.current, "resize");
+    const pos =
+      markerRef.current?.getPosition() ||
+      (typeof lat === "number" && typeof lng === "number"
+        ? new google.maps.LatLng(lat, lng)
+        : null);
+    if (pos) {
+      mapObj.current.setCenter(pos);
+      markerRef.current?.setPosition(pos);
+    }
+  }
+
+  // HANYA menampilkan info (tidak mengubah koordinat/state lain)
+  async function computeFromForm() {
+    const parts: string[] = [];
+    if (street.trim()) parts.push(street.trim()); // Street 1
+    if (district?.name) parts.push(String(district.name)); // Wilayah
+    if (zip.trim()) parts.push(zip.trim()); // Kode Pos
+    const q = parts.join(", ");
+
+    if (!q) {
+      setComputeMsg(
+        "Isi dulu minimal salah satu dari: Street 1, Wilayah, atau Kode Pos."
+      );
+      return;
+    }
+    if (!geocoderRef.current) {
+      setComputeMsg("Geocoder belum siap.");
+      return;
+    }
+
+    try {
+      const results = await geocodeReq({ address: q });
+      if (!results.length) {
+        setComputeMsg(`Lokasi tidak ditemukan untuk: ${q}`);
+        return;
+      }
+      const best = results[0];
+      const loc = best.geometry.location;
+      const latV = loc.lat();
+      const lngV = loc.lng();
+      const addr = best.formatted_address ?? "-";
+
+      // TAMPILKAN via Alert (inline), tidak mengubah lat/lng/map state
+      setComputeMsg(
+        `Query: ${q}\nKoordinat: ${latV}, ${lngV}\nAlamat: ${addr}`
+      );
+    } catch {
+      setComputeMsg("Gagal menghitung lokasi dari form.");
+    }
+  }
+
+  async function handleCopyMapDesc() {
+    if (!mapDesc) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(mapDesc);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = mapDesc;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "absolute";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopyState("ok");
+    } catch {
+      setCopyState("err");
+    } finally {
+      setTimeout(() => setCopyState("idle"), 1500);
+    }
+  }
+
+  // ===== Validation & submit =====
   const canSubmit = useMemo(
     () => name.trim() && street.trim() && !!district?.id,
     [name, street, district]
@@ -431,7 +559,7 @@ export default function AddressForm({
 
   return (
     <div className={rootClass}>
-      {/* Configuration warnings */}
+      {/* Warnings */}
       {!ADDRESS_POST_URL || !LOCATION_DISTRIC_URL ? (
         <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-800">
           Endpoint API belum dikonfigurasi (alamat/district). Periksa env.
@@ -443,26 +571,36 @@ export default function AddressForm({
         </div>
       ) : null}
 
-      {/* Sticky bottom action bar */}
+      {/* Sticky action bar */}
       <div
         className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/70"
         role="region"
         aria-label="Form actions"
       >
-        <div className="mx-auto max-w-screen-xl px-4 py-3 flex items-center justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={handleDiscard}>
-            {t("common.discard")}
-          </Button>
-          <Button
-            type="button"
-            variant="solid"
-            disabled={!canSubmit}
-            onClick={handleSave}
-          >
-            {mode === "edit"
-              ? t("addr.actions.update")
-              : t("addr.actions.save")}
-          </Button>
+        <div className="mx-auto max-w-screen-xl px-4 py-3 flex items-center justify-between gap-2">
+          {/* LEFT: Compute paling kiri */}
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" onClick={computeFromForm}>
+              Compute based on address
+            </Button>
+          </div>
+
+          {/* RIGHT: Discard & Save */}
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" onClick={handleDiscard}>
+              {t("common.discard")}
+            </Button>
+            <Button
+              type="button"
+              variant="solid"
+              disabled={!canSubmit}
+              onClick={handleSave}
+            >
+              {mode === "edit"
+                ? t("addr.actions.update")
+                : t("addr.actions.save")}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -471,7 +609,6 @@ export default function AddressForm({
         <div className="md:basis-1/2 min-w-0 space-y-4">
           {/* Name */}
           <Field.Root
-            inputRef={inputRef}
             value={name || ""}
             onChange={(v) => {
               setName(v);
@@ -483,7 +620,7 @@ export default function AddressForm({
                     : t("addr.validation.nameRequired"),
                 }));
             }}
-            onBlur={() => markTouched("name")}
+            onBlur={() => setTouched((p) => ({ ...p, name: true }))}
             placeholder={t("addr.name.placeholder")}
             ariaLabel={t("addr.name.aria")}
             required
@@ -497,9 +634,8 @@ export default function AddressForm({
             </Field.Control>
           </Field.Root>
 
-          {/* Street (multiline) */}
+          {/* Street */}
           <Field.Root
-            textareaRef={textAreaRef}
             value={street}
             onChange={(v) => {
               setStreet(v);
@@ -511,7 +647,7 @@ export default function AddressForm({
                     : t("addr.validation.streetRequired"),
                 }));
             }}
-            onBlur={() => markTouched("street")}
+            onBlur={() => setTouched((p) => ({ ...p, street: true }))}
             placeholder={t("addr.address.placeholder")}
             error={errors.street}
             touched={touched.street}
@@ -547,7 +683,17 @@ export default function AddressForm({
             label={t("addr.district.aria")}
             placeholder={t("addr.district.placeholder")}
             value={district}
-            onChange={onChangeDistrict}
+            onChange={(d) => {
+              setDistrict(d);
+              if (touched.district) {
+                setErrors((p) => ({
+                  ...p,
+                  district: d?.id
+                    ? undefined
+                    : t("addr.validation.districtRequired"),
+                }));
+              }
+            }}
             error={errors.district}
             endpoint={{
               url: `${LOCATION_DISTRIC_URL}`,
@@ -563,9 +709,8 @@ export default function AddressForm({
             prefetchQuery=""
           />
 
-          {/* ZIP */}
+          {/* ZIP / Email / Phone */}
           <Field.Root
-            inputRef={inputRef}
             value={zip}
             onChange={setZip}
             placeholder={t("addr.zip.placeholder")}
@@ -578,9 +723,7 @@ export default function AddressForm({
             </Field.Control>
           </Field.Root>
 
-          {/* Email */}
           <Field.Root
-            inputRef={inputRef}
             value={email}
             onChange={setEmail}
             placeholder={t("addr.email.placeholder")}
@@ -593,9 +736,7 @@ export default function AddressForm({
             </Field.Control>
           </Field.Root>
 
-          {/* Phone */}
           <Field.Root
-            inputRef={inputRef}
             value={mobile}
             onChange={setMobile}
             placeholder={t("addr.phone.placeholder")}
@@ -607,13 +748,19 @@ export default function AddressForm({
               <Field.Error />
             </Field.Control>
           </Field.Root>
-
-          {/* Actions moved to sticky bar */}
         </div>
 
-        {/* ===== Right: Map ===== */}
+        {/* ===== Right: Map & tools ===== */}
         <div className="md:basis-1/2 min-w-0 space-y-4">
           <div className="space-y-2 rounded-xl border p-3">
+            {/* Hasil Compute (Alert.tsx) */}
+            {computeMsg && (
+              <Alert kind="info" className="whitespace-pre-line">
+                {computeMsg}
+              </Alert>
+            )}
+
+            {/* Search & Refresh */}
             <div className="flex items-center gap-2">
               <input
                 value={mapSearch}
@@ -629,8 +776,12 @@ export default function AddressForm({
               >
                 Search
               </Button>
+              <Button type="button" variant="outline" onClick={refreshMap}>
+                Refresh
+              </Button>
             </div>
 
+            {/* Map */}
             <div
               ref={mapRef}
               className="relative h-[360px] w-full min-h-[280px] rounded-lg"
@@ -646,9 +797,10 @@ export default function AddressForm({
               </p>
             ) : null}
 
+            {/* Coords readonly */}
             <div className="grid grid-cols-1 gap-2">
               <Field.Root
-                value={typeof lat === "number" ? String(lat) : ""}
+                value={lat != null ? String(lat) : ""}
                 onChange={() => {}}
                 ariaLabel="Latitude"
                 disabled
@@ -659,8 +811,9 @@ export default function AddressForm({
                   <Field.Error />
                 </Field.Control>
               </Field.Root>
+
               <Field.Root
-                value={typeof lng === "number" ? String(lng) : ""}
+                value={lng != null ? String(lng) : ""}
                 onChange={() => {}}
                 ariaLabel="Longitude"
                 disabled
@@ -673,42 +826,41 @@ export default function AddressForm({
               </Field.Root>
             </div>
 
-            {mapDesc ? (
-              <div className="grid gap-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    {t("addr.map.desc")}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleCopyMapDesc}
-                    className="text-xs underline hover:opacity-80 focus:outline-none"
-                    aria-label="Copy map address"
-                    title="Copy map address"
-                  >
-                    {copyState === "ok" ? "Copied!" : "Copy map address"}
-                  </button>
-                </div>
-
-                <Field.Root
-                  value={mapDesc}
-                  onChange={() => {}}
-                  ariaLabel={t("addr.map.desc") as string}
-                  multiline
-                  rows={3}
-                  disabled
+            {/* Map description — SELALU tampil */}
+            <div className="grid gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {t("addr.map.desc")}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyMapDesc}
+                  className="text-xs underline hover:opacity-80 focus:outline-none"
+                  aria-label="Copy map address"
+                  title="Copy map address"
                 >
-                  <Field.Control>
-                    <Field.Textarea className="w-full" disabled />
-                    <Field.Error />
-                  </Field.Control>
-                </Field.Root>
-
-                {copyState === "err" && (
-                  <div className="text-xs text-amber-600">Failed to copy.</div>
-                )}
+                  {copyState === "ok" ? "Copied!" : "Copy map address"}
+                </button>
               </div>
-            ) : null}
+
+              <Field.Root
+                value={mapDesc}
+                onChange={() => {}}
+                ariaLabel={t("addr.map.desc") as string}
+                multiline
+                rows={3}
+                disabled
+              >
+                <Field.Control>
+                  <Field.Textarea className="w-full" disabled />
+                  <Field.Error />
+                </Field.Control>
+              </Field.Root>
+
+              {copyState === "err" && (
+                <div className="text-xs text-amber-600">Failed to copy.</div>
+              )}
+            </div>
 
             <p className="mt-1 text-xs text-slate-500">
               Klik peta atau drag pin untuk memilih koordinat. Pencarian map
