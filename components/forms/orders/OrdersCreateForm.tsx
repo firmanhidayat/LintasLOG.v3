@@ -36,7 +36,98 @@ import {
 import StatusDeliveryImage from "@/components/ui/DeliveryState";
 import { StatusStep } from "@/types/status-delivery";
 import { ExtraStop } from "./sections/ExtraStopCard";
+import { RecordItem } from "@/types/recorditem";
 type ExtraStopWithId = ExtraStop & { uid: string };
+
+// ====== NEW: Cargo Type Prefill (by id -> RecordItem) ======
+type IdLike = string | number;
+
+const CARGO_TYPES_URL = process.env.NEXT_PUBLIC_TMS_CARGO_TYPES_URL ?? "";
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+function isId(v: unknown): v is IdLike {
+  return typeof v === "string" || typeof v === "number";
+}
+function isStr(v: unknown): v is string {
+  return typeof v === "string";
+}
+
+export function toRecordItem(x: unknown): RecordItem {
+  // Langsung handle primitif
+  if (isId(x)) {
+    return { id: x, name: String(x) };
+  }
+
+  // Object-like
+  if (isRecord(x)) {
+    const idRaw = x["id"] ?? x["value"] ?? x["code"];
+    const nameRaw = x["name"] ?? x["label"];
+
+    const id: IdLike | "" = isId(idRaw) ? idRaw : "";
+    const name: string = isStr(nameRaw)
+      ? nameRaw
+      : isId(idRaw)
+      ? String(idRaw)
+      : "";
+
+    return { id, name };
+  }
+
+  // Fallback aman
+  return { id: "", name: "" };
+}
+
+async function fetchCargoTypeById(id?: IdLike): Promise<RecordItem | null> {
+  if (id == null || id === "") return null;
+  if (!CARGO_TYPES_URL) {
+    // fallback minimal tanpa endpoint
+    return { id, name: `#${id}` };
+  }
+  try {
+    const res = await fetch(
+      `${CARGO_TYPES_URL.replace(/\/$/, "")}/${encodeURIComponent(String(id))}`,
+      {
+        headers: { "Accept-Language": getLang() },
+        credentials: "include",
+      }
+    );
+    if (!res.ok) return { id, name: `#${id}` };
+    const data = await res.json();
+    return toRecordItem(data);
+  } catch {
+    return { id, name: `#${id}` };
+  }
+}
+function useCargoTypePrefill(initialId?: IdLike) {
+  const [value, setValue] = useState<RecordItem | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  console.log("useCargoTypePrefill: id = ", initialId);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (initialId == null) {
+        setValue(null);
+        return;
+      }
+      setLoading(true);
+      try {
+        const item = await fetchCargoTypeById(initialId);
+        if (alive) setValue(item);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [initialId]);
+  return { value, setValue, loading };
+}
+// ===========================================================
+
 // === Chat impulse hook (no top-level hooks usage violations) ===
 type ChatImpulseDetail = { active?: boolean; unread?: number };
 
@@ -202,19 +293,19 @@ function normalizeKey(s: unknown): string {
     .replace(/[\s_-]+/g, ""); // "On Review" -> "onreview"
 }
 
-type AnyStep =
-  | {
-      key?: string;
-      label?: string;
-      is_current?: boolean;
-      code?: string;
-      name?: string;
-      title?: string;
-      status?: string;
-      current?: boolean;
-      active?: boolean;
-    }
-  | string;
+// type AnyStep =
+//   | {
+//       key?: string;
+//       label?: string;
+//       is_current?: boolean;
+//       code?: string;
+//       name?: string;
+//       title?: string;
+//       status?: string;
+//       current?: boolean;
+//       active?: boolean;
+//     }
+//   | string;
 
 function extractApiSteps(
   d: NonNullable<OrdersCreateFormProps["initialData"]>
@@ -278,6 +369,17 @@ function prefillFromInitial(
 
     muatanNama: data.cargo_name ?? "",
     muatanDeskripsi: data.cargo_description ?? "",
+    // IMPORTANT: biarkan null, akan diprefill oleh useCargoTypePrefill
+    // jenisMuatan: null as RecordItem | null,
+    jenisMuatan:
+      data.cargo_type ??
+      (data.cargo_type_id ? ({ id: data.cargo_type_id } as RecordItem) : null),
+
+    cargoCBM: data.cargo_cbm ?? "",
+    cargoQTY: data.cargo_qty ?? "0",
+    cargo_type_id: data.cargo_type_id,
+    cargo_type: data.cargo_type,
+
     requirement_helmet: Boolean(data.requirement_helmet),
     requirement_apar: Boolean(data.requirement_apar),
     requirement_safety_shoes: Boolean(data.requirement_safety_shoes),
@@ -332,7 +434,7 @@ function prefillFromInitial(
   form.dest_street2 = main?.dest_street2 ?? "";
   form.dest_district_name = main?.dest_district.name ?? "";
   form.dest_zip = main?.dest_zip ?? "";
-  form.dest_latitude = main?.dest_latitude ?? "";
+  form.dest_latitude = main?.dest_latitude ?? main?.dest_latitude ?? "";
   form.dest_longitude = main?.dest_longitude ?? "";
 
   // Fallback: kalau tidak ada route main, coba dari top-level origin/dest_address
@@ -572,14 +674,16 @@ export default function OrdersCreateForm({
 
   const firstErrorKey = useMemo(() => {
     const order = [
+      "namaPenerima",
       "kotaMuat",
       "kotaBongkar",
       "jenisOrder",
       "armada",
       "tglMuat",
       "tglBongkar",
-      "muatanNama",
-      "muatanDeskripsi",
+      "jenisMuatan",
+      "cargoCBM",
+      "cargoQTY",
       "lokMuat",
       "lokBongkar",
     ] as const;
@@ -598,12 +702,6 @@ export default function OrdersCreateForm({
     string | number | undefined
   >(undefined);
 
-  // const [statusCurrent, setStatusCurrent] = useState<StatusStep | undefined>(
-  //   initialData?.states
-  //     ? (initialData.states as unknown as StatusStep | undefined)
-  //     : undefined
-  // );
-
   const [statusCurrent, setStatusCurrent] = useState<string | undefined>("");
   const [isReadOnly, setIsReadOnly] = useState<boolean>(false);
 
@@ -617,11 +715,6 @@ export default function OrdersCreateForm({
   const [chatOpen, setChatOpen] = useState(false);
   const canShowChat = isReadOnly || respIsSuccess; // sama dengan: hidden={isReadOnly ? false : !respIsSuccess}
 
-  // ❌ HAPUS efek reset otomatis yang mengosongkan prefill
-  // useEffect(() => { setLokMuat(null); }, [kotaMuat?.id]);
-  // useEffect(() => { setLokBongkar(null); }, [kotaBongkar?.id]);
-
-  // ✅ Ganti dengan handler khusus saat user mengganti kota
   function handleChangeKotaMuat(city: CityItem | null) {
     setKotaMuat(city);
     setLokMuat(null);
@@ -655,7 +748,12 @@ export default function OrdersCreateForm({
   const [muatanNama, setMuatanNama] = useState<string>("");
   const [muatanDeskripsi, setMuatanDeskripsi] = useState<string>("");
 
-  // Jika ada initialData, langsung prefill
+  // ====== UI state untuk jenisMuatan (RecordItem) ======
+  const [jenisMuatan, setJenisMuatan] = useState<RecordItem | null>(null);
+  const [cargoCBM, setCargoCBM] = useState<string>("");
+  const [cargoQTY, setCargoQTY] = useState<string>("0");
+
+  // Jika ada initialData, langsung prefill sebagian field
   useEffect(() => {
     console.log("initialData changed:", initialData);
 
@@ -681,6 +779,19 @@ export default function OrdersCreateForm({
 
     setMuatanNama(f.muatanNama);
     setMuatanDeskripsi(f.muatanDeskripsi);
+
+    setJenisMuatan(f.cargo_type ?? null);
+
+    setJenisMuatan(
+      f.cargo_type_id != null
+        ? {
+            id: String(f.cargo_type_id),
+            name: f.cargo_type?.name ?? f.cargo_type?.name ?? "",
+          }
+        : null
+    );
+    setCargoCBM(f.cargoCBM);
+    setCargoQTY(f.cargoQTY);
 
     setJenisOrder(f.jenisOrder);
     setArmada(f.armada);
@@ -775,6 +886,8 @@ export default function OrdersCreateForm({
           setOriginZipCode(f.origin_zip);
           setOriginLatitude(f.origin_latitude);
           setOriginLongitude(f.origin_longitude);
+          setCargoCBM(f.cargoCBM);
+          setCargoQTY(f.cargoQTY);
 
           setDestAddressName(f.dest_address_name);
           setDestStreet(f.dest_street);
@@ -788,6 +901,7 @@ export default function OrdersCreateForm({
           setMuatanDeskripsi(f.muatanDeskripsi);
           setJenisOrder(f.jenisOrder);
           setArmada(f.armada);
+          setJenisMuatan(f.cargo_type ?? null);
           setCustomer(f.customer);
           setNoJO(f.noJo);
 
@@ -831,7 +945,7 @@ export default function OrdersCreateForm({
   function validate(): Record<string, string> {
     const e: Record<string, string> = {};
     const REQ = t("form.required") ?? "Wajib diisi";
-
+    if (!namaPenerima) e.namaPenerima = REQ;
     if (!kotaMuat) e.kotaMuat = REQ;
     if (!kotaBongkar) e.kotaBongkar = REQ;
     if (
@@ -841,26 +955,23 @@ export default function OrdersCreateForm({
       e.jenisOrder = REQ;
     }
     if (!armada) e.armada = REQ;
-
     if (!tglMuat) e.tglMuat = REQ;
     if (!tglBongkar) e.tglBongkar = REQ;
-
-    if (!muatanNama) e.muatanNama = REQ;
-    if (!muatanDeskripsi) e.muatanDeskripsi = REQ;
-
+    // if (!muatanNama) e.muatanNama = REQ;
+    // if (!muatanDeskripsi) e.muatanDeskripsi = REQ;
+    if (!jenisMuatan) e.jenisMuatan = REQ;
+    if (!cargoCBM) e.cargoCBM = REQ;
+    if (!cargoQTY) e.cargoQTY = REQ;
     const hasTime = (v: string) =>
       v.includes("T") && v.split("T")[1]?.length >= 4;
     if (tglMuat && !hasTime(tglMuat))
       e.tglMuat = t("form.time_required") ?? "Jam wajib diisi";
     if (tglBongkar && !hasTime(tglBongkar))
       e.tglBongkar = t("form.time_required") ?? "Jam wajib diisi";
-
     const muatUTC = tzDateToUtcISO(tglMuat, profileTimezone);
     const bongkarUTC = tzDateToUtcISO(tglBongkar, profileTimezone);
-
     if (!muatUTC) e.tglMuat = REQ;
     if (!bongkarUTC) e.tglBongkar = REQ;
-
     if (muatUTC && bongkarUTC) {
       if (new Date(bongkarUTC).getTime() < new Date(muatUTC).getTime()) {
         e.tglBongkar =
@@ -868,11 +979,9 @@ export default function OrdersCreateForm({
           "Tanggal bongkar harus setelah/sama dengan tanggal muat.";
       }
     }
-
     // === Validasi MAIN ROUTE wajib ===
     if (!lokMuat?.id) e.lokMuat = REQ;
     if (!lokBongkar?.id) e.lokBongkar = REQ;
-
     // === Validasi EXTRA ROUTES (multi pick/drop) ===
     if (multiPickupDrop) {
       extraStops.forEach((s, idx) => {
@@ -883,7 +992,6 @@ export default function OrdersCreateForm({
           s.originPicPhone.trim() !== "" ||
           s.destPicName.trim() !== "" ||
           s.destPicPhone.trim() !== "";
-
         if (anyFilled) {
           if (!s.lokMuat?.id || !s.lokBongkar?.id) {
             e[`extra_${idx}`] =
@@ -893,7 +1001,6 @@ export default function OrdersCreateForm({
         }
       });
     }
-
     setErrors(e);
     return e;
   }
@@ -908,8 +1015,11 @@ export default function OrdersCreateForm({
         lokBongkar?.id &&
         tglMuat &&
         tglBongkar &&
-        muatanNama &&
-        muatanDeskripsi
+        // muatanNama &&
+        // muatanDeskripsi &&
+        jenisMuatan &&
+        cargoCBM &&
+        cargoQTY
     );
   }, [
     jenisOrder,
@@ -920,8 +1030,11 @@ export default function OrdersCreateForm({
     lokBongkar?.id,
     tglMuat,
     tglBongkar,
-    muatanNama,
-    muatanDeskripsi,
+    // muatanNama,
+    // muatanDeskripsi,
+    jenisMuatan,
+    cargoCBM,
+    cargoQTY,
   ]);
 
   /** ===================== Build Payload ===================== */
@@ -971,24 +1084,29 @@ export default function OrdersCreateForm({
           }))
       : [];
 
+    // normalisasi Cargo QTY alias jumlah muatan dari koma ke titik
+    // kalo backend butuh titik
+    const jumlahMuatanNumber = parseFloat((cargoQTY || "0").replace(",", "."));
+
     return {
       receipt_by: (namaPenerima ?? "").trim(),
       origin_city_id: Number(kotaMuat!.id),
       dest_city_id: Number(kotaBongkar!.id),
       order_type_id: (jenisOrder as OrderTypeItem).id.toString(),
       moda_id: (armada as ModaItem).id.toString(),
-
+      cargo_type_id: Number((jenisMuatan as RecordItem).id),
+      cargo_cbm: cargoCBM,
+      cargo_qty: jumlahMuatanNumber,
       cargo_name: (muatanNama ?? "").trim(),
       cargo_description: (muatanDeskripsi ?? "").trim(),
-
-      requirement_helmet: layananKhusus["Helm"] ? true : false,
-      requirement_apar: layananKhusus["APAR"] ? true : false,
-      requirement_safety_shoes: layananKhusus["Safety Shoes"] ? true : false,
-      requirement_vest: layananKhusus["Rompi"] ? true : false,
-      requirement_glasses: layananKhusus["Kaca mata"] ? true : false,
-      requirement_gloves: layananKhusus["Sarung tangan"] ? true : false,
-      requirement_face_mask: layananKhusus["Masker"] ? true : false,
-      requirement_tarpaulin: layananKhusus["Terpal"] ? true : false,
+      requirement_helmet: !!layananKhusus["Helm"],
+      requirement_apar: !!layananKhusus["APAR"],
+      requirement_safety_shoes: !!layananKhusus["Safety Shoes"],
+      requirement_vest: !!layananKhusus["Rompi"],
+      requirement_glasses: !!layananKhusus["Kaca mata"],
+      requirement_gloves: !!layananKhusus["Sarung tangan"],
+      requirement_face_mask: !!layananKhusus["Masker"],
+      requirement_tarpaulin: !!layananKhusus["Terpal"],
       requirement_other: (layananLainnya ?? "").trim(),
 
       route_ids: [mainRoute, ...extraRoutes],
@@ -1200,9 +1318,6 @@ export default function OrdersCreateForm({
     }
   }
 
-  // const lokasiMuatDisabled = !kotaMuat;
-  // const lokasiBongkarDisabled = !kotaBongkar;
-
   /* =================== Chat state & handler (non-intrusive) ================== */
   const [chatMsg, setChatMsg] = useState("");
   const [chatSending, setChatSending] = useState(false);
@@ -1246,15 +1361,15 @@ export default function OrdersCreateForm({
     );
   }
 
-  function mapApiSteps(
-    items: Array<{ key: string; label: string; is_current?: boolean }>
-  ): StatusStep[] {
-    return items.map(({ key, label, is_current }) => ({
-      key: key.toLowerCase(), // ← penting: seragamkan
-      label,
-      is_current: !!is_current,
-    }));
-  }
+  // function mapApiSteps(
+  //   items: Array<{ key: string; label: string; is_current?: boolean }>
+  // ): StatusStep[] {
+  //   return items.map(({ key, label, is_current }) => ({
+  //     key: key.toLowerCase(), // ← penting: seragamkan
+  //     label,
+  //     is_current: !!is_current,
+  //   }));
+  // }
 
   function safeJoin(base: string, path: string): string {
     return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
@@ -1414,10 +1529,17 @@ export default function OrdersCreateForm({
             <div className="md:basis-1/3  min-w-0 space-y-4">
               {/* Info Muatan */}
               <CargoInfoCard
+                jenisOrder={jenisOrder} // ⬅️ penting
                 muatanNama={muatanNama}
                 setMuatanNama={setMuatanNama}
                 muatanDeskripsi={muatanDeskripsi}
                 setMuatanDeskripsi={setMuatanDeskripsi}
+                jenisMuatan={jenisMuatan}
+                setJenisMuatan={setJenisMuatan}
+                jumlahMuatan={cargoQTY}
+                setJumlahMuatan={setCargoQTY}
+                cargoCBM={cargoCBM}
+                setCargoCBM={setCargoCBM}
                 errors={errors}
                 firstErrorKey={firstErrorKey}
                 firstErrorRef={firstErrorRef}

@@ -410,11 +410,11 @@ export default function LookupAutocomplete({
                       ) : (
                         <div className="flex items-center justify-between gap-3">
                           <span>{opt.name}</span>
-                          {opt.name && (
+                          {/* {opt.name && (
                             <span className="text-xs text-gray-500">
                               {opt.name}
                             </span>
-                          )}
+                          )} */}
                         </div>
                       )}
                     </li>

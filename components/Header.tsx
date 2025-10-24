@@ -43,7 +43,7 @@ export default function Header({
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white text-black">
+      <header className="sticky top-0 z-60 w-full border-b border-gray-200 bg-white text-black">
         <div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-3 px-4 sm:px-6">
           <div className="flex items-center gap-2">
             <button

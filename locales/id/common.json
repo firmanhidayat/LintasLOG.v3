@@ -34,7 +34,8 @@
         "yes": "Ya",
         "error": "Kesalahan",
         "add": "Tambah",
-        "remove": "Hapus"
+        "remove": "Hapus",
+        "disabled": "Pilih jenis order dahulu"
     },
     "form": {
         "required": "wajib diisi",

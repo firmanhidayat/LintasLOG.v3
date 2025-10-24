@@ -34,7 +34,8 @@
         "yes": "Yes",
         "error": "Error",
         "add": "Add",
-        "remove": "Remove"
+        "remove": "Remove",
+        "disabled": "Select order type"
     },
     "form": {
         "required": "required",

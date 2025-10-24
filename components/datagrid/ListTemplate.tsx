@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getLang, t } from "@/lib/i18n";
 import { goSignIn } from "@/lib/goSignIn";
+import { CellText } from "@/components/shared/CellText";
 
 export type SortDir = "asc" | "desc";
 
@@ -538,8 +539,24 @@ export function ListTemplate<
   const sequenceStart = (page - 1) * pageSize;
   const rowIsClickable = Boolean(onRowClick || rowNavigateTo);
 
+  function renderCellContent(row: T, col: ColumnDef<T>) {
+    const node = col.cell(row);
+
+    // Jangan potong untuk kolom aksi
+    if (col.isAction) return node;
+
+    // Jika text/number → pakai CellText (ada tooltip + truncate)
+    if (typeof node === "string" || typeof node === "number") {
+      // return <CellText value={node} max={90} className="w-[360px]" />;
+      return <CellText value={node} max={90} />;
+    }
+
+    // Selain itu (elemen React) → render apa adanya
+    return node;
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">{leftHeader}</div>
@@ -572,14 +589,17 @@ export function ListTemplate<
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="min-w-full text-md">
+      <div
+        className="relative max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-gray-200 bg-white shadow-sm"
+        style={{ scrollbarGutter: "stable both-edges" }}
+      >
+        <table className="table-auto min-w-full w-max text-md">
           <thead className="bg-primary/20 font-bold text-md border-b-4 border-transparent">
             <tr>
               {/* kolom nomor urut */}
               <th
                 scope="col"
-                className="w-12 px-3 py-2 text-left font-medium text-md text-gray-700"
+                className="w-12 px-3 py-2 text-left"
                 aria-label="Row number"
                 title="#"
               >
@@ -591,9 +611,7 @@ export function ListTemplate<
                   <th
                     key={c.id}
                     scope="col"
-                    className={`px-3 py-2 text-left font-medium text-md text-gray-700 ${
-                      c.className ?? ""
-                    }`}
+                    className={`px-3 py-2 text-left ${c.className ?? ""}`}
                   >
                     {c.sortable ? (
                       <button
@@ -603,7 +621,7 @@ export function ListTemplate<
                         aria-label={`Sort by ${c.label}`}
                       >
                         {c.label}
-                        <span className="text-md text-gray-500">
+                        <span className="text-shadow-sm text-gray-700">
                           {active ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
                         </span>
                       </button>
@@ -615,12 +633,12 @@ export function ListTemplate<
               })}
             </tr>
           </thead>
-          <tbody className="[&_tr]:bg-white">
+          <tbody className="[&_tr]:bg-white text-sm font-semibold">
             {loading ? (
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="p-4 text-center text-md text-gray-500"
+                  className="p-4 text-center  text-gray-500"
                 >
                   {t("common.loading")}
                 </td>
@@ -629,7 +647,7 @@ export function ListTemplate<
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="p-4 text-center text-md text-red-600"
+                  className="p-4 text-center text-red-600"
                 >
                   {error}
                 </td>
@@ -638,7 +656,7 @@ export function ListTemplate<
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="p-4 text-center text-md text-gray-500"
+                  className="p-4 text-center text-shadow-md text-gray-500"
                 >
                   {t("common.noData")}
                 </td>
@@ -673,8 +691,8 @@ export function ListTemplate<
                         "border-t border-gray-100 " +
                         (idx % 2 === 1 ? "bg-gray-50/40 " : "bg-white ") +
                         (clickable
-                          ? "cursor-pointer select-none hover:bg-gray-50/60 focus:bg-gray-50/80 focus:outline-none "
-                          : "hover:bg-gray-50/60 ") +
+                          ? "cursor-pointer select-none hover:bg-zinc-100 focus:bg-gray-50/80 focus:outline-none "
+                          : "hover:bg-zinc-100 cursor-pointer") +
                         (rowClassName?.(row, idx) ?? "")
                       }
                     >
@@ -689,7 +707,7 @@ export function ListTemplate<
                             c.className ?? ""
                           }`}
                         >
-                          {c.cell(row)}
+                          {renderCellContent(row, c)}
                         </td>
                       ))}
                     </tr>

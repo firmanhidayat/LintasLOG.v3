@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useMemo, useRef } from "react";
 import { t } from "@/lib/i18n";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import type { CityItem, OrderTypeItem, ModaItem } from "@/types/orders";
@@ -19,18 +21,14 @@ type Props = {
   customer: string;
   namaPenerima: string;
   setNamaPenerima: (v: string) => void;
-
   jenisOrder: OrderTypeItem | null;
   setJenisOrder: (v: OrderTypeItem | null) => void;
-
   armada: ModaItem | null;
   setArmada: (v: ModaItem | null) => void;
-
   kotaMuat: CityItem | null;
   onChangeKotaMuat: (c: CityItem | null) => void;
   kotaBongkar: CityItem | null;
   onChangeKotaBongkar: (c: CityItem | null) => void;
-
   errors: Record<string, string>;
   firstErrorKey?: string;
   firstErrorRef?: DivRef;
@@ -61,9 +59,80 @@ export default function OrderInfoCard({
       ? (firstErrorRef as React.Ref<HTMLDivElement>)
       : undefined;
 
+  // Isi otomatis customer saat create (tetap seperti sebelumnya)
   if (mode === "create") {
     customer = profile?.name || "";
   }
+
+  // Ambil identifier untuk order_type_id dari Jenis Order (code -> id -> value -> slug)
+  const orderTypeId = useMemo(() => {
+    const src =
+      (jenisOrder as unknown as Partial<
+        Record<"id" | "code" | "value" | "slug", string | number>
+      >) || {};
+    const v = src.code ?? src.id ?? src.value ?? src.slug;
+    return v ? String(v) : "";
+  }, [jenisOrder]);
+
+  // Build endpoint Armada dengan order_type_id di URL (biar LookupAutocomplete yang nambah page/page_size/query)
+  const armadaEndpoint = useMemo(() => {
+    const base = process.env.NEXT_PUBLIC_TMS_OMODA_FORM_URL ?? "";
+    try {
+      const u = new URL(base);
+      if (orderTypeId) {
+        u.searchParams.set("order_type_id", orderTypeId);
+      } else {
+        // kalau belum ada jenis order, kosongkan param agar tidak men-trigger fetch yang tidak perlu
+        u.searchParams.delete("order_type_id");
+      }
+      return {
+        url: u.toString(),
+        method: "GET" as const,
+        queryParam: "query",
+        pageParam: "page",
+        pageSizeParam: "page_size",
+        page: 1,
+        pageSize: 80,
+        mapResults: normalizeResults,
+        onUnauthorized: () => {
+          /* override kalau diperlukan */
+        },
+      };
+    } catch {
+      // fallback kalau base bukan absolute URL (harusnya absolute)
+      const withParam = orderTypeId
+        ? `${base}?order_type_id=${encodeURIComponent(orderTypeId)}`
+        : base;
+      return {
+        url: withParam,
+        method: "GET" as const,
+        queryParam: "query",
+        pageParam: "page",
+        pageSizeParam: "page_size",
+        page: 1,
+        pageSize: 80,
+        mapResults: normalizeResults,
+        onUnauthorized: () => {},
+      };
+    }
+  }, [orderTypeId]);
+
+  // Jaga: kalau Jenis Order berubah (setelah initial mount), reset pilihan Armada agar tidak mismatch
+  const prevOrderTypeId = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevOrderTypeId.current === null) {
+      // initial mount
+      prevOrderTypeId.current = orderTypeId;
+      return;
+    }
+    if (prevOrderTypeId.current !== orderTypeId) {
+      setArmada(null);
+      prevOrderTypeId.current = orderTypeId;
+    }
+  }, [orderTypeId, setArmada]);
+
+  const armadaDisabled = !orderTypeId;
+
   return (
     <Card>
       <CardHeader>
@@ -78,15 +147,18 @@ export default function OrderInfoCard({
           <Field.Root value={noJO || ""} onChange={() => {}} disabled>
             <Field.Label>{t("orders.no_jo")}</Field.Label>
             <Field.Control>
-              <Field.Input className="w-full"></Field.Input>
+              <Field.Input className="w-full" />
             </Field.Control>
           </Field.Root>
+
           <Field.Root value={customer || ""} onChange={() => {}} disabled>
             <Field.Label>{t("orders.customer")}</Field.Label>
             <Field.Control>
-              <Field.Input className="w-full"></Field.Input>
+              <Field.Input className="w-full" />
             </Field.Control>
           </Field.Root>
+
+          {/* Jenis Order */}
           <div ref={refIf("jenisOrder")}>
             <LookupAutocomplete
               label={t("orders.jenis_order")}
@@ -103,40 +175,33 @@ export default function OrderInfoCard({
                 page: 1,
                 pageSize: 80,
                 mapResults: normalizeResults,
-                // onUnauthorized: () => {
-                //   /* return true jika mau override goSignIn */
-                // },
               }}
               cacheNamespace="order-types"
               prefetchQuery=""
             />
           </div>
+
+          {/* Armada (tergantung Jenis Order) */}
           <div ref={refIf("armada")}>
             <LookupAutocomplete
               label={t("orders.armada")}
-              placeholder={t("orders.search_moda")}
+              placeholder={
+                armadaDisabled
+                  ? t("orders.select_order_type_first") ??
+                    "Pilih Jenis Order dulu"
+                  : t("orders.search_moda")
+              }
               value={armada}
               onChange={setArmada}
               error={errors.armada}
-              endpoint={{
-                url: process.env.NEXT_PUBLIC_TMS_OMODA_FORM_URL ?? "",
-                method: "GET",
-                queryParam: "query",
-                pageParam: "page",
-                pageSizeParam: "page_size",
-                page: 1,
-                pageSize: 80,
-                // headers: { Authorization: `Bearer ${token}` }, // jika perlu
-                mapResults: normalizeResults, // default juga sudah ini
-                onUnauthorized: () => {
-                  /* return true jika mau override goSignIn */
-                },
-              }}
-              cacheNamespace="moda-types"
+              endpoint={armadaEndpoint}
+              cacheNamespace={`moda-types:${orderTypeId || "none"}`}
               prefetchQuery=""
+              disabled={armadaDisabled}
             />
           </div>
 
+          {/* Kota Muat */}
           <div ref={refIf("kotaMuat")}>
             <LookupAutocomplete
               label={t("orders.kota_muat")}
@@ -153,15 +218,13 @@ export default function OrderInfoCard({
                 page: 1,
                 pageSize: 80,
                 mapResults: normalizeResults,
-                // onUnauthorized: () => {
-                //   /* return true jika mau override goSignIn */
-                // },
               }}
               cacheNamespace="kota-muat"
               prefetchQuery=""
             />
           </div>
 
+          {/* Kota Bongkar */}
           <div ref={refIf("kotaBongkar")}>
             <LookupAutocomplete
               label={t("orders.kota_bongkar")}
@@ -178,20 +241,23 @@ export default function OrderInfoCard({
                 page: 1,
                 pageSize: 80,
                 mapResults: normalizeResults,
-                // onUnauthorized: () => {
-                //   /* return true jika mau override goSignIn */
-                // },
               }}
               cacheNamespace="kota-bongkar"
               prefetchQuery=""
             />
           </div>
 
-          <Field.Root value={namaPenerima || ""} onChange={setNamaPenerima}>
+          {/* Nama Penerima */}
+          <Field.Root
+            error={errors.namaPenerima}
+            touched={Boolean(errors.namaPenerima)}
+            value={namaPenerima || ""}
+            onChange={setNamaPenerima}
+          >
             <Field.Label>{t("orders.nama_penerima")}</Field.Label>
             <Field.Control>
-              <Field.Input className="w-full"></Field.Input>
-              <Field.Error></Field.Error>
+              <Field.Input className="w-full" />
+              <Field.Error />
             </Field.Control>
           </Field.Root>
         </div>

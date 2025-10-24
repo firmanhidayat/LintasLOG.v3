@@ -236,7 +236,7 @@ export default function StatusTrackingPage({
         label: t("statustracking.columns.lokasiBongkar"),
         sortable: true,
         sortValue: (r) => r.lokasiBongkar ?? "",
-        className: "min-w-[240px]",
+        className: "w-[96px]",
         cell: (r) => r.lokasiBongkar,
       },
       {
@@ -244,7 +244,7 @@ export default function StatusTrackingPage({
         label: t("statustracking.columns.armada"),
         sortable: true,
         sortValue: (r) => r.armada ?? "",
-        className: "min-w-[160px]",
+        className: "w-[200px]",
         cell: (r) => r.armada,
       },
       {
@@ -252,7 +252,7 @@ export default function StatusTrackingPage({
         label: t("statustracking.columns.jenisMuatan"),
         sortable: true,
         sortValue: (r) => r.jenisMuatan ?? "",
-        className: "min-w-[180px]",
+        className: "w-[180px]",
         cell: (r) => r.jenisMuatan,
       },
       {
@@ -260,7 +260,7 @@ export default function StatusTrackingPage({
         label: t("statustracking.columns.status"),
         sortable: true,
         sortValue: (r) => r.status ?? "",
-        className: "min-w-[220px]",
+        className: "w-[30px]",
         cell: (row) => {
           const id = String(row.id);
           const menuOpen = menuOpenId === row.id;

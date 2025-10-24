@@ -1,3 +1,4 @@
+import { RecordItem } from "./recorditem";
 import { StatusStep } from "./status-delivery";
 
 /// Item untuk dropdown city, address, etc.
@@ -63,8 +64,12 @@ export type ApiPayload = {
   dest_city_id: number;
   order_type_id: string;
   moda_id: string;
+
+  cargo_type_id: number;
   cargo_name: string;
   cargo_description: string;
+  cargo_cbm: string;
+  cargo_qty: number;
 
   requirement_helmet: boolean;
   requirement_apar: boolean;
@@ -116,6 +121,7 @@ export interface CreateOrderPayload {
   requirement_other: string;
 
   // Informasi Muatan
+  cargo_type_id: number;
   muatan_nama: string;
   muatan_deskripsi: string;
 
@@ -143,8 +149,12 @@ export type OrdersCreateFormProps = {
     moda_id: number;
     moda: ModaItem;
     order_type: OrderTypeItem;
+    cargo_type: RecordItem;
+    cargo_type_id: number;
     cargo_name: string;
     cargo_description: string;
+    cargo_cbm: string;
+    cargo_qty: string;
     requirement_helmet: boolean;
     requirement_apar: boolean;
     requirement_safety_shoes: boolean;

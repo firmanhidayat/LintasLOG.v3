@@ -182,7 +182,8 @@ export default function SectionShell({
   }
 
   return (
-    <div className="flex min-h-dvh">
+    // <div className="flex min-h-dvh">
+    <div>
       {/* SIDEBAR: fixed, full-height, scroll sendiri */}
       {showSidebar && (
         <aside

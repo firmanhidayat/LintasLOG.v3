@@ -47,6 +47,8 @@
         "search": {
             "placeholder": "cari..."
         },
+        "search_cargo_type": "Jenis muatan...",
+        "jenis_cargo": "Jenis Muatan",
         "search_moda": "Jenis armada...",
         "search_order_type": "Jenis order...",
         "pic_muat_name": "PIC Muat",

@@ -9,8 +9,6 @@ import { Icon } from "@/components/icons/Icon";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 const USER_ADDRESS_URL = process.env.NEXT_PUBLIC_TMS_USER_ADDRESS_URL!;
-
-// ============ Types (tetap sama) ============
 export type AddressItem = {
   id?: number | string;
   name?: string;
@@ -25,7 +23,6 @@ export type AddressItem = {
   district_name?: string;
 };
 
-// ============ Helpers spesifik Address ============
 function renderDistrict(it: AddressItem) {
   const d = it.district;
   if (!d) return it.district_name ?? "-";
@@ -37,25 +34,13 @@ export default function AddressesListPage() {
   const router = useRouter();
   const { i18nReady, activeLang } = useI18nReady();
 
-  if (!i18nReady) {
-    return (
-      <div className="space-y-4" data-lang={activeLang}>
-        <div className="flex items-center justify-between">
-          <div className="h-8 w-40 animate-pulse rounded bg-slate-200" />
-          <div className="h-8 w-32 animate-pulse rounded bg-slate-200" />
-        </div>
-        <div className="h-64 animate-pulse rounded-lg border bg-slate-100" />
-      </div>
-    );
-  }
-
-  // ----- Kolom dinamis utk Address -----
   const columns: ColumnDef<AddressItem>[] = [
     {
       id: "name",
       label: t("addresses.columns.name"),
       sortable: true,
       sortValue: (r) => (r.name ?? "").toLowerCase(),
+      className: "w-[60px]",
       cell: (r) => r.name ?? "-",
     },
     {
@@ -63,6 +48,7 @@ export default function AddressesListPage() {
       label: t("addresses.columns.street"),
       sortable: true,
       sortValue: (r) => (r.street ?? "").toLowerCase(),
+      className: "w-[60px]",
       cell: (r) => r.street ?? "-",
     },
     {
@@ -70,6 +56,7 @@ export default function AddressesListPage() {
       label: t("addresses.columns.street2"),
       sortable: true,
       sortValue: (r) => (r.street2 ?? "").toLowerCase(),
+      className: "w-[60px]",
       cell: (r) => r.street2 ?? "-",
     },
     {
@@ -82,6 +69,7 @@ export default function AddressesListPage() {
         if (typeof d === "string") return d.toLowerCase();
         return String(d.name ?? r.district_name ?? "").toLowerCase();
       },
+      className: "w-[60px]",
       cell: (r) => renderDistrict(r),
     },
     {
@@ -89,6 +77,7 @@ export default function AddressesListPage() {
       label: t("addresses.columns.zip"),
       sortable: true,
       sortValue: (r) => (r.zip ?? "").toLowerCase(),
+      className: "w-[60px]",
       cell: (r) => r.zip ?? "-",
     },
     {
@@ -96,6 +85,7 @@ export default function AddressesListPage() {
       label: t("addresses.columns.email"),
       sortable: true,
       sortValue: (r) => (r.email ?? "").toLowerCase(),
+      className: "w-[60px]",
       cell: (r) => r.email ?? "-",
     },
     {
@@ -103,13 +93,14 @@ export default function AddressesListPage() {
       label: t("addresses.columns.phone"),
       sortable: true,
       sortValue: (r) => (r.mobile ?? r.phone ?? "").toLowerCase(),
+      className: "w-[60px]",
       cell: (r) => r.mobile ?? r.phone ?? "-",
     },
     {
       id: "actions",
       label: "",
       isAction: true,
-      className: "w-20",
+      className: "w-24",
       cell: (it) => (
         <div className="flex items-center gap-2">
           {it.id != null ? (
@@ -176,7 +167,7 @@ export default function AddressesListPage() {
       ),
     },
   ];
-
+  if (!i18nReady) return null;
   const leftHeader = (
     <div className="flex items-center gap-2">
       <Button
