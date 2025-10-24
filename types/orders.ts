@@ -68,7 +68,7 @@ export type ApiPayload = {
   cargo_type_id: number;
   cargo_name: string;
   cargo_description: string;
-  cargo_cbm: string;
+  cargo_cbm: number;
   cargo_qty: number;
 
   requirement_helmet: boolean;
@@ -153,8 +153,8 @@ export type OrdersCreateFormProps = {
     cargo_type_id: number;
     cargo_name: string;
     cargo_description: string;
-    cargo_cbm: string;
-    cargo_qty: string;
+    cargo_cbm: number;
+    cargo_qty: number;
     requirement_helmet: boolean;
     requirement_apar: boolean;
     requirement_safety_shoes: boolean;
@@ -198,6 +198,7 @@ export type OrdersCreateFormProps = {
     dest_longitude: string;
 
     route_ids?: Array<{
+      id?: number;
       is_main_route: boolean;
       origin_address_id: number;
       origin_pic_name?: string;

@@ -375,8 +375,8 @@ function prefillFromInitial(
       data.cargo_type ??
       (data.cargo_type_id ? ({ id: data.cargo_type_id } as RecordItem) : null),
 
-    cargoCBM: data.cargo_cbm ?? "",
-    cargoQTY: data.cargo_qty ?? "0",
+    cargoCBM: data.cargo_cbm,
+    cargoQTY: data.cargo_qty,
     cargo_type_id: data.cargo_type_id,
     cargo_type: data.cargo_type,
 
@@ -410,6 +410,7 @@ function prefillFromInitial(
 
   const main = routes.find((r) => r.is_main_route);
 
+  // form.id = main.id ?? 0;
   // Prefill dari route main kalau ada
   form.tglMuat = apiToLocalIsoMinute(main?.etd_date) || form.tglMuat;
   form.tglBongkar = apiToLocalIsoMinute(main?.eta_date) || form.tglBongkar;
@@ -453,6 +454,7 @@ function prefillFromInitial(
   const extras: RouteItem[] = routes.filter((r) => !r.is_main_route);
   form.extraStops = extras.map(
     (r): ExtraStop => ({
+      id: r.id,
       lokMuat: addrFromRoute(r, "origin"),
       lokBongkar: addrFromRoute(r, "dest"),
       originPicName: r.origin_pic_name ?? "",
@@ -750,8 +752,8 @@ export default function OrdersCreateForm({
 
   // ====== UI state untuk jenisMuatan (RecordItem) ======
   const [jenisMuatan, setJenisMuatan] = useState<RecordItem | null>(null);
-  const [cargoCBM, setCargoCBM] = useState<string>("");
-  const [cargoQTY, setCargoQTY] = useState<string>("0");
+  const [cargoCBM, setCargoCBM] = useState<number>();
+  const [cargoQTY, setCargoQTY] = useState<number>();
 
   // Jika ada initialData, langsung prefill sebagian field
   useEffect(() => {
@@ -1009,6 +1011,7 @@ export default function OrdersCreateForm({
     return Boolean(
       jenisOrder?.id &&
         armada &&
+        namaPenerima &&
         kotaMuat?.id &&
         kotaBongkar?.id &&
         lokMuat?.id &&
@@ -1086,7 +1089,7 @@ export default function OrdersCreateForm({
 
     // normalisasi Cargo QTY alias jumlah muatan dari koma ke titik
     // kalo backend butuh titik
-    const jumlahMuatanNumber = parseFloat((cargoQTY || "0").replace(",", "."));
+    // const jumlahMuatanNumber = parseFloat((cargoQTY || "0").replace(",", "."));
 
     return {
       receipt_by: (namaPenerima ?? "").trim(),
@@ -1095,8 +1098,8 @@ export default function OrdersCreateForm({
       order_type_id: (jenisOrder as OrderTypeItem).id.toString(),
       moda_id: (armada as ModaItem).id.toString(),
       cargo_type_id: Number((jenisMuatan as RecordItem).id),
-      cargo_cbm: cargoCBM,
-      cargo_qty: jumlahMuatanNumber,
+      cargo_cbm: cargoCBM ?? 0,
+      cargo_qty: cargoQTY ?? 0,
       cargo_name: (muatanNama ?? "").trim(),
       cargo_description: (muatanDeskripsi ?? "").trim(),
       requirement_helmet: !!layananKhusus["Helm"],
@@ -1536,9 +1539,9 @@ export default function OrdersCreateForm({
                 setMuatanDeskripsi={setMuatanDeskripsi}
                 jenisMuatan={jenisMuatan}
                 setJenisMuatan={setJenisMuatan}
-                jumlahMuatan={cargoQTY}
+                jumlahMuatan={cargoQTY ?? 0}
                 setJumlahMuatan={setCargoQTY}
-                cargoCBM={cargoCBM}
+                cargoCBM={cargoCBM ?? 0}
                 setCargoCBM={setCargoCBM}
                 errors={errors}
                 firstErrorKey={firstErrorKey}

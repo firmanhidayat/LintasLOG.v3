@@ -10,6 +10,7 @@ import { AddressSidePanel } from "@/components/ui/AddressSidePanel";
 import { fmtDate } from "@/lib/helpers";
 
 export type ExtraStop = {
+  id?: number;
   lokMuat: AddressItem | null;
   lokBongkar: AddressItem | null;
   originPicName: string;
@@ -39,6 +40,7 @@ export type ExtraStop = {
 };
 
 type Props = {
+  id?: number;
   isReadOnly: boolean;
   idx: number;
   stop: ExtraStop;
