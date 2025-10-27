@@ -115,6 +115,7 @@ export default function LoginPage() {
     setVerifyHint({ show: false });
 
     try {
+      // console.log("(Login) ", { login: email, password, tms_user_type: tab });
       const res = await fetch(LOGIN_URL, {
         method: "POST",
         headers: {
@@ -122,7 +123,7 @@ export default function LoginPage() {
           Accept: "application/json",
           "Accept-Language": activeLang,
         },
-        body: JSON.stringify({ login: email, password }),
+        body: JSON.stringify({ login: email, password, tms_user_type: tab }),
         credentials: "include",
       });
 
