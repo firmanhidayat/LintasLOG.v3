@@ -276,9 +276,10 @@ export function generateStatusTimelineSvg(opts: {
         : ``;
 
       // ⬇️ Skip bullet untuk current (karena sudah diganti truk), tetap render label & subteks
-      const bulletNode = isCurrent
-        ? ""
-        : `<circle cx="${x}" cy="${lineY}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="2" />`;
+      const bulletNode =
+        isCurrent && showTruck
+          ? ""
+          : `<circle cx="${x}" cy="${lineY}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="2" />`;
 
       return `
       <g>
@@ -390,6 +391,10 @@ export function GetStatesInLine({
       ? "bg-emerald-100 text-emerald-700 border-emerald-200"
       : value === "review"
       ? "bg-violet-100 text-violet-700 border-violet-200"
+      : value === "rfq"
+      ? "bg-white text-black border-gray-200"
+      : value === "reject"
+      ? "bg-red-400 text-gwhite border-black"
       : "bg-green-100 text-green-700 border-green-200"; // Done
 
   return (

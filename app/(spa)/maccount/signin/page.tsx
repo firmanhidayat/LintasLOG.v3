@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import lintaslogo from "@/images/lintaslog-logo.png";
 import bglintas from "@/images/bg-1.png";
 
-import { useAuth } from "@/components/providers/AuthProvider";
+import { Role, useAuth } from "@/components/providers/AuthProvider";
 
 import {
   loadDictionaries,
@@ -20,8 +20,6 @@ import { mapFastapi422, mapCommonErrors } from "@/lib/i18n-fastapi";
 import LangToggle from "@/components/LangToggle";
 
 const LOGIN_URL = process.env.NEXT_PUBLIC_TMS_LOGIN_URL!;
-
-type Role = "shipper" | "transporter";
 
 type LoginOk = {
   login: string;
@@ -160,7 +158,16 @@ export default function LoginPage() {
         return;
       }
 
-      authLogin({ login: ok.login, mail_verified: ok.mail_verified, remember });
+      console.log("{OK : ", ok, " }");
+      console.log("{Remember : ", remember, " }");
+      console.log("{Tab : ", tab, " }");
+
+      authLogin({
+        login: ok.login,
+        mail_verified: ok.mail_verified,
+        remember: remember,
+        tms_user_type: tab,
+      });
 
       if (ok.mail_verified) {
         router.push("/dashboard");

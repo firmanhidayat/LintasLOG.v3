@@ -35,7 +35,9 @@
         "error": "Kesalahan",
         "add": "Tambah",
         "remove": "Hapus",
-        "disabled": "Pilih jenis order dahulu"
+        "disabled": "Pilih jenis order dahulu",
+        "accept": "Terima",
+        "reject": "Tolak"
     },
     "form": {
         "required": "wajib diisi",

@@ -35,7 +35,9 @@
         "error": "Error",
         "add": "Add",
         "remove": "Remove",
-        "disabled": "Select order type"
+        "disabled": "Select order type",
+        "accept": "Accept",
+        "reject": "Reject"
     },
     "form": {
         "required": "required",

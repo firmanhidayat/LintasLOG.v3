@@ -100,6 +100,7 @@ type CoreState = {
   errId: string;
 
   inputRef?: React.Ref<HTMLInputElement>;
+  textareaRef?: React.Ref<HTMLTextAreaElement>;
 
   // common state
   value: string;
@@ -174,6 +175,8 @@ function Root({
   // common
   value,
   onChange,
+  inputRef,
+  textareaRef,
   touched,
   error,
   description,
@@ -232,6 +235,9 @@ function Root({
       inputId,
       descId,
       errId,
+
+      inputRef,
+      textareaRef,
 
       value,
       onChange,
@@ -344,7 +350,8 @@ function Label({ className, children, ...rest }: LabelProps) {
           "peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100",
           // saat fokus/ada value
           "peer-focus:-translate-y-3 peer-focus:scale-90",
-          "peer-not-placeholder-shown:-translate-y-3 peer-not-placeholder-shown:scale-90",
+          // "peer-not-placeholder-shown:-translate-y-3 peer-not-placeholder-shown:scale-90",
+          "peer-[:not(:placeholder-shown)]:-translate-y-3 peer-[:not(:placeholder-shown)]:scale-90",
           className
         )}
         {...rest}
@@ -415,21 +422,16 @@ type ControlProps = React.ComponentPropsWithoutRef<"div"> & {
 };
 function Control({ className, fluid = true, children, ...rest }: ControlProps) {
   const ctx = useFieldCtx();
-
-  // deteksi apakah ada Prefix/Suffix dari children
-  // const childArr = React.Children.toArray(children);
-  // const hasPrefix = childArr.some(
-  //   (c: any) => React.isValidElement(c) && (c.type as any)?._isFieldPrefix
-  // );
-  // const hasSuffix = childArr.some(
-  //   (c: any) => React.isValidElement(c) && (c.type as any)?._isFieldSuffix
-  // );
   const childArr = React.Children.toArray(children);
   const hasPrefix = childArr.some((c) => isMarkedChild(c, "_isFieldPrefix"));
   const hasSuffix = childArr.some((c) => isMarkedChild(c, "_isFieldSuffix"));
 
   // injeksikan meta ke context untuk Input/Textarea
-  const patchedCtx = { ...ctx, hasPrefix, hasSuffix };
+  //const patchedCtx = { ...ctx, hasPrefix, hasSuffix };
+  const patchedCtx = React.useMemo(
+    () => ({ ...ctx, hasPrefix, hasSuffix }),
+    [ctx, hasPrefix, hasSuffix]
+  );
 
   const base = (
     <FieldContext.Provider value={patchedCtx}>
@@ -470,6 +472,7 @@ function Suffix({ className, ...rest }: AdornProps) {
   const ctx = useFieldCtx();
   const cls = clsx(
     "inline-flex items-center border border-gray-600 rounded-r-md border-l-0",
+    // "inline-flex items-center border border-gray-300 rounded-r-md border-l-0",
     ctx.isInvalid && "border-red-400",
     ctx.disabled ? "bg-gray-100 text-gray-500" : "bg-gray-50 text-gray-700",
     addonSizeClasses[ctx.size],
@@ -483,21 +486,6 @@ function Suffix({ className, ...rest }: AdornProps) {
 /** ===== Base Input classes (dipakai Input/Textarea) ===== */
 function useFieldClasses() {
   const ctx = useFieldCtx();
-  // const base =
-  //   "rounded-md border-1 outline-none border-gray-600 focus:ring-1 focus:ring-primary focus:bg-primary/5 transition font-sans";
-  // const inv = ctx.isInvalid
-  //   ? "border-red-500 border-1 border-dotted focus:ring-red-500"
-  //   : "";
-  // const state = ctx.disabled
-  //   ? "bg-gray-100 text-gray-500 cursor-not-allowed !border-gray-300 !text-gray-800"
-  //   : ctx.readOnly
-  //   ? "bg-gray-50 text-gray-700"
-  //   : "bg-white text-gray-900";
-  // const size = sizeClasses[ctx.size];
-  // const cutLeft = ctx.hasPrefix ? "rounded-l-none border-l-0" : "";
-  // const cutRight = ctx.hasSuffix ? "rounded-r-none border-r-0" : "";
-  // const peerCls = ctx.layout === "floating" ? "peer" : "";
-  // return clsx(base, size, inv, state, cutLeft, cutRight, peerCls);
   const opts: FieldStyleOptions = {
     disabled: ctx.disabled,
     readOnly: ctx.readOnly,
@@ -507,7 +495,8 @@ function useFieldClasses() {
     size: ctx.size,
     layout: ctx.layout,
   };
-  return fieldClasses(opts);
+  // return fieldClasses(opts);
+  return clsx(fieldClasses(opts), ctx.layout === "floating" && "peer");
 }
 
 /** ===== Input ===== */
@@ -567,6 +556,7 @@ function Textarea({ className, placeholder, ...rest }: TextareaProps) {
 
   return (
     <textarea
+      ref={ctx.textareaRef}
       id={ctx.inputId}
       name={ctx.name}
       value={ctx.value}

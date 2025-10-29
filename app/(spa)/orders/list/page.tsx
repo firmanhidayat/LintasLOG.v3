@@ -9,18 +9,117 @@ import {
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link"; // ⟵ dihapus, diganti Button
 import { Icon } from "@/components/icons/Icon";
-import { OrderRow } from "@/types/orders";
+import { OrderRow, POrderRow } from "@/types/orders";
 import { fmtDate, fmtPrice } from "@/lib/helpers";
 import { GetStatesInLine } from "@/components/ui/DeliveryState";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/components/providers/AuthProvider";
 
-const GET_ORDERS_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
+const GET_ORDERS_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL!;
+const GET_P_ORDERS_URL = process.env.NEXT_PUBLIC_TMS_P_ORDER_FORM_URL!;
 
 export default function OrdersListPage() {
   const router = useRouter();
   const { i18nReady, activeLang } = useI18nReady();
+  const { profile } = useAuth();
 
+  const userType = useMemo(() => {
+    if (profile) return profile.tms_user_type;
+    return undefined;
+  }, [profile]);
+
+  const columnsPO: ColumnDef<POrderRow>[] = [
+    {
+      id: "jo_no",
+      label: t("orders.columns.joNo") || "No. JO",
+      sortable: true,
+      sortValue: (r) => r.name ?? "",
+      className: "w-[60px]",
+      cell: (r) => <div className="font-medium text-gray-900">{r.name}</div>,
+    },
+    {
+      id: "pickup_date",
+      label: t("orders.columns.pickupDate") || "Tanggal Pickup",
+      sortable: true,
+      sortValue: (r) => r.pickup_date_planne ?? "",
+      className: "w-[60px]",
+      cell: (r) =>
+        r.route_ids.length > 0
+          ? r.route_ids[0].is_main_route
+            ? fmtDate(r.route_ids[0].etd_date)
+            : "-"
+          : "-",
+    },
+    {
+      id: "pickup_to",
+      label: t("orders.columns.pickupTo") || "Tujuan Pickup",
+      sortable: true,
+      sortValue: (r) => (r.origin_city?.name ?? "").toLowerCase(),
+      className: "w-[60px]",
+      cell: (r) => (
+        <span className="text-gray-700">{r.origin_city?.name ?? "-"}</span>
+      ),
+    },
+    {
+      id: "drop_date",
+      label: t("orders.columns.dropDate") || "Tanggal Drop",
+      sortable: true,
+      sortValue: (r) => r.drop_off_date_planne ?? "",
+      className: "w-[60px]",
+      cell: (r) =>
+        r.route_ids.length > 0
+          ? r.route_ids[0].is_main_route
+            ? fmtDate(r.route_ids[0].eta_date)
+            : "-"
+          : "-",
+    },
+    {
+      id: "drop_to",
+      label: t("orders.columns.dropTo") || "Tujuan Drop",
+      sortable: true,
+      sortValue: (r) => (r.dest_city?.name ?? "").toLowerCase(),
+      className: "w-[60px]",
+      cell: (r) => (
+        <span className="text-gray-700">{r.dest_city?.name ?? "-"}</span>
+      ),
+    },
+    {
+      id: "special_request",
+      label: t("orders.columns.specialRequest") || "Permintaan Khusus",
+      sortable: true,
+      sortValue: (r) => (r.requirement_other ?? "").toLowerCase(),
+      className: "w-[100px]",
+      cell: (r) => r.requirement_other?.trim() || "-",
+    },
+    {
+      id: "price",
+      label: t("orders.columns.price") || "Harga",
+      sortable: true,
+      sortValue: (r) => String(r.amount_total ?? ""),
+      className: "w-[56px] text-right",
+      cell: (r) => (
+        <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
+      ),
+    },
+    {
+      id: "status",
+      label: t("orders.columns.status") || "Status",
+      sortable: true,
+      sortValue: (r) =>
+        r.tms_states.find((s) => s.is_current)?.key || "unknown",
+      className: "w-[32px]",
+      cell: (r) =>
+        r.tms_states.find((s) => s.is_current)?.is_current ? (
+          <GetStatesInLine
+            value={r.tms_states.find((s) => s.is_current)?.key || "unknown"}
+            label={r.tms_states.find((s) => s.is_current)?.label || "unknown"}
+          />
+        ) : (
+          <GetStatesInLine value="unknown" label="unknown" />
+        ),
+    },
+  ];
   const columns: ColumnDef<OrderRow>[] = [
     {
       id: "jo_no",
@@ -181,7 +280,7 @@ export default function OrdersListPage() {
   ];
 
   if (!i18nReady) return null;
-
+  const isShipper = userType === "shipper" ? true : false;
   const leftHeader = (
     <div className="flex items-center gap-2">
       <Button
@@ -197,19 +296,41 @@ export default function OrdersListPage() {
 
   return (
     <div className="space-y-4" data-lang={activeLang}>
-      <ListTemplate<OrderRow>
-        key={"orders-" + (t("lang") || "id")}
-        fetchBase={`${GET_ORDERS_URL}`}
-        deleteBase={`${GET_ORDERS_URL}`}
-        columns={columns}
-        searchPlaceholder={t("orders.search.placeholder")}
-        rowsPerPageLabel={t("orders.rowsPerPage")}
-        leftHeader={leftHeader}
-        initialPageSize={80}
-        initialSort={{ by: "id", dir: "desc" }}
-        postFetchTransform={(list) => list}
-        rowNavigateTo={(id) => ({ pathname: "orders/details", query: { id } })}
-      />
+      {isShipper ? (
+        <ListTemplate<OrderRow>
+          key={"orders-" + (t("lang") || "id")}
+          fetchBase={`${GET_ORDERS_URL}`}
+          deleteBase={`${GET_ORDERS_URL}`}
+          columns={columns}
+          searchPlaceholder={t("orders.search.placeholder")}
+          rowsPerPageLabel={t("orders.rowsPerPage")}
+          leftHeader={leftHeader}
+          initialPageSize={80}
+          initialSort={{ by: "id", dir: "desc" }}
+          postFetchTransform={(list) => list}
+          rowNavigateTo={(id) => ({
+            pathname: "orders/details",
+            query: { id },
+          })}
+        />
+      ) : (
+        <ListTemplate<POrderRow>
+          key={"orders-" + (t("lang") || "id")}
+          fetchBase={`${GET_P_ORDERS_URL}`}
+          deleteBase={`${GET_P_ORDERS_URL}`}
+          columns={columnsPO}
+          searchPlaceholder={t("orders.search.placeholder")}
+          rowsPerPageLabel={t("orders.rowsPerPage")}
+          // leftHeader={isShipper ? leftHeader : undefined}
+          initialPageSize={80}
+          initialSort={{ by: "id", dir: "desc" }}
+          postFetchTransform={(list) => list}
+          rowNavigateTo={(id) => ({
+            pathname: "orders/details",
+            query: { id },
+          })}
+        />
+      )}
     </div>
   );
 }

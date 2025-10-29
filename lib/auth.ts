@@ -1,5 +1,6 @@
 export const AUTH_KEYS = ["llog.login", "llog.mail_verified"] as const;
-export const LOGOUT_URL = "https://odoodev.linitekno.com/api-tms/auth/logout";
+// export const LOGOUT_URL = "https://odoodev.linitekno.com/api-tms/auth/logout";
+export const LOGOUT_URL = process.env.NEXT_PUBLIC_TMS_LOGOUT_URL!;
 
 type ApiLogoutResponse = {
   detail?: string;
@@ -24,21 +25,6 @@ function getCookie(name: string): string | null {
   const m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
   return m ? decodeURIComponent(m[2]) : null;
 }
-
-// export function isLoggedIn(): boolean {
-//   const login =
-//     (typeof window !== "undefined" && localStorage.getItem("llog.login")) ||
-//     (typeof window !== "undefined" && sessionStorage.getItem("llog.login")) ||
-//     null;
-
-//   const verified =
-//     (typeof window !== "undefined" &&
-//       (localStorage.getItem("llog.mail_verified") ||
-//         sessionStorage.getItem("llog.mail_verified"))) ||
-//     null;
-
-//   return !!login && verified === "true";
-// }
 
 export function isLoggedIn(): boolean {
   if (typeof window === "undefined") return false;

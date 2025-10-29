@@ -1,13 +1,17 @@
-// export default function OrdersDetailPage() {
-//   return (
-//     <section>
-//       <h1 className="text-2xl font-bold">Orders Detail</h1>
-//       <p className="mt-2 text-gray-600">Example SPA route.</p>
-//     </section>
-//   );
-// }
+"use client";
 
+import React, { useMemo } from "react";
 import OrdersCreateForm from "@/components/forms/orders/OrdersCreateForm";
+import { useAuth } from "@/components/providers/AuthProvider";
+import PurchaseOrderForm from "@/components/forms/orders/sections/transporter/PurchaseOrderForm";
+
 export default function OrdersDetailPage() {
-  return <OrdersCreateForm mode="edit" />;
+  const { profile } = useAuth();
+  const userType = useMemo(() => {
+    if (profile) return profile.tms_user_type;
+    return undefined;
+  }, [profile]);
+  const isShipper = userType === "shipper" ? true : false;
+  if (isShipper) return <OrdersCreateForm mode="edit" />;
+  else return <PurchaseOrderForm mode="edit" />;
 }

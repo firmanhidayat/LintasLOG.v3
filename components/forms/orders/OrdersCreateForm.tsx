@@ -166,7 +166,7 @@ const UPDATE_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const APP_BASE_PATH = process.env.NEXT_PUBLIC_URL_BASE ?? "";
 
 /* === Lightweight Modal/Dialog === */
-function Modal({
+export function Modal({
   open,
   onClose,
   children,
@@ -292,20 +292,6 @@ function normalizeKey(s: unknown): string {
     .trim()
     .replace(/[\s_-]+/g, ""); // "On Review" -> "onreview"
 }
-
-// type AnyStep =
-//   | {
-//       key?: string;
-//       label?: string;
-//       is_current?: boolean;
-//       code?: string;
-//       name?: string;
-//       title?: string;
-//       status?: string;
-//       current?: boolean;
-//       active?: boolean;
-//     }
-//   | string;
 
 function extractApiSteps(
   d: NonNullable<OrdersCreateFormProps["initialData"]>
@@ -1520,6 +1506,7 @@ export default function OrdersCreateForm({
 
               {/* Layanan Khusus */}
               <SpecialServicesCard
+                isReadOnly={isReadOnly}
                 layananPreset={layananPreset}
                 layananKhusus={layananKhusus}
                 setLayananKhusus={setLayananKhusus}

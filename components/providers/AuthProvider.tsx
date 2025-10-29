@@ -3,13 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { isLoggedIn, clearAuth } from "@/lib/auth";
 import type { TmsProfile } from "@/types/tms-profile";
-
-// type TmsProfile = {
-//   email?: string;
-//   name?: string;
-//   roles?: string[];
-//   [k: string]: unknown;
-// };
+export type Role = "shipper" | "transporter";
 
 type LoadStatus = "idle" | "loading" | "success" | "error";
 
@@ -19,6 +13,7 @@ type AuthContextType = {
     login: string;
     mail_verified: boolean;
     remember?: boolean;
+    tms_user_type: Role;
   }) => void;
   logout: () => Promise<void>;
   profile?: TmsProfile | null;
@@ -27,8 +22,6 @@ type AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// const PROFILE_URL = process.env.NEXT_PUBLIC_TMS_PROFILE_URL ?? "";
 const PROFILE_URL = process.env.NEXT_PUBLIC_TMS_USER_PROFILE_URL!;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -108,15 +101,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login: string;
     mail_verified: boolean;
     remember?: boolean;
+    tms_user_type: Role;
   }) => {
     localStorage.removeItem("llog.login");
     localStorage.removeItem("llog.mail_verified");
     sessionStorage.removeItem("llog.login");
     sessionStorage.removeItem("llog.mail_verified");
+    localStorage.removeItem("llog.usrtype");
+    sessionStorage.removeItem("llog.usrtype");
+
+    console.log("{DATA: ", data, "}");
 
     const store = data.remember ? localStorage : sessionStorage;
     store.setItem("llog.login", data.login);
     store.setItem("llog.mail_verified", String(data.mail_verified));
+    store.setItem("llog.usrtype", data.tms_user_type);
+
+    console.log("{STORE: ", store, "}");
 
     setLoggedIn(true);
     void refreshProfile();

@@ -2,9 +2,11 @@ import React from "react";
 import { t } from "@/lib/i18n";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { fmtPrice } from "@/lib/helpers";
+import clsx from "clsx";
 
 // ===== Props ===== Readonly data only
 type Props = {
+  isShowNotes?: boolean | undefined;
   biayaKirimLabel: number | string | undefined;
   biayaLayananTambahanLabel: number | string | undefined;
   taxLabel: number | string | undefined;
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export default function CostDetailsCard({
+  isShowNotes = true,
   biayaKirimLabel,
   biayaLayananTambahanLabel,
   taxLabel,
@@ -40,7 +43,12 @@ export default function CostDetailsCard({
             <span>{t("orders.tax")}</span>
             <span className="font-extrabold">{fmtPrice(taxLabel)}</span>
           </div>
-          <div className="flex items-start justify-between">
+          <div
+            className={clsx(
+              "flex items-start justify-between",
+              !isShowNotes && "hidden"
+            )}
+          >
             <span>{t("orders.biaya_na")}</span>
             <span className="max-w-[60%] text-right text-gray-600">
               {t("orders.biaya_na_note")}

@@ -44,6 +44,21 @@ export type OrderRow = {
   route_ids: RoutePayload[];
 };
 
+// Row type untuk datagrid purchase orders : sisi Transporter
+export type POrderRow = {
+  id: number | string;
+  name?: string;
+  dest_city?: { id: number; name: string };
+  origin_city?: { id: number; name: string };
+  pickup_date_planne?: RoutePayload["etd_date"];
+  drop_off_date_planne?: RoutePayload["eta_date"];
+  requirement_other?: string;
+  amount_total?: number;
+  tms_state: string;
+  tms_states: StatusStep[];
+  route_ids: RoutePayload[];
+};
+
 // Payload untuk create / edit order
 export type RoutePayload = {
   is_main_route: boolean;
@@ -172,6 +187,9 @@ export type OrdersCreateFormProps = {
     amount_tax: string | number;
     amount_total: string | number;
     states: StatusStep[];
+
+    tms_states?: StatusStep[];
+    tms_state?: string;
 
     origin_city?: CityItem;
     dest_city?: CityItem;

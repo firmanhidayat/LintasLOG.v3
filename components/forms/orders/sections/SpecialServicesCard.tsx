@@ -4,6 +4,7 @@ import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Field } from "@/components/form/FieldInput";
 
 type Props<L extends string> = {
+  isReadOnly?: boolean;
   layananPreset: readonly L[];
   layananKhusus: Record<L, boolean>;
   setLayananKhusus: (
@@ -14,6 +15,7 @@ type Props<L extends string> = {
 };
 
 export default function SpecialServicesCard<L extends string>({
+  isReadOnly = false,
   layananPreset,
   layananKhusus,
   setLayananKhusus,
@@ -32,6 +34,7 @@ export default function SpecialServicesCard<L extends string>({
           {layananPreset.map((k) => (
             <label key={k} className="inline-flex items-center gap-2 text-sm">
               <input
+                disabled={!!isReadOnly}
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300"
                 checked={!!layananKhusus[k]}
@@ -49,7 +52,7 @@ export default function SpecialServicesCard<L extends string>({
         <div className="mt-4">
           <Field.Root value={layananLainnya} onChange={setLayananLainnya}>
             <Field.Label>{t("orders.layanan_lainnya")}</Field.Label>
-            <Field.Textarea rows={4}></Field.Textarea>
+            <Field.Textarea rows={4} readOnly={isReadOnly}></Field.Textarea>
             <Field.Error></Field.Error>
           </Field.Root>
         </div>
