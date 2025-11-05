@@ -81,5 +81,56 @@
             "arrive": "Arrived",
             "depart": "Departed"
         }
+    },
+    "fleets": {
+        "model_name": "Model",
+        "model_year": "Model Year",
+        "license_plate": "License Plate",
+        "acquisition_date": "Registration Date",
+        "write_off_date": "Cancellation Date",
+        "create": {
+            "title": "Create Fleet"
+        }
+    },
+    "fleet": {
+        "model": "Model",
+        "license_plate": "License Plate",
+        "model_year": "Model Year",
+        "color": "Color",
+        "category": "Category",
+        "vin_sn": "Chassis Number",
+        "engine_sn": "Engine Number",
+        "tonnage_max": "Max. Tonnage",
+        "cbm_volume": "Volume",
+        "horsepower": "Horse Power",
+        "axle": "Axle",
+        "acquisition_date": "Registration Date",
+        "write_off_date": "Cancellation Date",
+        "kir": "KIR Number",
+        "kir_expiry": "KIR Expired Date",
+        "vehicle_foto": "Upload Foto Unit (3 foto) : Tampak Depan, Tampak Belakang, Tampak samping dengan terlihat jelas plat nomornya)",
+        "stnk_foto": "Upload Document (STNK, KIR, Sertifikat DG)"
+    },
+    "drivers": {
+        "name": "Complete Name",
+        "login": "Login Name",
+        "mobile": "Mobile",
+        "no_ktp": "ID Number",
+        "drivers_license": "Driver License",
+        "drivers_license_expiry": "Driver License Expiry",
+        "create": {
+            "title": "Create Driver"
+        }
+    },
+    "driver": {
+        "district": "District",
+        "name": "Name",
+        "no_ktp": "ID Number",
+        "mobile": "Mobile",
+        "street": "Street",
+        "street2": "Street 2",
+        "zip": "ZIP",
+        "drivers_license": "Driver License",
+        "drivers_license_expiry": "Driver License Expiry"
     }
 }

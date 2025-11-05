@@ -5,9 +5,9 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NavGroup, NavLink } from "@/components/NavLink";
 import lintaslogo from "@/images/lintaslog-logo.png";
-
 import { t, getLang, onLangChange, type Lang } from "@/lib/i18n";
 import { OpenMap, SectionKey } from "@/types/sidebar";
+import { useAuth } from "@/components/providers/AuthProvider";
 import {
   IconDashboard,
   IconSummary,
@@ -20,6 +20,9 @@ import {
   IconOrders,
   IconTracking,
   IconVendorBill,
+  IconTruck,
+  IconFleet,
+  IconDriver,
 } from "./icons/Icon";
 
 export default function Sidebar({
@@ -85,21 +88,20 @@ const DEFAULT_OPEN: OpenMap = {
   finance: false,
   downpayment: false,
   vendorbill: false,
+  fleetndriver: false,
 };
 
 /** ====== Komponen isi sidebar (dipakai di mobile & desktop) ====== */
 const SidebarContent = memo(function SidebarContent() {
   const pathname = usePathname();
-
   const [openMap, setOpenMap] = useState<OpenMap>(DEFAULT_OPEN);
   const loaded = useMemo(() => typeof window !== "undefined", []);
-
   const [activeLang, setActiveLang] = useState<Lang>(() => getLang());
+
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
     return () => off?.();
   }, [activeLang]);
-
   useEffect(() => {
     if (!loaded) return;
     try {
@@ -113,20 +115,20 @@ const SidebarContent = memo(function SidebarContent() {
     }
   }, [loaded]);
 
+  const { currentUserType } = useAuth();
+
   useEffect(() => {
     const match = (prefix: string) =>
       pathname === prefix || (prefix !== "/" && pathname.startsWith(prefix));
-
     // const next: OpenMap = { ...openMap };
     const next: OpenMap = { ...DEFAULT_OPEN };
-
     if (match("/dashboard") || pathname === "/") next.dashboard = true;
     if (match("/orders")) next.orders = true;
     if (match("/claims")) next.claims = true;
     if (match("/finance")) next.finance = true;
     if (match("/downpayment")) next.downpayment = true;
     if (match("/vendorbill")) next.vendorbill = true;
-
+    if (match("/fleetndriver")) next.fleetndriver = true;
     if (ACCORDION) {
       const activeKey: SectionKey | null =
         match("/dashboard") || pathname === "/"
@@ -141,6 +143,8 @@ const SidebarContent = memo(function SidebarContent() {
           ? "downpayment"
           : match("/vendorbill")
           ? "vendorbill"
+          : match("/fleetndriver")
+          ? "fleetndriver"
           : null;
 
       if (activeKey) {
@@ -152,7 +156,6 @@ const SidebarContent = memo(function SidebarContent() {
 
     setOpenMap(next);
   }, [pathname]);
-
   useEffect(() => {
     if (!loaded) return;
     try {
@@ -161,7 +164,6 @@ const SidebarContent = memo(function SidebarContent() {
       // ignore
     }
   }, [openMap, loaded]);
-
   const toggle = (key: SectionKey) => (next: boolean) => {
     setOpenMap((curr) => {
       if (ACCORDION) {
@@ -174,7 +176,6 @@ const SidebarContent = memo(function SidebarContent() {
       return { ...curr, [key]: next };
     });
   };
-
   return (
     <div className="flex w-full flex-col">
       <div className="px-4 pt-4 pb-10">
@@ -189,7 +190,6 @@ const SidebarContent = memo(function SidebarContent() {
           />
         </div>
       </div>
-
       <nav className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
         <NavGroup
           href="#"
@@ -212,7 +212,6 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
-
         <NavGroup
           href="#"
           label={t("nav.orders.title")}
@@ -234,7 +233,6 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
-
         <NavGroup
           href="#"
           label={t("nav.claims.title")}
@@ -251,7 +249,6 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
-
         <NavGroup
           href="#"
           label={t("nav.finance.title")}
@@ -273,7 +270,6 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
-
         <NavGroup
           href="#"
           label={t("nav.downpayment.title")}
@@ -290,7 +286,6 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
-
         <NavGroup
           href="#"
           label={t("nav.vendorbill.title")}
@@ -307,6 +302,29 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
+        {currentUserType === "transporter" && (
+          <NavGroup
+            href="#"
+            label={t("nav.fleetndriver.title")}
+            icon={IconTruck}
+            items={[
+              {
+                label: t("nav.fleetndriver.fleet"),
+                href: "/fleetndriver/fleet/list",
+                icon: IconFleet,
+              },
+              {
+                label: t("nav.fleetndriver.driver"),
+                href: "/fleetndriver/driver/list",
+                icon: IconDriver,
+              },
+            ]}
+            open={openMap.fleetndriver}
+            onToggle={toggle("fleetndriver")}
+            duration={240}
+            easing="cubic-bezier(.2,.8,.2,1)"
+          />
+        )}
       </nav>
 
       <div className="mt-auto border-t border-white/10 px-4 py-3">

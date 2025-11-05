@@ -27,6 +27,8 @@
       "@/locales/*" : ["./locales/*"],
       "@/types/*" : ["./types/*"],
       "@/hooks/*" : ["./hooks/*"],
+      "@/core/*" : ["./core/forms/*"],
+      "@/features/*" : ["./features/*"],
     },
     "types": ["google.maps"]
   },

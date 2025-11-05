@@ -4,6 +4,7 @@ export type SectionKey =
   | "claims"
   | "finance"
   | "downpayment"
-  | "vendorbill";
+  | "vendorbill"
+  | "fleetndriver";
 
 export type OpenMap = Record<SectionKey, boolean>;

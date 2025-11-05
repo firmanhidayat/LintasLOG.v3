@@ -27,6 +27,12 @@
       "title": "Tagihan Vendor",
       "list": "Daftar Tagihan Vendor"
     },
+    "fleetndriver": {
+      "title": "Fleet & Driver",
+      "list": "Fleet & Driver List",
+      "fleet": "Fleet",
+      "driver": "Driver"
+    },
     "docs": "Dokumentasi & Komponen"
   }
 }

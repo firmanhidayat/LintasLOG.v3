@@ -81,5 +81,56 @@
             "arrive": "Arrived",
             "depart": "Departed"
         }
+    },
+    "fleets": {
+        "model_name": "Model",
+        "model_year": "Tahun Model",
+        "license_plate": "No. Polisi",
+        "acquisition_date": "Tanggal Registrasi",
+        "write_off_date": "Cancellation Date",
+        "create": {
+            "title": "Tambah Fleet"
+        }
+    },
+    "fleet": {
+        "model": "Model",
+        "license_plate": "License Plate",
+        "model_year": "Model Year",
+        "color": "Color",
+        "category": "Category",
+        "vin_sn": "Chassis Number",
+        "engine_sn": "Engine Number",
+        "tonnage_max": "Max. Tonnage",
+        "cbm_volume": "Volume",
+        "horsepower": "Horse Power",
+        "axle": "Axle",
+        "acquisition_date": "Registration Date",
+        "write_off_date": "Cancellation Date",
+        "kir": "KIR Number",
+        "kir_expiry": "KIR Expired Date",
+        "vehicle_foto": "Upload Foto Unit (3 foto) : Tampak Depan, Tampak Belakang, Tampak samping dengan terlihat jelas plat nomornya)",
+        "stnk_foto": "Upload Document (STNK, KIR, Sertifikat DG)"
+    },
+    "drivers": {
+        "name": "Nama Lengkap",
+        "login": "Nama Login",
+        "mobile": "No. Ponsel",
+        "no_ktp": "Nomor KTP",
+        "drivers_license": "No. SIM",
+        "drivers_license_expiry": "SIM Kadaluwarsa",
+        "create": {
+            "title": "Tambah Driver"
+        }
+    },
+    "driver": {
+        "district": "Kota",
+        "name": "Nama",
+        "no_ktp": "No. KTP",
+        "mobile": "Ponsel",
+        "street": "Jalan",
+        "street2": "Jalan 2",
+        "zip": "Kode Pos",
+        "drivers_license": "SIM",
+        "drivers_license_expiry": "SIM Kadaluwarsa"
     }
 }

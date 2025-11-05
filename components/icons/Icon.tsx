@@ -176,3 +176,72 @@ export const IconVendorBill = (p: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
+export const IconTruck = (p: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...p}
+  >
+    {/* Box kargo */}
+    <path d="M3 7h10v7H3z" />
+    {/* Kabin + moncong */}
+    <path d="M13 10L18 10L20 13L20 17L13 17Z" />
+    {/* Roda */}
+    <circle cx="7" cy="19" r="2" />
+    <circle cx="17" cy="19" r="2" />
+  </svg>
+);
+
+// IconFleet.tsx
+export const IconFleet = (p: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...p}
+  >
+    {/* Truck belakang (lebih kecil, agak naik & kiri) */}
+    <path d="M6 6h8v5H6z" />
+    <path d="M14 8h3l2 2v3h-5z" />
+    <circle cx="9" cy="15" r="1.5" />
+    <circle cx="16" cy="15" r="1.5" />
+
+    {/* Truck depan (utama) */}
+    <path d="M3 9h10v7H3z" />
+    <path d="M13 12h5l2 3v1h-7z" />
+    <circle cx="7" cy="19" r="2" />
+    <circle cx="17" cy="19" r="2" />
+  </svg>
+);
+
+export const IconDriver = (p: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...p}
+  >
+    {/* Kepala */}
+    <circle cx="12" cy="6.5" r="3" />
+    {/* Bahu / badan bawah (garis lengkung) */}
+    <path d="M5 20c0-3.5 14-3.5 14 0" />
+    {/* Stir */}
+    <circle cx="12" cy="15.5" r="4" />
+    {/* Spoke & arc atas agar terbaca seperti stir */}
+    <path d="M9 15.5a3 3 0 0 1 6 0" />
+    <path d="M12 13v5" />
+    {/* Tangan pegang stir (opsional, tipis) */}
+    <path d="M8 15.5H6.8M16 15.5h1.2" />
+  </svg>
+);

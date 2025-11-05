@@ -590,6 +590,33 @@ function Textarea({ className, placeholder, ...rest }: TextareaProps) {
   );
 }
 
+/** ===== Switch / CheckBox ===== */
+export function FieldSwitch({
+  checked,
+  onCheckedChange,
+  ...rest
+}: {
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+} & React.ComponentProps<"button">) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onCheckedChange(!checked)}
+      {...rest}
+      className="inline-flex h-6 w-11 items-center rounded-full border px-0.5"
+    >
+      <span
+        className={`h-5 w-5 rounded-full bg-white transition-transform ${
+          checked ? "translate-x-5" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
+}
+
 /** ===== Namespace export ===== */
 export const Field = {
   Root,
@@ -597,6 +624,7 @@ export const Field = {
   Control,
   Input,
   Textarea,
+  Switch: FieldSwitch,
   Prefix,
   Suffix,
   Description,

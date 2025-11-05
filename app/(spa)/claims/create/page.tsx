@@ -262,6 +262,20 @@ export default function ClaimCreatePage() {
               touched={touched.amount}
             />
 
+            <div className="md:col-span-2">
+              <FieldTextarea
+                label={t("claims.form.fields.description")}
+                name="description"
+                value={form.description}
+                onChange={(v) => setForm((p) => ({ ...p, description: v }))}
+                onBlur={() =>
+                  setTouched((prev) => ({ ...prev, description: true }))
+                }
+                placeholder={t("claims.form.placeholders.description")}
+                rows={4}
+              />
+            </div>
+
             {/* Upload Document (MultiFileUpload) */}
             <div className="md:col-span-2">
               <MultiFileUpload
@@ -280,20 +294,6 @@ export default function ClaimCreatePage() {
                 // maxFiles={5} // aktifkan jika mau batasi jumlah file
                 droppable
                 showImagePreview
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <FieldTextarea
-                label={t("claims.form.fields.description")}
-                name="description"
-                value={form.description}
-                onChange={(v) => setForm((p) => ({ ...p, description: v }))}
-                onBlur={() =>
-                  setTouched((prev) => ({ ...prev, description: true }))
-                }
-                placeholder={t("claims.form.placeholders.description")}
-                rows={4}
               />
             </div>
 

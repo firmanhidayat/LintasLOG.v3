@@ -37,7 +37,13 @@
         "remove": "Hapus",
         "disabled": "Pilih jenis order dahulu",
         "accept": "Terima",
-        "reject": "Tolak"
+        "reject": "Tolak",
+        "search_model": "Pilih model...",
+        "search_district": "Pilih kota...",
+        "search_category": "Pilih kategori kendaraan...",
+        "updated": "Informasi",
+        "saved_desc": "Data berhasil disimpan",
+        "failed_to_save": "Telah terjadi kesalahan"
     },
     "form": {
         "required": "wajib diisi",

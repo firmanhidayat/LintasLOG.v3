@@ -1,16 +1,17 @@
-export const AUTH_KEYS = ["llog.login", "llog.mail_verified"] as const;
-// export const LOGOUT_URL = "https://odoodev.linitekno.com/api-tms/auth/logout";
+export const AUTH_KEYS = [
+  "llog.login",
+  "llog.mail_verified",
+  "llog.remember",
+  "llog.usrtype",
+] as const;
 export const LOGOUT_URL = process.env.NEXT_PUBLIC_TMS_LOGOUT_URL!;
-
 type ApiLogoutResponse = {
   detail?: string;
   message?: string;
 };
-
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
-
 function isApiLogoutResponse(v: unknown): v is ApiLogoutResponse {
   if (!isRecord(v)) return false;
   const d = v["detail"];
@@ -19,13 +20,11 @@ function isApiLogoutResponse(v: unknown): v is ApiLogoutResponse {
   const okMessage = typeof m === "undefined" || typeof m === "string";
   return okDetail && okMessage;
 }
-
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
   const m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
   return m ? decodeURIComponent(m[2]) : null;
 }
-
 export function isLoggedIn(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -40,7 +39,6 @@ export function isLoggedIn(): boolean {
     return false;
   }
 }
-
 export async function clearAuth(): Promise<void> {
   if (typeof window !== "undefined") {
     for (const k of AUTH_KEYS) {
@@ -62,21 +60,17 @@ export async function clearAuth(): Promise<void> {
     } catch {}
   }
 }
-
 export async function apiLogout(opts?: {
   signal?: AbortSignal;
   csrfCookieName?: string;
 }): Promise<{ ok: boolean; status: number; message: string }> {
   const controller = new AbortController();
   const signal = opts?.signal ?? controller.signal;
-
   const csrfCookieName = opts?.csrfCookieName || "csrftoken";
   const csrf = getCookie(csrfCookieName);
-
   let status = 0;
   let ok = false;
   let message = "Logged out";
-
   try {
     const res = await fetch(LOGOUT_URL, {
       method: "POST",
@@ -89,10 +83,8 @@ export async function apiLogout(opts?: {
       body: "{}",
       signal,
     });
-
     status = res.status;
     ok = res.ok;
-
     try {
       const data: unknown = await res.json();
       if (isApiLogoutResponse(data)) {
@@ -105,7 +97,6 @@ export async function apiLogout(opts?: {
     } catch {
       // abaikan jika bukan JSON
     }
-
     if (!ok && (!message || message === "Logged out")) {
       message = `HTTP ${res.status} ${res.statusText}`;
     }
@@ -115,6 +106,5 @@ export async function apiLogout(opts?: {
   } finally {
     await clearAuth();
   }
-
   return { ok, status, message };
 }

@@ -37,7 +37,13 @@
         "remove": "Remove",
         "disabled": "Select order type",
         "accept": "Accept",
-        "reject": "Reject"
+        "reject": "Reject",
+        "search_model": "Search model...",
+        "search_district": "Search district...",
+        "search_category": "Search vehicle category...",
+        "updated": "Information",
+        "saved_desc": "Save successfully",
+        "failed_to_save": "Something went wrong"
     },
     "form": {
         "required": "required",

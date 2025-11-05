@@ -3,10 +3,8 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { isLoggedIn, clearAuth } from "@/lib/auth";
 import type { TmsProfile } from "@/types/tms-profile";
-export type Role = "shipper" | "transporter";
-
+export type Role = "shipper" | "transporter" | "transporter_driver";
 type LoadStatus = "idle" | "loading" | "success" | "error";
-
 type AuthContextType = {
   loggedIn: boolean;
   login: (data: {
@@ -19,19 +17,27 @@ type AuthContextType = {
   profile?: TmsProfile | null;
   profileStatus?: LoadStatus;
   refreshProfile?: () => Promise<void>;
+  currentUserType: Role | "";
 };
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const PROFILE_URL = process.env.NEXT_PUBLIC_TMS_USER_PROFILE_URL!;
+
+function readUsrTypeStorage(): Role | "" {
+  if (typeof window === "undefined") return "";
+  const v =
+    localStorage.getItem("llog.usrtype") ??
+    sessionStorage.getItem("llog.usrtype") ??
+    "";
+  return v.trim() as Role | "";
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [profile, setProfile] = useState<TmsProfile | null>(null);
-  const [profileStatus, setProfileStatus] = useState<LoadStatus>("idle");
 
+  const [profileStatus, setProfileStatus] = useState<LoadStatus>("idle");
   const inFlightRef = useRef(false);
   const mountedRef = useRef(true);
-
   useEffect(() => {
     mountedRef.current = true;
     const ok = isLoggedIn();
@@ -41,7 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mountedRef.current = false;
     };
   }, []);
-
   const refreshProfile = async () => {
     if (!isLoggedIn()) {
       setProfile(null);
@@ -55,7 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     if (inFlightRef.current) return;
     inFlightRef.current = true;
-
     const ac = new AbortController();
     try {
       setProfileStatus("loading");
@@ -65,7 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: "include",
         signal: ac.signal,
       });
-
       if (res.status === 401 || res.status === 403) {
         await clearAuth();
         if (!mountedRef.current) return;
@@ -74,16 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfileStatus("idle");
         return;
       }
-
       if (!res.ok) {
         if (!mountedRef.current) return;
         setProfile(null);
         setProfileStatus("error");
         return;
       }
-
       const data = (await res.json()) as TmsProfile;
-
       if (!mountedRef.current) return;
       setProfile(data);
       setProfileStatus("success");
@@ -97,6 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const currentUserType: Role | "" =
+    (profile?.tms_user_type?.trim() as Role) ?? readUsrTypeStorage();
+
   const login = (data: {
     login: string;
     mail_verified: boolean;
@@ -109,16 +112,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     sessionStorage.removeItem("llog.mail_verified");
     localStorage.removeItem("llog.usrtype");
     sessionStorage.removeItem("llog.usrtype");
-
+    localStorage.removeItem("llog.remember");
+    sessionStorage.removeItem("llog.remember");
     console.log("{DATA: ", data, "}");
-
     const store = data.remember ? localStorage : sessionStorage;
+    const bs = data.remember ? 1 : 0;
     store.setItem("llog.login", data.login);
     store.setItem("llog.mail_verified", String(data.mail_verified));
     store.setItem("llog.usrtype", data.tms_user_type);
-
+    store.setItem("llog.remember", String(bs));
     console.log("{STORE: ", store, "}");
-
     setLoggedIn(true);
     void refreshProfile();
   };
@@ -140,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         profileStatus,
         refreshProfile,
+        currentUserType,
       }}
     >
       {children}

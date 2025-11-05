@@ -18,6 +18,8 @@ import {
 } from "@/lib/i18n";
 import { mapFastapi422, mapCommonErrors } from "@/lib/i18n-fastapi";
 import LangToggle from "@/components/LangToggle";
+import { Field } from "@/components/form/FieldInput";
+import Button from "@/components/ui/Button";
 
 const LOGIN_URL = process.env.NEXT_PUBLIC_TMS_LOGIN_URL!;
 
@@ -278,13 +280,30 @@ export default function LoginPage() {
 
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div>
-              <label
+              {/* <label
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
                 {t("form.email.label")}
-              </label>
-              <input
+              </label> */}
+
+              <Field.Root
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e)}
+                error={fieldErr.email}
+              >
+                <Field.Label>{t("form.email.label")}</Field.Label>
+                <Field.Input
+                  type="email"
+                  autoComplete="username"
+                  required
+                  placeholder={t("form.email.placeholder")}
+                ></Field.Input>
+                <Field.Error></Field.Error>
+              </Field.Root>
+
+              {/* <input
                 id="email"
                 type="email"
                 value={email}
@@ -298,17 +317,35 @@ export default function LoginPage() {
               />
               {fieldErr.email && (
                 <p className="mt-1 text-xs text-red-600">{fieldErr.email}</p>
-              )}
+              )} */}
             </div>
 
             <div>
-              <label
+              {/* <label
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700"
               >
                 {t("form.password.label")}
-              </label>
-              <input
+              </label> */}
+
+              <Field.Root
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e)}
+                error={fieldErr.password}
+              >
+                <Field.Label>{t("form.password.label")}</Field.Label>
+                <Field.Input
+                  type="password"
+                  autoComplete="current-password"
+                  minLength={4}
+                  required
+                  placeholder={t("form.password.placeholder")}
+                ></Field.Input>
+                <Field.Error></Field.Error>
+              </Field.Root>
+
+              {/* <input
                 id="password"
                 type="password"
                 value={password}
@@ -323,7 +360,7 @@ export default function LoginPage() {
               />
               {fieldErr.password && (
                 <p className="mt-1 text-xs text-red-600">{fieldErr.password}</p>
-              )}
+              )} */}
             </div>
 
             <div className="flex items-center justify-between">
@@ -348,7 +385,7 @@ export default function LoginPage() {
             </div>
 
             <div className="text-center">
-              <button
+              <Button
                 type="submit"
                 disabled={!canSubmit}
                 className={`inline-flex items-center justify-center rounded-md px-4 py-3 text-base font-medium text-white ${
@@ -379,7 +416,7 @@ export default function LoginPage() {
                 ) : (
                   t("form.submit")
                 )}
-              </button>
+              </Button>
             </div>
 
             <p className="mt-4 text-center text-sm text-gray-500">
