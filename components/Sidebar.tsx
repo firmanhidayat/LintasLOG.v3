@@ -270,7 +270,7 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
-        <NavGroup
+        {/* <NavGroup
           href="#"
           label={t("nav.downpayment.title")}
           icon={IconDownPayment}
@@ -285,7 +285,7 @@ const SidebarContent = memo(function SidebarContent() {
           onToggle={toggle("downpayment")}
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
-        />
+        /> */}
         <NavGroup
           href="#"
           label={t("nav.vendorbill.title")}

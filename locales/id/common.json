@@ -36,14 +36,16 @@
         "add": "Tambah",
         "remove": "Hapus",
         "disabled": "Pilih jenis order dahulu",
-        "accept": "Terima",
+        "accept": "Bid Order",
         "reject": "Tolak",
         "search_model": "Pilih model...",
         "search_district": "Pilih kota...",
         "search_category": "Pilih kategori kendaraan...",
         "updated": "Informasi",
         "saved_desc": "Data berhasil disimpan",
-        "failed_to_save": "Telah terjadi kesalahan"
+        "failed_to_save": "Telah terjadi kesalahan",
+        "search_fleet": "Pilih kendaraan",
+        "search_driver": "Pilih pengemudi"
     },
     "form": {
         "required": "wajib diisi",

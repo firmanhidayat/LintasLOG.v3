@@ -194,6 +194,9 @@ export type OrdersCreateFormProps = {
     origin_city?: CityItem;
     dest_city?: CityItem;
 
+    driver_partner?: RecordItem;
+    fleet_vehicle?: RecordItem;
+
     // 🔥 Tambahan (top-level) untuk prefill alamat dari API
     origin_address?: AddressItem;
     dest_address?: AddressItem;

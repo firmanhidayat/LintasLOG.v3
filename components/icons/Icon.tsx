@@ -245,3 +245,20 @@ export const IconDriver = (p: React.SVGProps<SVGSVGElement>) => (
     <path d="M8 15.5H6.8M16 15.5h1.2" />
   </svg>
 );
+
+export const IconCar = (p: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}>
+    <path d="M3 13l2-5a2 2 0 0 1 2-1h8a2 2 0 0 1 2 1l2 5" strokeWidth={2} />
+    <path d="M5 13h14" strokeWidth={2} />
+    <circle cx="7.5" cy="17" r="1.5" />
+    <circle cx="16.5" cy="17" r="1.5" />
+    <path d="M3 17h2m14 0h2" strokeWidth={2} />
+  </svg>
+);
+
+export const IconUser = (p: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}>
+    <circle cx="12" cy="7" r="3" strokeWidth={2} />
+    <path d="M4 19a8 8 0 0 1 16 0" strokeWidth={2} />
+  </svg>
+);
