@@ -82,12 +82,42 @@ function extractApiSteps(
     return { key, label, is_current: Boolean(it.is_current) };
   });
 }
+// --- RecordItem sanitizer & guard ---
+const isValidRecordItem = (v: unknown): v is RecordItem => {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return false;
+  const o = v as Record<string, unknown>;
+  const id = Number(o.id);
+  const nameRaw = o.name;
+  const name = typeof nameRaw === "string" ? nameRaw.trim() : "";
+  // valid jika punya name bukan "false" atau punya id > 0
+  if (name && name.toLowerCase() !== "false") return true;
+  return Number.isFinite(id) && id > 0;
+};
+
+const toRecordItem = (v: unknown): RecordItem | null => {
+  if (!isValidRecordItem(v)) return null;
+  const o = v as Record<string, unknown>;
+  const idNum = Number(o.id);
+  const nameRaw = typeof o.name === "string" ? o.name.trim() : "";
+  const fallbackName = String(
+    o.display_name ?? o.label ?? o.license_plate ?? o.plate_no ?? o.code ?? ""
+  );
+  const name =
+    nameRaw && nameRaw.toLowerCase() !== "false" ? nameRaw : fallbackName;
+
+  // cukup id & name saja agar aman
+  return {
+    id: Number.isFinite(idNum) && idNum > 0 ? idNum : (o.id as number),
+    name,
+  } as RecordItem;
+};
+
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>
 ) {
   const form = {
-    driver_partner: data.driver_partner ?? null,
-    fleet_vehicle: data.fleet_vehicle ?? null,
+    driver_partner: toRecordItem(data.driver_partner),
+    fleet_vehicle: toRecordItem(data.fleet_vehicle),
     states: data.tms_states ? extractApiSteps(data) : ([] as StatusStep[]),
     noJo: data.name ?? "",
     customer: (data.partner as PartnerItem)?.name ?? "",
@@ -391,6 +421,120 @@ export default function PurchaseOrderForm({
     );
     setDlgOpen(true);
   }
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPending, startTransition] = React.useTransition();
+
+  const hydrateFromPrefill = React.useCallback(
+    (f: ReturnType<typeof prefillFromInitial>) => {
+      setNamaPenerima(f.namaPenerima);
+      setJenisOrder(f.jenisOrder);
+      setArmada(f.armada);
+      setKotaMuat(f.kotaMuat);
+      setKotaBongkar(f.kotaBongkar);
+      setTglMuat(f.tglMuat);
+      setTglBongkar(f.tglBongkar);
+      setLokMuat(f.lokMuat);
+      setLokBongkar(f.lokBongkar);
+      setPicMuatNama(f.picMuatNama);
+      setPicMuatTelepon(f.picMuatTelepon);
+      setPicBongkarNama(f.picBongkarNama);
+      setPicBongkarTelepon(f.picBongkarTelepon);
+
+      setOriginAddressName(f.origin_address_name);
+      setOriginStreet(f.origin_street);
+      setOriginStreet2(f.origin_street2);
+      setOriginDistrictName(f.origin_district_name);
+      setOriginZipCode(f.origin_zip);
+      setOriginLatitude(f.origin_latitude);
+      setOriginLongitude(f.origin_longitude);
+
+      setDestAddressName(f.dest_address_name);
+      setDestStreet(f.dest_street);
+      setDestStreet2(f.dest_street2);
+      setDestDistrictName(f.dest_district_name);
+      setDestZipCode(f.dest_zip);
+      setDestLatitude(f.dest_latitude);
+      setDestLongitude(f.dest_longitude);
+
+      setMuatanNama(f.muatanNama);
+      setMuatanDeskripsi(f.muatanDeskripsi);
+      setJenisMuatan(f.cargo_type ?? null);
+      setCargoCBMText(format2comma(f.cargoCBM));
+      setJumlahMuatanText(format2comma(f.cargoQTY));
+
+      setCustomer(f.customer);
+      setNoJO(f.noJo);
+
+      setLayananLainnya(f.requirement_other);
+      setLayananKhusus((ls) => ({
+        ...ls,
+        Helm: f.requirement_helmet,
+        APAR: f.requirement_apar,
+        "Safety Shoes": f.requirement_safety_shoes,
+        Rompi: f.requirement_vest,
+        "Kaca mata": f.requirement_glasses,
+        "Sarung tangan": f.requirement_gloves,
+        Masker: f.requirement_face_mask,
+        Terpal: f.requirement_tarpaulin,
+      }));
+
+      setAmountShipping(f.amount_shipping);
+      setAmountShippingMultiCharge(f.amount_shipping_multi_charge);
+      setAmountTax(f.amount_tax);
+      setAmountTotal(f.amount_total);
+
+      if (f.extraStops.length > 0) {
+        setMultiPickupDrop(true);
+        setExtraStops(withUid(f.extraStops));
+      } else {
+        setMultiPickupDrop(false);
+      }
+
+      // setVehicles(f.fleet_vehicle);
+      // setDrivers(f.driver_partner);
+      // setFleet(f.fleet_vehicle);
+      // setDriver(f.driver_partner);
+      setVehicles(toRecordItem(f.fleet_vehicle));
+      setDrivers(toRecordItem(f.driver_partner));
+      setFleet(toRecordItem(f.fleet_vehicle));
+      setDriver(toRecordItem(f.driver_partner));
+
+      setSteps(f.states);
+      setStatusCurrent(f.states.find((s) => s.is_current)?.key);
+      setIsReadOnly(f.isReadOnly);
+    },
+    []
+  );
+
+  const softReloadDetail = React.useCallback(async () => {
+    if (!DETAIL_URL_TPL || !effectiveOrderId) return;
+    setIsRefreshing(true);
+    try {
+      const url = buildDetailUrl(DETAIL_URL_TPL, effectiveOrderId);
+      const res = await fetch(url, {
+        headers: { "Accept-Language": getLang() },
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (res.status === 401) {
+        goSignIn({ routerReplace: router.replace });
+        return;
+      }
+      if (!res.ok) throw new Error(await res.text());
+      const json = (await res.json()) as OrdersCreateFormProps["initialData"];
+      if (!json) return;
+      const f = prefillFromInitial(json);
+      startTransition(() => {
+        hydrateFromPrefill(f);
+      });
+    } catch (e) {
+      console.error("[PurchaseOrder] soft reload failed:", e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [DETAIL_URL_TPL, effectiveOrderId, router.replace, hydrateFromPrefill]);
+
   async function onHandleStartToPrepare() {
     if (!effectiveOrderId) {
       openErrorDialog(
@@ -417,7 +561,8 @@ export default function PurchaseOrderForm({
       if (!res.ok) throw new Error(await res.text());
       setIsReadOnly(true);
       onSuccess?.();
-      router.refresh?.();
+      // router.refresh?.();
+      await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
       console.error("[PurchaseOrder] accept error:", e);
@@ -456,7 +601,8 @@ export default function PurchaseOrderForm({
       if (!res.ok) throw new Error(await res.text());
       setIsReadOnly(true);
       onSuccess?.();
-      router.refresh?.();
+      // router.refresh?.();
+      await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
       console.error("[PurchaseOrder] accept error:", e);
@@ -491,7 +637,8 @@ export default function PurchaseOrderForm({
       if (!res.ok) throw new Error(await res.text());
       setIsReadOnly(true);
       onSuccess?.();
-      router.refresh?.();
+      // router.refresh?.();
+      await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
       console.error("[PurchaseOrder] accept error:", e);
@@ -536,7 +683,8 @@ export default function PurchaseOrderForm({
       setReason("");
       setIsReadOnly(true);
       onSuccess?.();
-      router.refresh?.();
+      // router.refresh?.();
+      await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
       console.error("[PurchaseOrder] reject error:", e);
@@ -831,11 +979,20 @@ export default function PurchaseOrderForm({
     }
   }, [statusCurrent, effectiveOrderId]);
 
+  // useEffect(() => {
+  //   const s = (statusCurrent ?? "").trim().toLowerCase();
+  //   if (mode === "edit" && (AUTOSET_STATUSES.has(s) || s === "preparation")) {
+  //     if (uDriver !== undefined) setDrivers(uDriver);
+  //     if (uVehicle !== undefined) setVehicles(uVehicle);
+  //   }
+  // }, [mode, statusCurrent, uDriver, uVehicle]);
   useEffect(() => {
     const s = (statusCurrent ?? "").trim().toLowerCase();
     if (mode === "edit" && (AUTOSET_STATUSES.has(s) || s === "preparation")) {
-      if (uDriver !== undefined) setDrivers(uDriver);
-      if (uVehicle !== undefined) setVehicles(uVehicle);
+      const d = toRecordItem(uDriver);
+      const v = toRecordItem(uVehicle);
+      if (d) setDrivers(d); // hanya set kalau valid
+      if (v) setVehicles(v); // hanya set kalau valid
     }
   }, [mode, statusCurrent, uDriver, uVehicle]);
 
@@ -855,14 +1012,21 @@ export default function PurchaseOrderForm({
     return `${base}/${action}`;
   }
 
-  function safeLabel(x: RecordItem | null | undefined, fallback: string) {
-    if (!x) return "-";
-    const name = String(x.name ?? "")
-      .trim()
-      .toLowerCase();
-    if (name && name !== "false") return String(x.name);
-    const id = x.id ?? "";
-    return id ? `${fallback} #${id}` : fallback;
+  // function safeLabel(x: RecordItem | null | undefined, fallback: string) {
+  //   if (!x) return "-";
+  //   const name = String(x.name ?? "")
+  //     .trim()
+  //     .toLowerCase();
+  //   if (name && name !== "false") return String(x.name);
+  //   const id = x.id ?? "";
+  //   return id ? `${fallback} #${id}` : fallback;
+  // }
+  function safeLabel(x: unknown, fallback: string) {
+    const r = toRecordItem(x);
+    if (!r) return fallback;
+    const nm = String(r.name ?? "").trim();
+    if (nm && nm.toLowerCase() !== "false") return nm;
+    return r.id ? `${fallback} #${r.id}` : fallback;
   }
 
   // Primitive guard
@@ -1154,8 +1318,8 @@ export default function PurchaseOrderForm({
                       <LookupAutocomplete
                         label={"Fleet"}
                         placeholder={t("common.search_fleet")}
-                        value={vehicles as RecordItem}
-                        onChange={(v) => setVehicles(v as RecordItem)}
+                        value={vehicles as RecordItem | null}
+                        onChange={(v) => setVehicles(toRecordItem(v))}
                         endpoint={{
                           url: urlCandidateFleet,
                           method: "GET",
@@ -1174,8 +1338,8 @@ export default function PurchaseOrderForm({
                       <LookupAutocomplete
                         label={"Driver"}
                         placeholder={t("common.search_driver")}
-                        value={drivers as RecordItem}
-                        onChange={(v) => setDrivers(v as RecordItem)}
+                        value={drivers as RecordItem | null}
+                        onChange={(v) => setDrivers(toRecordItem(v))}
                         endpoint={{
                           url: urlCandidateDriver,
                           method: "GET",
@@ -1328,6 +1492,15 @@ export default function PurchaseOrderForm({
               <div className="mx-auto max-w-screen-xl px-4 py-3 flex items-center justify-between gap-2">
                 {/* LEFT: Chat / Broadcast */}
                 <div className="flex items-center gap-2">
+                  {(isRefreshing || isPending) && (
+                    <span
+                      className="text-xs text-gray-500 select-none"
+                      aria-live="polite"
+                    >
+                      Updating…
+                    </span>
+                  )}
+
                   <Button
                     type="button"
                     variant="outline"
