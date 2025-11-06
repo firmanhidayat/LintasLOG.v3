@@ -1379,39 +1379,28 @@ export default function PurchaseOrderForm({
                       </h4>
                     </CardHeader>
                     <CardBody>
-                      <ul className="space-y-2">
-                        <li className="flex items-start gap-2">
-                          <IconCar className="mt-0.5 h-8 w-8 text-gray-700 shrink-0" />
-                          <span
-                            className="text-blue-900 cursor-pointer font-semibold mb-3 hover:bg-primary/25"
-                            onClick={() => setFdOpen(true)}
-                          >
-                            {/* {vehicles?.name} */}
-                            {safeLabel(vehicles, "Fleet")}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <IconUser className="mt-0.5 h-8 w-8 text-gray-700 shrink-0" />
-                          <span
-                            className="text-blue-900 cursor-pointer font-semibold mb-3 hover:bg-primary/25"
-                            onClick={() => setFdOpen(true)}
-                          >
-                            {/* {drivers?.name} */}
-                            {safeLabel(drivers, "Driver")}
-                          </span>
-                        </li>
-                      </ul>
-                    </CardBody>
-                    {/* <CardFooter> */}
-                    {/* <Button
-                        variant="solid"
-                        onClick={() => {
-                          alert();
-                        }}
+                      <Field.Root
+                        value={safeLabel(vehicles, "Fleet")}
+                        onChange={() => {}}
+                        disabled
                       >
-                        More Detail
-                      </Button> */}
-                    {/* </CardFooter> */}
+                        <Field.Label>Fleet</Field.Label>
+                        <Field.Input className="w-full"></Field.Input>
+                      </Field.Root>
+                      <Field.Root
+                        value={safeLabel(drivers, "Driver")}
+                        onChange={() => {}}
+                        disabled
+                      >
+                        <Field.Label>Driver</Field.Label>
+                        <Field.Input className="w-full"></Field.Input>
+                      </Field.Root>
+                    </CardBody>
+                    <CardFooter>
+                      <Button variant="ghost" onClick={() => setFdOpen(true)}>
+                        Detail
+                      </Button>
+                    </CardFooter>
                   </Card>
                 )}
 
