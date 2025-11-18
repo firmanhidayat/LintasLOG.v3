@@ -75,3 +75,14 @@
 }
 .input { @apply block w-full rounded-md border-gray-300 dark:border-gray-700 bg-white focus:border-brand-500 focus:ring-brand-500; }
 .label { @apply text-sm font-medium dark:text-black; }
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-container table {
+  width: 100%;
+  table-layout: fixed;
+  min-width: 1024px; 
+}

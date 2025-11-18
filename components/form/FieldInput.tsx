@@ -590,6 +590,81 @@ function Textarea({ className, placeholder, ...rest }: TextareaProps) {
   );
 }
 
+/** ===== Select (single value) ===== */
+type SelectOption = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+};
+
+type SelectProps = React.ComponentPropsWithoutRef<"select"> & {
+  /**
+   * Opsional: kalau mau generate option dari array.
+   * Kalau tidak, bisa pakai <option> sebagai children biasa.
+   */
+  options?: SelectOption[];
+  /**
+   * Opsional: text placeholder di option pertama
+   * akan muncul ketika value === "".
+   */
+  placeholderOption?: string;
+};
+
+function Select({
+  className,
+  options,
+  children,
+  placeholderOption = "Pilih salah satu",
+  ...rest
+}: SelectProps) {
+  const ctx = useFieldCtx();
+  const classes = useFieldClasses();
+
+  const describedBy =
+    [
+      ctx.description && !ctx.isInvalid ? ctx.descId : null,
+      ctx.isInvalid ? ctx.errId : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
+  const showPlaceholder = placeholderOption && ctx.value === "";
+
+  return (
+    <select
+      id={ctx.inputId}
+      name={ctx.name}
+      value={ctx.value}
+      onChange={(e) => ctx.onChange((e.target as HTMLSelectElement).value)}
+      onBlur={ctx.onBlur}
+      onFocus={ctx.onFocus}
+      required={ctx.required}
+      disabled={ctx.disabled}
+      aria-label={ctx.ariaLabel || ctx.name}
+      aria-invalid={ctx.isInvalid || undefined}
+      aria-required={ctx.required || undefined}
+      aria-describedby={describedBy}
+      aria-readonly={ctx.readOnly || undefined}
+      className={clsx(classes, "bg-white", className)}
+      {...rest}
+    >
+      {showPlaceholder && (
+        <option value="" disabled hidden>
+          {placeholderOption}
+        </option>
+      )}
+
+      {options
+        ? options.map((opt) => (
+            <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+              {opt.label}
+            </option>
+          ))
+        : children}
+    </select>
+  );
+}
+
 /** ===== Switch / CheckBox ===== */
 export function FieldSwitch({
   checked,
@@ -624,6 +699,7 @@ export const Field = {
   Control,
   Input,
   Textarea,
+  DropDownSelect: Select,
   Switch: FieldSwitch,
   Prefix,
   Suffix,
@@ -740,3 +816,36 @@ export const Field = {
 // </Field.Root>
 
 // */
+
+/* <Field.Root
+  name="status"
+  value={values.status}
+  onChange={(v) => setFieldValue("status", v)}
+  required
+>
+  <Field.Label>Status</Field.Label>
+  <div>
+    <Field.Control>
+      <Field.DropDownSelect
+        placeholderOption="Pilih status"
+        options={[
+          { value: "draft", label: "Draft" },
+          { value: "confirmed", label: "Confirmed" },
+          { value: "cancelled", label: "Cancelled" },
+        ]}
+      />
+    </Field.Control>
+    <Field.Description />
+    <Field.Error />
+  </div>
+</Field.Root> 
+
+untuk manual :
+
+<Field.Control>
+  <Field.DropDownSelect placeholderOption="Pilih role">
+    <option value="admin">Admin</option>
+    <option value="user">User</option>
+  </Field.DropDownSelect>
+</Field.Control>
+*/

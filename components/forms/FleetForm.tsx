@@ -16,75 +16,47 @@ import {
 } from "@/features/fleet/FleetFormController";
 import { useFormController } from "@/core/useFormController";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
-import MultiFileUpload from "@/components/form/MultiFileUpload";
-import { ModalDialog } from "../ui/ModalDialog";
+import MultiFileUpload, {
+  ExistingFileItem,
+} from "@/components/form/MultiFileUpload";
+import { ModalDialog } from "@/components/ui/ModalDialog";
 
 const MODELS_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_MODELS_URL ?? "";
 const CATEGORIES_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_CATEGORIES_URL ?? "";
+const ATTACHMENTS_URL =
+  process.env.NEXT_PUBLIC_TMS_DOCUMENT_ATTACHMENTS_URL ?? "";
 
-// /** Lightweight modal dialog (no external deps) */
-// function ModalDialog({
-//   open,
-//   kind = "success",
-//   title,
-//   message,
-//   onClose,
-// }: {
-//   open: boolean;
-//   kind?: "success" | "error";
-//   title: string;
-//   message: React.ReactNode;
-//   onClose: () => void;
-// }) {
-//   if (!open) return null;
-//   const ring = kind === "success" ? "ring-green-500" : "ring-red-500";
-//   const head = kind === "success" ? "text-green-700" : "text-red-700";
-//   const btn =
-//     kind === "success"
-//       ? "bg-green-600 hover:bg-green-700"
-//       : "bg-red-600 hover:bg-red-700";
-//   return (
-//     <div
-//       className="fixed inset-0 z-[100] flex items-center justify-center"
-//       role="dialog"
-//       aria-modal="true"
-//       onKeyDown={(e) => e.key === "Escape" && onClose()}
-//     >
-//       <div
-//         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-//         onClick={onClose}
-//       />
-//       <div
-//         className={`relative mx-4 w-full max-w-md rounded-2xl bg-white p-5 shadow-xl ring-1 ${ring}`}
-//       >
-//         <div className={`mb-2 text-lg font-semibold ${head}`}>{title}</div>
-//         <div className="mb-4 text-sm text-gray-700">{message}</div>
-//         <div className="flex justify-end">
-//           <button
-//             type="button"
-//             onClick={onClose}
-//             className={`inline-flex items-center rounded-lg px-4 py-2 text-white ${btn} focus:outline-none focus:ring`}
-//           >
-//             OK
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
+type FleetDocType = "fleet_unit" | "fleet_document";
+type FleetAttachmentGroup = {
+  id: number;
+  name: string;
+  doc_type: string;
+  attachments?: {
+    id: number;
+    name: string;
+    mimetype: string;
+    res_model: string;
+    res_id: number;
+    access_token: string;
+    url: string;
+  }[];
+};
+
+type FleetInitialData = Partial<FleetValues> & {
+  unit_attachment?: FleetAttachmentGroup;
+  document_attachment?: FleetAttachmentGroup;
+};
 
 export default function FleetFormPage({
   mode = "create",
   fleetId,
   initialData,
   onSuccess,
-}: // className,
-{
+}: {
   mode?: "create" | "edit";
   fleetId?: number | string;
-  initialData?: Partial<FleetValues>;
+  initialData?: FleetInitialData;
   onSuccess?: (data: FleetApiResponse | null) => void;
-  // className?: string;
 }) {
   const { ready: i18nReady } = useI18nReady();
   const router = useRouter();
@@ -105,6 +77,8 @@ export default function FleetFormPage({
     write_off_date: initialData?.write_off_date ?? "",
     kir: initialData?.kir ?? "",
     kir_expiry: initialData?.kir_expiry ?? "",
+    unit_attachment_id: initialData?.unit_attachment_id ?? 0,
+    document_attachment_id: initialData?.document_attachment_id ?? 0,
   };
   const [ctrl, snap] = useFormController(() => new FleetFormController(init));
 
@@ -113,12 +87,32 @@ export default function FleetFormPage({
     return Number.isFinite(n) ? n : 0;
   };
 
-  // NEW: submitting & dialog states
   const [submitting, setSubmitting] = useState(false);
   const [dlgOpen, setDlgOpen] = useState(false);
   const [dlgKind, setDlgKind] = useState<"success" | "error">("success");
   const [dlgTitle, setDlgTitle] = useState("");
   const [dlgMsg, setDlgMsg] = useState<React.ReactNode>("");
+
+  const [fleetFotoFiles, setFleetFotoFiles] = useState<File[]>([]);
+  const [fleetSTNKDocFiles, setFleetSTNKDocFiles] = useState<File[]>([]);
+  const [unitExistingFiles, setUnitExistingFiles] = useState<
+    ExistingFileItem[]
+  >([]);
+  const [docExistingFiles, setDocExistingFiles] = useState<ExistingFileItem[]>(
+    []
+  );
+  const [unitHeaderName, setUnitHeaderName] = useState<string | undefined>();
+  const [docHeaderName, setDocHeaderName] = useState<string | undefined>();
+
+  function handleClearUnitAttachments() {
+    setUnitExistingFiles([]);
+    ctrl.set("unit_attachment_id", 0);
+  }
+
+  function handleClearDocumentAttachments() {
+    setDocExistingFiles([]);
+    ctrl.set("document_attachment_id", 0);
+  }
 
   function openSuccessDialog() {
     setDlgKind("success");
@@ -146,12 +140,205 @@ export default function FleetFormPage({
     setDlgOpen(true);
   }
 
+  async function uploadDocumentAttachment(
+    docType: FleetDocType,
+    files: File[]
+  ): Promise<number | undefined> {
+    if (!files.length) return undefined;
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const url = `${ATTACHMENTS_URL}?doc_type=${encodeURIComponent(docType)}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `Failed to upload ${docType} attachments (${res.status} ${res.statusText}) ${text}`
+      );
+    }
+
+    const json = (await res.json()) as { id?: number };
+    if (typeof json.id !== "number") {
+      throw new Error(
+        `Unexpected response when uploading ${docType} attachments`
+      );
+    }
+    return json.id;
+  }
+
+  async function appendFilesToExistingAttachment(
+    docAttachmentId: number,
+    files: File[]
+  ): Promise<void> {
+    if (!files.length) return;
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const url = `${ATTACHMENTS_URL}/${encodeURIComponent(
+      String(docAttachmentId)
+    )}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `Failed to append attachments (${res.status} ${res.statusText}) ${text}`
+      );
+    }
+  }
+
+  async function deleteRemoteAttachment(
+    docAttachmentId: number,
+    attachmentId: number
+  ) {
+    const url = `${ATTACHMENTS_URL}/${encodeURIComponent(
+      String(docAttachmentId)
+    )}/attachments/${encodeURIComponent(String(attachmentId))}`;
+
+    const res = await fetch(url, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`
+      );
+    }
+  }
+
+  async function handleRemoveUnitExisting(item: ExistingFileItem) {
+    if (!item.groupId) {
+      setUnitExistingFiles((prev) => prev.filter((it) => it.id !== item.id));
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await deleteRemoteAttachment(item.groupId, item.id);
+      setUnitExistingFiles((prev) => prev.filter((it) => it.id !== item.id));
+    } catch (e) {
+      console.error(e);
+      openErrorDialog(e);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleRemoveDocExisting(item: ExistingFileItem) {
+    if (!item.groupId) {
+      setDocExistingFiles((prev) => prev.filter((it) => it.id !== item.id));
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await deleteRemoteAttachment(item.groupId, item.id);
+      setDocExistingFiles((prev) => prev.filter((it) => it.id !== item.id));
+    } catch (e) {
+      console.error(e);
+      openErrorDialog(e);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function onSave() {
     try {
       setSubmitting(true);
+      if (mode === "create") {
+        if (fleetFotoFiles.length > 0) {
+          const unitId = await uploadDocumentAttachment(
+            "fleet_unit",
+            fleetFotoFiles
+          );
+          if (typeof unitId === "number") {
+            ctrl.set("unit_attachment_id", unitId);
+          }
+        }
+
+        if (fleetSTNKDocFiles.length > 0) {
+          const docId = await uploadDocumentAttachment(
+            "fleet_document",
+            fleetSTNKDocFiles
+          );
+          if (typeof docId === "number") {
+            ctrl.set("document_attachment_id", docId);
+          }
+        }
+      } else if (mode === "edit") {
+        const snapNow = ctrl.snapshot();
+        console.log("BEFORE : ", snapNow);
+        const currentUnitAttachmentId =
+          (snapNow.values.unit_attachment_id as number | undefined) ??
+          initialData?.unit_attachment_id ??
+          0;
+        const currentDocumentAttachmentId =
+          (snapNow.values.document_attachment_id as number | undefined) ??
+          initialData?.document_attachment_id ??
+          0;
+
+        if (fleetFotoFiles.length > 0) {
+          if (currentUnitAttachmentId && currentUnitAttachmentId > 0) {
+            await appendFilesToExistingAttachment(
+              currentUnitAttachmentId,
+              fleetFotoFiles
+            );
+          } else {
+            const unitId = await uploadDocumentAttachment(
+              "fleet_unit",
+              fleetFotoFiles
+            );
+            if (typeof unitId === "number") {
+              ctrl.set("unit_attachment_id", unitId);
+            }
+          }
+        }
+
+        console.log("AFTER : ", snapNow);
+
+        // --- DOKUMEN STNK ---
+        if (fleetSTNKDocFiles.length > 0) {
+          if (currentDocumentAttachmentId && currentDocumentAttachmentId > 0) {
+            await appendFilesToExistingAttachment(
+              currentDocumentAttachmentId,
+              fleetSTNKDocFiles
+            );
+          } else {
+            // belum ada attachment → buat baru pakai doc_type=fleet_document
+            const docId = await uploadDocumentAttachment(
+              "fleet_document",
+              fleetSTNKDocFiles
+            );
+            if (typeof docId === "number") {
+              ctrl.set("document_attachment_id", docId);
+            }
+          }
+        }
+      }
+
       const data = await ctrl.submit(mode, fleetId);
-      onSuccess?.(data); // JANGAN diubah
+      onSuccess?.(data);
       openSuccessDialog();
+
+      setFleetFotoFiles([]);
+      setFleetSTNKDocFiles([]);
     } catch (e) {
       console.error(e);
       openErrorDialog(e);
@@ -179,11 +366,47 @@ export default function FleetFormPage({
       write_off_date: initialData?.write_off_date ?? "",
       kir: initialData?.kir ?? "",
       kir_expiry: initialData?.kir_expiry ?? "",
+      unit_attachment_id: initialData?.unit_attachment_id ?? 0,
+      document_attachment_id: initialData?.document_attachment_id ?? 0,
     });
-  }, [initialData, ctrl]);
 
-  const [fleetFotoFiles, setFleetFotoFiles] = useState<File[]>([]);
-  const [fleetSTNKDocFiles, setFleetSTNKDocFiles] = useState<File[]>([]);
+    if (mode === "edit") {
+      const unitGroup = initialData.unit_attachment;
+      const docGroup = initialData.document_attachment;
+
+      setUnitHeaderName(initialData.document_attachment?.name);
+      setDocHeaderName(initialData.unit_attachment?.name);
+
+      if (unitGroup?.attachments?.length) {
+        setUnitExistingFiles(
+          unitGroup.attachments.map((att) => ({
+            id: att.id,
+            name: att.name,
+            url: att.url,
+            mimetype: att.mimetype,
+            groupId: unitGroup.id,
+          }))
+        );
+      } else {
+        setUnitExistingFiles([]);
+      }
+
+      if (docGroup?.attachments?.length) {
+        setDocExistingFiles(
+          docGroup.attachments.map((att) => ({
+            id: att.id,
+            name: att.name,
+            url: att.url,
+            mimetype: att.mimetype,
+            groupId: docGroup.id,
+          }))
+        );
+      } else {
+        setDocExistingFiles([]);
+      }
+    }
+  }, [initialData, ctrl, mode]);
+  // }, [initialData, ctrl]);
 
   function handleDiscard() {
     router.push("/fleetndriver/fleet/list");
@@ -417,6 +640,7 @@ export default function FleetFormPage({
                 </Field.Control>
               </Field.Root>
 
+              {/* FLEET UNIT PHOTO → doc_type=fleet_unit */}
               <MultiFileUpload
                 label={t("fleet.vehicle_foto")}
                 value={fleetFotoFiles}
@@ -428,11 +652,19 @@ export default function FleetFormPage({
                   t("orders.upload_hint_10mb") ??
                   "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
                 }
-                onReject={(msgs) => console.warn("[SJ/POD] rejected:", msgs)}
+                onReject={(msgs) =>
+                  console.warn("[FLEET_UNIT] rejected:", msgs)
+                }
                 className="gap-3 justify-end"
                 showImagePreview
+                existingItems={mode === "edit" ? unitExistingFiles : undefined}
+                existingHeader={mode === "edit" ? unitHeaderName : undefined}
+                onRemoveExisting={
+                  mode === "edit" ? handleRemoveUnitExisting : undefined
+                }
               />
 
+              {/* FLEET DOCUMENT (STNK) → doc_type=fleet_document */}
               <MultiFileUpload
                 label={t("fleet.stnk_foto")}
                 value={fleetSTNKDocFiles}
@@ -444,9 +676,16 @@ export default function FleetFormPage({
                   t("orders.upload_hint_10mb") ??
                   "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
                 }
-                onReject={(msgs) => console.warn("[SJ/POD] rejected:", msgs)}
+                onReject={(msgs) =>
+                  console.warn("[FLEET_DOCUMENT] rejected:", msgs)
+                }
                 className="gap-3 justify-end"
                 showImagePreview
+                existingItems={mode === "edit" ? docExistingFiles : undefined}
+                existingHeader={mode === "edit" ? docHeaderName : undefined}
+                onRemoveExisting={
+                  mode === "edit" ? handleRemoveDocExisting : undefined
+                }
               />
             </div>
           </div>

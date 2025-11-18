@@ -2,8 +2,32 @@ import { AbstractFormController } from "@/core/AbstractFormController";
 import type { RecordItem } from "@/types/recorditem";
 
 const DRIVER_URL = process.env.NEXT_PUBLIC_TMS_DRIVERS_URL!;
-
-// ===== Types =====
+export type DriverAttachmentItem = {
+  id: number;
+  name?: string;
+  mimetype?: string;
+  url?: string;
+  full_url?: string;
+  content_url?: string;
+};
+export type DriverDocumentAttachment = {
+  id: number;
+  name?: string;
+  attachments?: DriverAttachmentItem[];
+};
+export type DriverAttachmentFile = {
+  id: number;
+  name?: string;
+  mimetype?: string;
+  url?: string;
+  full_url?: string;
+  content_url?: string;
+};
+export type DriverAttachmentGroup = {
+  id: number;
+  name?: string;
+  attachments?: DriverAttachmentFile[];
+};
 export type DriverValues = {
   name: string;
   no_ktp: string;
@@ -17,6 +41,9 @@ export type DriverValues = {
   drivers_license_expiry: string;
   login: string;
   password: string;
+
+  driver_document_attachment_id: number | null;
+  // driver_document_attachment: DriverAttachmentGroup | null;
 };
 
 export type DriverErrors = Partial<Record<keyof DriverValues, string>>;
@@ -32,6 +59,7 @@ export type DriverPayload = {
   drivers_license_expiry: string;
   login?: string;
   password?: string;
+  driver_document_attachment_id?: number | null;
 };
 
 export type DriverApiResponse = {
@@ -39,6 +67,8 @@ export type DriverApiResponse = {
   name?: string;
   mobile?: string;
   login?: string;
+  driver_document_attachment_id?: number | null;
+  driver_document_attachment?: DriverAttachmentGroup | null;
 } | null;
 
 // ===== Controller =====
@@ -69,6 +99,7 @@ export class DriverFormController extends AbstractFormController<
       drivers_license_expiry: "",
       login: "",
       password: "",
+      driver_document_attachment_id: null,
     };
   }
 
@@ -106,7 +137,6 @@ export class DriverFormController extends AbstractFormController<
 
   // ===== Payload builder =====
   protected toPayload(values: DriverValues): DriverPayload {
-    // Gunakan helper untuk district_id aman, tanpa `any`
     const districtId =
       typeof values.district?.id === "string" ||
       typeof values.district?.id === "number"
@@ -130,10 +160,13 @@ export class DriverFormController extends AbstractFormController<
     if (values.password?.length > 0 && this.formMode !== "edit")
       payload.password = values.password;
 
+    if (values.driver_document_attachment_id) {
+      payload.driver_document_attachment_id =
+        values.driver_document_attachment_id;
+    }
+
     return payload;
   }
-
-  // ===== Endpoint builder =====
   protected endpoint(mode: "create" | "edit", id?: string | number): string {
     if (mode === "edit" && id != null) {
       return `${DRIVER_URL}/${id}`;

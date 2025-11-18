@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { t, getLang, onLangChange } from "@/lib/i18n";
 import { goSignIn } from "@/lib/goSignIn";
@@ -26,6 +32,8 @@ import type {
   CityItem,
   OrdersCreateFormProps,
   PartnerItem,
+  OrderAttachmentGroup,
+  OrderAttachmentItem,
 } from "@/types/orders";
 
 import {
@@ -37,6 +45,7 @@ import StatusDeliveryImage from "@/components/ui/DeliveryState";
 import { StatusStep } from "@/types/status-delivery";
 import { ExtraStop } from "./sections/ExtraStopCard";
 import { RecordItem } from "@/types/recorditem";
+import { ExistingFileItem } from "@/components/form/MultiFileUpload";
 type ExtraStopWithId = ExtraStop & { uid: string };
 
 // ====== NEW: Cargo Type Prefill (by id -> RecordItem) ======
@@ -164,6 +173,22 @@ const POST_CHAT_URL = process.env.NEXT_PUBLIC_TMS_ORDER_CHAT_URL ?? "";
 const DETAIL_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const UPDATE_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const APP_BASE_PATH = process.env.NEXT_PUBLIC_URL_BASE ?? "";
+
+const DOCUMENT_ATTACHMENTS_URL =
+  process.env.NEXT_PUBLIC_TMS_DOCUMENT_ATTACHMENTS_URL ?? "";
+
+const DOC_ATTACHMENT_PACKING_LIST_TYPE =
+  "transport_order_packing_list" as const;
+const DOC_ATTACHMENT_DELIVERY_NOTE_TYPE =
+  "transport_order_delivery_note" as const;
+
+type DocumentAttachmentsResponse = OrderAttachmentGroup;
+
+// ApiPayload + field attachment_id
+type ApiPayloadWithAttachments = ApiPayload & {
+  packing_list_attachment_id?: number;
+  delivery_note_attachment_id?: number;
+};
 
 /* === Lightweight Modal/Dialog === */
 export function Modal({
@@ -361,6 +386,31 @@ function extractApiSteps(
   });
 }
 
+function toExistingFileItems(
+  attachment: OrderAttachmentGroup | OrderAttachmentItem[] | null | undefined
+): ExistingFileItem[] {
+  if (!attachment) return [];
+
+  // Mode lama: array langsung [ { id, name, url, mimetype }, ... ]
+  if (Array.isArray(attachment)) {
+    return attachment.map((att) => ({
+      id: att.id,
+      name: att.name,
+      url: att.url,
+      mimetype: att.mimetype,
+    }));
+  }
+
+  // Mode baru: group { id, name, doc_type, attachments: [...] }
+  const items = attachment.attachments ?? [];
+  return items.map((att) => ({
+    id: att.id,
+    name: att.name,
+    url: att.url,
+    mimetype: att.mimetype,
+  }));
+}
+
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>
 ) {
@@ -437,8 +487,17 @@ function prefillFromInitial(
     picBongkarNama: "",
     picBongkarTelepon: "",
     // extraStops: [] as ExtraStopWithId[],
+    existingPackingList: [] as ExistingFileItem[],
+    existingDeliveryNotes: [] as ExistingFileItem[],
+
+    packingListAttachmentId: null as number | null,
+    deliveryNoteAttachmentId: null as number | null,
+    packingListAttachmentName: "",
+    deliveryNoteAttachmentName: "",
+
     extraStops: [] as ExtraStop[],
     isReadOnly: false,
+    mainRouteId: null as number | null,
   };
 
   console.log("form before:", form);
@@ -449,7 +508,8 @@ function prefillFromInitial(
 
   const main = routes.find((r) => r.is_main_route);
 
-  // form.id = main.id ?? 0;
+  form.mainRouteId = typeof main?.id === "number" ? main.id : null;
+
   // Prefill dari route main kalau ada
   form.tglMuat = apiToLocalIsoMinute(main?.etd_date) || form.tglMuat;
   form.tglBongkar = apiToLocalIsoMinute(main?.eta_date) || form.tglBongkar;
@@ -524,6 +584,44 @@ function prefillFromInitial(
   form.isReadOnly = current
     ? !["draft", "pending"].includes(current.key)
     : false;
+
+  form.existingPackingList = toExistingFileItems(
+    data.packing_list_attachment as
+      | OrderAttachmentGroup
+      | OrderAttachmentItem[]
+      | null
+      | undefined
+  );
+
+  form.existingDeliveryNotes = toExistingFileItems(
+    data.delivery_note_attachment as
+      | OrderAttachmentGroup
+      | OrderAttachmentItem[]
+      | null
+      | undefined
+  );
+
+  const pl = data.packing_list_attachment as
+    | OrderAttachmentGroup
+    | OrderAttachmentItem[]
+    | null
+    | undefined;
+
+  if (pl && !Array.isArray(pl)) {
+    form.packingListAttachmentId = typeof pl.id === "number" ? pl.id : null;
+    form.packingListAttachmentName = pl.name ?? "";
+  }
+
+  const dn = data.delivery_note_attachment as
+    | OrderAttachmentGroup
+    | OrderAttachmentItem[]
+    | null
+    | undefined;
+
+  if (dn && !Array.isArray(dn)) {
+    form.deliveryNoteAttachmentId = typeof dn.id === "number" ? dn.id : null;
+    form.deliveryNoteAttachmentName = dn.name ?? "";
+  }
 
   console.log("form results:", form);
 
@@ -632,6 +730,7 @@ export default function OrdersCreateForm({
   const [destZipCode, setDestZipCode] = useState<string>("");
   const [destLatitude, setDestLatitude] = useState<string>("");
   const [destLongitude, setDestLongitude] = useState<string>("");
+  const [mainRouteId, setMainRouteId] = useState<number | null>(null);
 
   // Kontak utama (PIC)
   const [picMuatNama, setPicMuatNama] = useState<string>("");
@@ -645,6 +744,7 @@ export default function OrdersCreateForm({
     (
       [
         {
+          id: 0,
           lokMuat: null,
           lokBongkar: null,
           originPicName: "",
@@ -669,6 +769,7 @@ export default function OrdersCreateForm({
           destLongitude: "",
         },
         {
+          id: 0,
           lokMuat: null,
           lokBongkar: null,
           originPicName: "",
@@ -696,9 +797,28 @@ export default function OrdersCreateForm({
     ).map((s) => ({ ...s, uid: genUid() }))
   );
 
-  // Upload lists (MultiFileUpload controlled) — belum dikirim (UI only)
+  // Upload lists (MultiFileUpload controlled)
   const [dokumenFiles, setDokumenFiles] = useState<File[]>([]);
   const [sjPodFiles, setSjPodFiles] = useState<File[]>([]);
+
+  const [existingPackingList, setExistingPackingList] = useState<
+    ExistingFileItem[]
+  >([]);
+  const [existingDeliveryNotes, setExistingDeliveryNotes] = useState<
+    ExistingFileItem[]
+  >([]);
+
+  const [packingListAttachmentId, setPackingListAttachmentId] = useState<
+    number | null
+  >(null);
+  const [deliveryNoteAttachmentId, setDeliveryNoteAttachmentId] = useState<
+    number | null
+  >(null);
+
+  const [packingListAttachmentName, setPackingListAttachmentName] =
+    useState<string>("");
+  const [deliveryNoteAttachmentName, setDeliveryNoteAttachmentName] =
+    useState<string>("");
 
   // Amount placeholders
   const [biayaKirimLabel, setAmountShipping] = useState<number | string>();
@@ -800,10 +920,11 @@ export default function OrdersCreateForm({
 
     if (!initialData) return;
     const f = prefillFromInitial(initialData);
+    setMainRouteId(f.mainRouteId);
     setNamaPenerima(f.namaPenerima);
     setJenisOrder(f.jenisOrder);
     setArmada(f.armada);
-    // prefill langsung set kota (tanpa trigger handler reset)
+
     setKotaMuat(f.kotaMuat);
     setKotaBongkar(f.kotaBongkar);
 
@@ -861,6 +982,15 @@ export default function OrdersCreateForm({
       setExtraStops(withUid(f.extraStops));
     }
 
+    setExistingPackingList(f.existingPackingList);
+    setExistingDeliveryNotes(f.existingDeliveryNotes);
+
+    setPackingListAttachmentId(f.packingListAttachmentId);
+    setDeliveryNoteAttachmentId(f.deliveryNoteAttachmentId);
+    setPackingListAttachmentName(f.packingListAttachmentName);
+    setDeliveryNoteAttachmentName(f.deliveryNoteAttachmentName);
+
+    console.log("f data: ", f);
     console.log("initialData.states:", initialData.states);
     console.log("extracted steps:", extractApiSteps(initialData));
     console.log("prefilled steps:", f.states);
@@ -876,7 +1006,72 @@ export default function OrdersCreateForm({
     setLoadingDetail(false);
   }, [initialData]);
 
-  // Jika edit tapi initialData tidak ada, fetch detail (jika env DETAIL_URL_TPL tersedia)
+  async function deleteRemoteAttachment(
+    docAttachmentId: number,
+    attachmentId: number
+  ) {
+    const url = `${DOCUMENT_ATTACHMENTS_URL}/${encodeURIComponent(
+      String(docAttachmentId)
+    )}/attachments/${encodeURIComponent(String(attachmentId))}`;
+
+    const res = await fetch(url, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`
+      );
+    }
+  }
+
+  const handleRemovePackingList = useCallback(
+    async (item: ExistingFileItem) => {
+      console.log("handleRemovePackingList ", item);
+      if (!item.groupId) {
+        setExistingPackingList((prev) =>
+          prev.filter((it) => it.id !== item.id)
+        );
+        return;
+      }
+      try {
+        setExistingPackingList((prev) => prev.filter((i) => i.id !== item.id));
+        await deleteRemoteAttachment(item.groupId, item.id);
+        console.log("Removing packing list attachment:", item);
+      } catch (error) {
+        console.error("Failed to remove packing list:", error);
+        setExistingPackingList((prev) => [...prev, item]);
+      }
+    },
+    []
+  );
+
+  const handleRemoveDeliveryNote = useCallback(
+    async (item: ExistingFileItem) => {
+      console.log("handleRemoveDeliveryNote ", item);
+      if (!item.groupId) {
+        setExistingDeliveryNotes((prev) =>
+          prev.filter((it) => it.id !== item.id)
+        );
+        return;
+      }
+
+      try {
+        setExistingDeliveryNotes((prev) =>
+          prev.filter((i) => i.id !== item.id)
+        );
+        await deleteRemoteAttachment(item.groupId, item.id);
+        console.log("Removing delivery note attachment:", item);
+      } catch (error) {
+        console.error("Failed to remove delivery note:", error);
+        setExistingDeliveryNotes((prev) => [...prev, item]);
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     if (mode !== "edit" || initialData) return;
     if (!effectiveOrderId) {
@@ -906,6 +1101,7 @@ export default function OrdersCreateForm({
         const json = (await res.json()) as OrdersCreateFormProps["initialData"];
         if (json) {
           const f = prefillFromInitial(json);
+          setMainRouteId(f.mainRouteId);
           setNamaPenerima(f.namaPenerima);
           setJenisOrder(f.jenisOrder);
           setArmada(f.armada);
@@ -968,12 +1164,24 @@ export default function OrdersCreateForm({
             setMultiPickupDrop(true);
             setExtraStops(withUid(f.extraStops));
           }
+
+          setExistingPackingList(f.existingPackingList);
+          setExistingDeliveryNotes(f.existingDeliveryNotes);
+
+          setPackingListAttachmentId(f.packingListAttachmentId);
+          setDeliveryNoteAttachmentId(f.deliveryNoteAttachmentId);
+          setPackingListAttachmentName(f.packingListAttachmentName);
+          setDeliveryNoteAttachmentName(f.deliveryNoteAttachmentName);
+
           setSteps(f.states);
           setStatusCurrent(f.states.find((s) => s.is_current)?.key);
 
           setIsReadOnly(f.isReadOnly);
         }
       } catch (err) {
+        // if ((err as any)?.name === "AbortError") {
+        //   return;
+        // }
         console.error("[OrderDetail] fetch error:", err);
       } finally {
         setLoadingDetail(false);
@@ -981,6 +1189,95 @@ export default function OrdersCreateForm({
     })();
     return () => abort.abort();
   }, [mode, effectiveOrderId, initialData, router.replace]);
+
+  async function uploadDocumentsForDocType(
+    files: File[],
+    opts: {
+      docType:
+        | typeof DOC_ATTACHMENT_PACKING_LIST_TYPE
+        | typeof DOC_ATTACHMENT_DELIVERY_NOTE_TYPE;
+      groupId?: number | null;
+    }
+  ): Promise<number | null> {
+    if (!files.length) return opts.groupId ?? null;
+    const { docType, groupId } = opts;
+    const baseUrl = DOCUMENT_ATTACHMENTS_URL.replace(/\/$/, "");
+    const url =
+      groupId && groupId > 0
+        ? `${baseUrl}/${groupId}`
+        : `${baseUrl}?doc_type=${encodeURIComponent(docType)}`;
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file, file.name);
+    });
+
+    const res = await fetch(url, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      let text = "";
+      try {
+        text = await res.text();
+      } catch {}
+      const baseMsg =
+        docType === DOC_ATTACHMENT_PACKING_LIST_TYPE
+          ? t("orders.upload_packing_list_failed") ??
+            "Upload dokumen Packing List gagal."
+          : t("orders.upload_delivery_note_failed") ??
+            "Upload dokumen Surat Jalan / POD gagal.";
+      const msg = text ? `${baseMsg} ${text}` : baseMsg;
+      throw new Error(msg);
+    }
+    if (!groupId) {
+      try {
+        const json = (await res.json()) as DocumentAttachmentsResponse;
+        if (typeof json.id === "number") {
+          return json.id;
+        }
+      } catch {}
+      return null;
+    }
+    return groupId;
+  }
+
+  async function uploadShippingDocumentsIfNeeded(): Promise<{
+    packingListAttachmentId?: number;
+    deliveryNoteAttachmentId?: number;
+  }> {
+    let packingId = packingListAttachmentId ?? undefined;
+    let deliveryId = deliveryNoteAttachmentId ?? undefined;
+
+    if (dokumenFiles.length > 0) {
+      const newId = await uploadDocumentsForDocType(dokumenFiles, {
+        docType: DOC_ATTACHMENT_PACKING_LIST_TYPE,
+        groupId: packingId,
+      });
+      if (typeof newId === "number") {
+        packingId = newId;
+        setPackingListAttachmentId(newId);
+      }
+    }
+
+    if (sjPodFiles.length > 0) {
+      const newId = await uploadDocumentsForDocType(sjPodFiles, {
+        docType: DOC_ATTACHMENT_DELIVERY_NOTE_TYPE,
+        groupId: deliveryId,
+      });
+      if (typeof newId === "number") {
+        deliveryId = newId;
+        setDeliveryNoteAttachmentId(newId);
+      }
+    }
+
+    return {
+      packingListAttachmentId: packingId,
+      deliveryNoteAttachmentId: deliveryId,
+    };
+  }
 
   /** ===================== Validation ===================== */
   function validate(): Record<string, string> {
@@ -1080,7 +1377,10 @@ export default function OrdersCreateForm({
   ]);
 
   /** ===================== Build Payload ===================== */
-  function buildApiPayload(): ApiPayload {
+  function buildApiPayload(params?: {
+    packingListAttachmentId?: number;
+    deliveryNoteAttachmentId?: number;
+  }): ApiPayload {
     const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 
     const toBackendDate = (localStr: string, tz: string): string => {
@@ -1099,6 +1399,7 @@ export default function OrdersCreateForm({
     };
 
     const mainRoute = {
+      ...(mode === "edit" && mainRouteId ? { id: mainRouteId } : {}),
       is_main_route: true,
       origin_address_id: Number(lokMuat?.id ?? 0),
       origin_pic_name: (picMuatNama ?? "").trim(),
@@ -1114,6 +1415,9 @@ export default function OrdersCreateForm({
       ? extraStops
           .filter((s) => s.lokMuat?.id && s.lokBongkar?.id)
           .map((s) => ({
+            ...(mode === "edit" && typeof s.id === "number" && s.id > 0
+              ? { id: s.id }
+              : {}),
             is_main_route: false,
             origin_address_id: Number(s.lokMuat?.id ?? 0),
             origin_pic_name: (s.originPicName ?? "").trim(),
@@ -1126,11 +1430,7 @@ export default function OrdersCreateForm({
           }))
       : [];
 
-    // normalisasi Cargo QTY alias jumlah muatan dari koma ke titik
-    // kalo backend butuh titik
-    // const jumlahMuatanNumber = parseFloat((cargoQTY || "0").replace(",", "."));
-
-    return {
+    const basePayload: ApiPayloadWithAttachments = {
       receipt_by: (namaPenerima ?? "").trim(),
       origin_city_id: Number(kotaMuat!.id),
       dest_city_id: Number(kotaBongkar!.id),
@@ -1150,18 +1450,36 @@ export default function OrdersCreateForm({
       requirement_face_mask: !!layananKhusus["Masker"],
       requirement_tarpaulin: !!layananKhusus["Terpal"],
       requirement_other: (layananLainnya ?? "").trim(),
-
       route_ids: [mainRoute, ...extraRoutes],
-      // // attachments: siapkan kolom untuk backend (nanti ganti dengan IDs)
-      // attachments: {
-      //   docs: [],
-      //   pod: [],
-      // },
     };
+
+    const payload: ApiPayloadWithAttachments = { ...basePayload };
+
+    if (mode === "edit") {
+      // Jika ada existing attachment IDs, gunakan mereka
+      payload.packing_list_attachment_id = 0;
+      if (packingListAttachmentId) {
+        payload.packing_list_attachment_id = packingListAttachmentId;
+      }
+      payload.delivery_note_attachment_id = 0;
+      if (deliveryNoteAttachmentId) {
+        payload.delivery_note_attachment_id = deliveryNoteAttachmentId;
+      }
+    }
+
+    if (typeof params?.packingListAttachmentId === "number") {
+      payload.packing_list_attachment_id = params.packingListAttachmentId;
+    }
+    if (typeof params?.deliveryNoteAttachmentId === "number") {
+      payload.delivery_note_attachment_id = params.deliveryNoteAttachmentId;
+    }
+
+    return payload;
   }
 
   /** ===================== Submit (Create/Edit) ===================== */
-  async function doSubmitToApi(apiPayload: ApiPayload) {
+  // async function doSubmitToApi(apiPayload: ApiPayload) {
+  async function doSubmitToApi() {
     if (mode === "create" && !POST_ORDER_URL) {
       setRespIsSuccess(false);
       setRespTitle(t("common.error") ?? "Error");
@@ -1188,6 +1506,32 @@ export default function OrdersCreateForm({
 
     try {
       setSubmitLoading(true);
+
+      // === 1) Upload dokumen (kalau ada file) ===
+      let attachIds: {
+        packingListAttachmentId?: number;
+        deliveryNoteAttachmentId?: number;
+      } | null = null;
+
+      try {
+        attachIds = await uploadShippingDocumentsIfNeeded();
+      } catch (err) {
+        console.error("[OrderSubmit] upload attachments error:", err);
+        setRespIsSuccess(false);
+        setRespTitle(t("common.error") ?? "Error");
+        setRespMessage(
+          err instanceof Error
+            ? err.message
+            : t("orders.upload_failed") ??
+                "Upload dokumen gagal. Silakan periksa file dan coba lagi."
+        );
+        setRespOpen(true);
+        return;
+      }
+
+      // === 2) Build payload order + attachment_id bila ada ===
+      const apiPayload = buildApiPayload(attachIds ?? undefined);
+      console.log("[OrderSubmit] payload:", apiPayload);
 
       const method = mode === "create" ? "POST" : "PUT";
       let url = POST_ORDER_URL;
@@ -1312,18 +1656,13 @@ export default function OrdersCreateForm({
       setConfirmOpen(false);
       return;
     }
-    const payload = buildApiPayload();
-
-    console.log(payload);
-
-    void doSubmitToApi(payload);
+    void doSubmitToApi();
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const eobj = validate();
     if (Object.keys(eobj).length > 0) {
-      // Tunggu DOM re-render supaya firstErrorRef terpasang
       requestAnimationFrame(() => {
         if (firstErrorRef.current) {
           firstErrorRef.current.scrollIntoView({
@@ -1335,7 +1674,6 @@ export default function OrdersCreateForm({
           ) as HTMLElement | null;
           el?.focus();
         } else {
-          // cari extra_* pertama
           const firstExtraIdx = Object.keys(eobj)
             .filter((k) => k.startsWith("extra_"))
             .map((k) => Number(k.split("_")[1]))
@@ -1352,11 +1690,15 @@ export default function OrdersCreateForm({
     setConfirmOpen(true);
   }
 
+  function handleCreate() {
+    router.push("/orders/create");
+  }
+
   function handleDiscard() {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
     } else {
-      router.push(pathJoin(APP_BASE_PATH, "/orders"));
+      router.push("/orders");
     }
   }
 
@@ -1439,21 +1781,9 @@ export default function OrdersCreateForm({
       <div className="p-4 text-sm text-gray-600">{t("common.loading")}…</div>
     );
   }
-
-  // function mapApiSteps(
-  //   items: Array<{ key: string; label: string; is_current?: boolean }>
-  // ): StatusStep[] {
-  //   return items.map(({ key, label, is_current }) => ({
-  //     key: key.toLowerCase(), // ← penting: seragamkan
-  //     label,
-  //     is_current: !!is_current,
-  //   }));
-  // }
-
   function safeJoin(base: string, path: string): string {
     return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
   }
-
   const stp = [
     {
       key: "pending",
@@ -1561,7 +1891,6 @@ export default function OrdersCreateForm({
                 setLokMuat={setLokMuat}
                 lokBongkar={lokBongkar}
                 setLokBongkar={setLokBongkar}
-                // ⬇️ Tambahkan 8 props PIC berikut
                 picMuatNama={picMuatNama}
                 setPicMuatNama={setPicMuatNama}
                 picMuatTelepon={picMuatTelepon}
@@ -1609,7 +1938,7 @@ export default function OrdersCreateForm({
             <div className="md:basis-1/3  min-w-0 space-y-4">
               {/* Info Muatan */}
               <CargoInfoCard
-                jenisOrder={jenisOrder} // ⬅️ penting
+                jenisOrder={jenisOrder}
                 muatanNama={muatanNama}
                 setMuatanNama={setMuatanNama}
                 muatanDeskripsi={muatanDeskripsi}
@@ -1639,6 +1968,12 @@ export default function OrdersCreateForm({
                 setDokumenFiles={setDokumenFiles}
                 sjPodFiles={sjPodFiles}
                 setSjPodFiles={setSjPodFiles}
+                existingPackingList={existingPackingList}
+                existingDeliveryNotes={existingDeliveryNotes}
+                onRemovePackingList={handleRemovePackingList}
+                onRemoveDeliveryNote={handleRemoveDeliveryNote}
+                existingPackingListLabel={packingListAttachmentName}
+                existingDeliveryNotesLabel={deliveryNoteAttachmentName}
               />
             </div>
 
@@ -1651,6 +1986,16 @@ export default function OrdersCreateForm({
               <div className="mx-auto max-w-screen-xl px-4 py-3 flex items-center justify-between gap-2">
                 {/* LEFT: Chat / Broadcast (dengan IMPULSE) */}
                 <div className="flex items-center gap-2">
+                  {mode != "create" && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleCreate}
+                    >
+                      {t("orders.create.title")}
+                    </Button>
+                  )}
+
                   {canShowChat && (
                     <Button
                       type="button"

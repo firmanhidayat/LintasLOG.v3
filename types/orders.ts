@@ -1,6 +1,30 @@
 import { RecordItem } from "./recorditem";
 import { StatusStep } from "./status-delivery";
 
+export type OrderAttachmentItem = {
+  id: number;
+  name: string;
+  mimetype: string;
+  res_model: string;
+  res_id: number;
+  access_token: string;
+  url: string;
+};
+
+export type OrderAttachmentGroup = {
+  id: number;
+  name: string;
+  doc_type: string;
+  attachments?: OrderAttachmentItem[];
+};
+
+// export type AttachmentItem = {
+//   id: number;
+//   name: string;
+//   url: string;
+//   mimetype?: string;
+// };
+
 /// Item untuk dropdown city, address, etc.
 export interface CityItem {
   id: number | string;
@@ -217,6 +241,9 @@ export type OrdersCreateFormProps = {
     dest_zip: string;
     dest_latitude: string;
     dest_longitude: string;
+
+    packing_list_attachment?: OrderAttachmentGroup;
+    delivery_note_attachment?: OrderAttachmentGroup;
 
     route_ids?: Array<{
       id?: number;

@@ -6,14 +6,37 @@ import type { FleetValues } from "@/features/fleet/FleetFormController";
 
 const FLEET_DETAIL_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_URL ?? "";
 
+type FleetAttachmentGroup = {
+  id: number;
+  name: string;
+  doc_type: string;
+  attachments?: {
+    id: number;
+    name: string;
+    mimetype: string;
+    res_model: string;
+    res_id: number;
+    access_token: string;
+    url: string;
+  }[];
+};
+
+type FleetInitialData = Partial<FleetValues> & {
+  unit_attachment?: FleetAttachmentGroup;
+  document_attachment?: FleetAttachmentGroup;
+};
+
 export default function FleetDetailPage() {
   const sp = useSearchParams();
   const router = useRouter();
   const fleetId = sp.get("id") ?? "";
 
-  const [initialData, setInitialData] = useState<Partial<FleetValues> | null>(
-    null
-  );
+  // const [initialData, setInitialData] = useState<Partial<FleetValues> | null>(
+  //   null
+  // );
+  // const [loading, setLoading] = useState(true);
+  // const [err, setErr] = useState<string | null>(null);
+  const [initialData, setInitialData] = useState<FleetInitialData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -31,7 +54,8 @@ export default function FleetDetailPage() {
         );
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
         const j = await res.json();
-        const mapped: Partial<FleetValues> = {
+        // const mapped: Partial<FleetValues> = {
+        const mapped: FleetInitialData = {
           model: j?.model ?? null,
           category: j?.category ?? null,
           license_plate: j?.license_plate ?? "",
@@ -48,6 +72,10 @@ export default function FleetDetailPage() {
           write_off_date: j?.write_off_date ?? "",
           kir: j?.kir ?? "",
           kir_expiry: j?.kir_expiry ?? "",
+          unit_attachment_id: j?.unit_attachment_id ?? 0,
+          document_attachment_id: j?.document_attachment_id ?? 0,
+          unit_attachment: j?.unit_attachment,
+          document_attachment: j?.document_attachment,
         };
         if (alive) setInitialData(mapped);
       } catch (e: unknown) {

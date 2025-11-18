@@ -120,36 +120,44 @@ export default function OrdersListPage() {
         ),
     },
   ];
+  // Tambahkan container wrapper dan perbaiki width
   const columns: ColumnDef<OrderRow>[] = [
     {
       id: "jo_no",
       label: t("orders.columns.joNo") || "No. JO",
       sortable: true,
       sortValue: (r) => r.name ?? "",
-      className: "w-[60px]",
-      cell: (r) => <div className="font-medium text-gray-900">{r.name}</div>,
+      className: "min-w-[80px] max-w-[100px]",
+      cell: (r) => (
+        <div className="font-medium text-gray-900 truncate">{r.name}</div>
+      ),
     },
     {
       id: "pickup_date",
       label: t("orders.columns.pickupDate") || "Tanggal Pickup",
       sortable: true,
       sortValue: (r) => r.pickup_date_planne ?? "",
-      className: "w-[60px]",
-      cell: (r) =>
-        r.route_ids.length > 0
-          ? r.route_ids[0].is_main_route
-            ? fmtDate(r.route_ids[0].etd_date)
-            : "-"
-          : "-",
+      className: "min-w-[100px] max-w-[120px]",
+      cell: (r) => (
+        <div className="truncate">
+          {r.route_ids.length > 0
+            ? r.route_ids[0].is_main_route
+              ? fmtDate(r.route_ids[0].etd_date)
+              : "-"
+            : "-"}
+        </div>
+      ),
     },
     {
       id: "pickup_to",
       label: t("orders.columns.pickupTo") || "Tujuan Pickup",
       sortable: true,
       sortValue: (r) => (r.origin_city?.name ?? "").toLowerCase(),
-      className: "w-[60px]",
+      className: "min-w-[120px] max-w-[150px]",
       cell: (r) => (
-        <span className="text-gray-700">{r.origin_city?.name ?? "-"}</span>
+        <span className="text-gray-700 truncate block">
+          {r.origin_city?.name ?? "-"}
+        </span>
       ),
     },
     {
@@ -157,22 +165,27 @@ export default function OrdersListPage() {
       label: t("orders.columns.dropDate") || "Tanggal Drop",
       sortable: true,
       sortValue: (r) => r.drop_off_date_planne ?? "",
-      className: "w-[60px]",
-      cell: (r) =>
-        r.route_ids.length > 0
-          ? r.route_ids[0].is_main_route
-            ? fmtDate(r.route_ids[0].eta_date)
-            : "-"
-          : "-",
+      className: "min-w-[100px] max-w-[120px]",
+      cell: (r) => (
+        <div className="truncate">
+          {r.route_ids.length > 0
+            ? r.route_ids[0].is_main_route
+              ? fmtDate(r.route_ids[0].eta_date)
+              : "-"
+            : "-"}
+        </div>
+      ),
     },
     {
       id: "drop_to",
       label: t("orders.columns.dropTo") || "Tujuan Drop",
       sortable: true,
       sortValue: (r) => (r.dest_city?.name ?? "").toLowerCase(),
-      className: "w-[60px]",
+      className: "min-w-[120px] max-w-[150px]",
       cell: (r) => (
-        <span className="text-gray-700">{r.dest_city?.name ?? "-"}</span>
+        <span className="text-gray-700 truncate block">
+          {r.dest_city?.name ?? "-"}
+        </span>
       ),
     },
     {
@@ -180,47 +193,61 @@ export default function OrdersListPage() {
       label: t("orders.columns.specialRequest") || "Permintaan Khusus",
       sortable: true,
       sortValue: (r) => (r.requirement_other ?? "").toLowerCase(),
-      className: "w-[100px]",
-      cell: (r) => r.requirement_other?.trim() || "-",
+      className: "min-w-[120px] max-w-[200px]",
+      cell: (r) => (
+        <div className="truncate">{r.requirement_other?.trim() || "-"}</div>
+      ),
     },
     {
       id: "price",
       label: t("orders.columns.price") || "Harga",
       sortable: true,
       sortValue: (r) => String(r.amount_total ?? ""),
-      className: "w-[56px] text-right",
+      className: "min-w-[80px] max-w-[100px] text-right",
       cell: (r) => (
-        <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
+        <span className="tabular-nums truncate block">
+          {fmtPrice(r.amount_total)}
+        </span>
       ),
     },
+
     {
       id: "status",
       label: t("orders.columns.status") || "Status",
       sortable: true,
       sortValue: (r) => r.states.find((s) => s.is_current)?.key || "unknown",
-      className: "w-[32px]",
-      cell: (r) =>
-        r.states.find((s) => s.is_current)?.is_current ? (
-          <GetStatesInLine
-            value={r.states.find((s) => s.is_current)?.key || "unknown"}
-            label={r.states.find((s) => s.is_current)?.label || "unknown"}
-          />
-        ) : (
-          <GetStatesInLine value="unknown" label="unknown" />
-        ),
+      className: "min-w-[120px] max-w-[180px]",
+      cell: (r) => (
+        <div className="truncate">
+          {r.states.find((s) => s.is_current)?.is_current ? (
+            <GetStatesInLine
+              value={r.states.find((s) => s.is_current)?.key || "unknown"}
+              label={r.states.find((s) => s.is_current)?.label || "unknown"}
+            />
+          ) : (
+            <GetStatesInLine value="unknown" label="unknown" />
+          )}
+        </div>
+      ),
     },
+    // {
+    //   id: "blankColumn",
+    //   label: "",
+    //   className: "min-w-[80px] max-w-[100px] text-center",
+    //   cell: (r) => <span>&nbsp;</span>,
+    // },
     {
       id: "actions",
       label: "",
       isAction: true,
-      className: "w-24",
+      className: "min-w-[70px] max-w-[90px] sticky right-0",
       cell: (it) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-end  bg-white">
           {it.id != null ? (
             <Link
               data-stop-rowclick
               href={`/orders/details?id=${encodeURIComponent(String(it.id))}`}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100 shrink-0"
               aria-label="Edit address"
               title="Edit"
             >
@@ -230,7 +257,7 @@ export default function OrdersListPage() {
             <button
               data-stop-rowclick
               type="button"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50 shrink-0"
               title="Edit (unavailable)"
               disabled
             >
@@ -243,13 +270,12 @@ export default function OrdersListPage() {
               data-stop-rowclick
               type="button"
               onClick={() => {
-                // ListTemplate kini menangani event ini & membuka modal konfirmasi
                 const evt = new CustomEvent("llog.openDeleteConfirm", {
                   detail: { id: it.id, name: it.name },
                 });
                 window.dispatchEvent(evt);
               }}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100 shrink-0"
               aria-label="Delete address"
               title="Delete"
             >
@@ -263,7 +289,7 @@ export default function OrdersListPage() {
             <button
               data-stop-rowclick
               type="button"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50 shrink-0"
               title="Delete (unavailable)"
               disabled
             >

@@ -20,6 +20,8 @@ export type FleetValues = {
   write_off_date: string;
   kir: string;
   kir_expiry: string;
+  unit_attachment_id: number;
+  document_attachment_id: number;
 };
 export type FleetErrors = Partial<Record<keyof FleetValues, string>>;
 export type FleetApiResponse = { id?: string } & {
@@ -42,6 +44,8 @@ export type FleetPayload = {
   write_off_date: string;
   kir: string;
   kir_expiry: string;
+  unit_attachment_id: number;
+  document_attachment_id: number;
 };
 const FLEET_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_URL ?? "";
 // const MODELS_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_MODELS_URL ?? "";
@@ -95,6 +99,8 @@ export class FleetFormController extends AbstractFormController<
       write_off_date: values.write_off_date,
       kir: values.kir,
       kir_expiry: values.kir_expiry,
+      unit_attachment_id: values.unit_attachment_id,
+      document_attachment_id: values.document_attachment_id,
     };
   }
   protected endpoint(mode: "create" | "edit", id?: string | number): string {

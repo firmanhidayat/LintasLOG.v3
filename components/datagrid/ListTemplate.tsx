@@ -593,7 +593,7 @@ export function ListTemplate<
         className="relative max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-gray-200 bg-white shadow-sm"
         style={{ scrollbarGutter: "stable both-edges" }}
       >
-        <table className="table-auto min-w-full w-max text-md">
+        <table className="table-auto min-w-full w-max text-md  border-collapse">
           <thead className="bg-primary/20 font-bold text-md border-b-4 border-transparent">
             <tr>
               {/* kolom nomor urut */}

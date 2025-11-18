@@ -10,7 +10,7 @@ export default function AvatarMenu() {
   const { profile, loggedIn } = useAuth();
   const profileName = profile?.name;
   const profileImage = profile?.avatar_url;
-  const loginId = profile?.login;
+  const loginId = profile?.email;
 
   const displayName = useMemo(() => {
     if (profileName && profileName.trim()) return profileName;

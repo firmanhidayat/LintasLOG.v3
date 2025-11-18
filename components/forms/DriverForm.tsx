@@ -15,88 +15,50 @@ import {
   DriverValues,
 } from "@/features/driver/DriverFormController";
 import { useFormController } from "@/core/useFormController";
-import MultiFileUpload from "@/components/form/MultiFileUpload";
+import MultiFileUpload, {
+  ExistingFileItem,
+} from "@/components/form/MultiFileUpload";
 import FieldPassword from "@/components/form/FieldPassword";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { ModalDialog } from "../ui/ModalDialog";
 
 const DISTRICT_URL = process.env.NEXT_PUBLIC_TMS_LOCATIONS_DISTRICT_URL!;
+const ATTACHMENTS_URL =
+  process.env.NEXT_PUBLIC_TMS_DOCUMENT_ATTACHMENTS_URL ?? "";
 
-/** Lightweight modal dialog (no external deps) */
-// function ModalDialog({
-//   open,
-//   kind = "success",
-//   title,
-//   message,
-//   onClose,
-// }: {
-//   open: boolean;
-//   kind?: "success" | "error";
-//   title: string;
-//   message: React.ReactNode;
-//   onClose: () => void;
-// }) {
-//   if (!open) return null;
-//   const ring = kind === "success" ? "ring-green-500" : "ring-red-500";
-//   const head = kind === "success" ? "text-green-700" : "text-red-700";
-//   const btn =
-//     kind === "success"
-//       ? "bg-green-600 hover:bg-green-700"
-//       : "bg-red-600 hover:bg-red-700";
-//   return (
-//     <div
-//       className="fixed inset-0 z-[100] flex items-center justify-center"
-//       role="dialog"
-//       aria-modal="true"
-//       onKeyDown={(e) => e.key === "Escape" && onClose()}
-//     >
-//       <div
-//         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-//         onClick={onClose}
-//       />
-//       <div
-//         className={`relative mx-4 w-full max-w-md rounded-2xl bg-white p-5 shadow-xl ring-1 ${ring}`}
-//       >
-//         <div className={`mb-2 text-lg font-semibold ${head}`}>{title}</div>
-//         <div className="mb-4 text-sm text-gray-700">{message}</div>
-//         <div className="flex justify-end">
-//           <button
-//             type="button"
-//             onClick={onClose}
-//             className={`inline-flex items-center rounded-lg px-4 py-2 text-white ${btn} focus:outline-none focus:ring`}
-//           >
-//             OK
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
+type DriverDoctType = "driver_document";
+type DriverAttachmentGroup = {
+  id: number;
+  name: string;
+  doc_type: string;
+  attachments?: {
+    id: number;
+    name: string;
+    mimetype: string;
+    res_model: string;
+    res_id: number;
+    access_token: string;
+    url: string;
+  }[];
+};
 
-export default function FleetFormPage({
+type DriverInitialData = Partial<DriverValues> & {
+  driver_document_attachment?: DriverAttachmentGroup;
+};
+
+export default function DriverFormPage({
   mode = "create",
-  fleetId,
+  driverId,
   initialData,
   onSuccess,
 }: {
   mode?: "create" | "edit";
-  fleetId?: number | string;
-  initialData?: Partial<DriverValues>;
+  driverId?: number | string;
+  initialData?: DriverInitialData;
   onSuccess?: (data: DriverApiResponse | null) => void;
 }) {
   const { ready: i18nReady } = useI18nReady();
   const router = useRouter();
-
-  const [submitting, setSubmitting] = useState(false);
-  const [confirm, setConfirm] = useState("");
-  const [driverDocumentFiles, setDriverDocumentFiles] = useState<File[]>([]);
-
-  // NEW: dialog state
-  const [dlgOpen, setDlgOpen] = useState(false);
-  const [dlgKind, setDlgKind] = useState<"success" | "error">("success");
-  const [dlgTitle, setDlgTitle] = useState("");
-  const [dlgMsg, setDlgMsg] = useState<React.ReactNode>("");
-
   const init: DriverValues = {
     name: initialData?.name ?? "",
     no_ktp: initialData?.no_ktp ?? "",
@@ -110,11 +72,31 @@ export default function FleetFormPage({
     drivers_license_expiry: initialData?.drivers_license_expiry ?? "",
     login: initialData?.login ?? "",
     password: initialData?.password ?? "",
+    driver_document_attachment_id:
+      initialData?.driver_document_attachment_id ?? null,
+    // driver_document_attachment: initialData?.driver_document_attachment ?? null,
   };
-
   const [ctrl, snap] = useFormController(
     () => new DriverFormController(mode, init)
   );
+  const [submitting, setSubmitting] = useState(false);
+  const [dlgOpen, setDlgOpen] = useState(false);
+  const [dlgKind, setDlgKind] = useState<"success" | "error">("success");
+  const [dlgTitle, setDlgTitle] = useState("");
+  const [dlgMsg, setDlgMsg] = useState<React.ReactNode>("");
+  const [confirm, setConfirm] = useState("");
+
+  const [driverDocumentFiles, setDriverDocumentFiles] = useState<File[]>([]);
+  const [driverDocumentExistingFiles, setDriverDocumentExistingFiles] =
+    useState<ExistingFileItem[]>([]);
+  const [driverDocumentHeaderName, setDriverDocumentHeaderName] = useState<
+    string | undefined
+  >();
+
+  function handleClearDocumentAttachments() {
+    setDriverDocumentExistingFiles([]);
+    ctrl.set("driver_document_attachment_id", 0);
+  }
 
   function openSuccessDialog() {
     setDlgKind("success");
@@ -142,6 +124,112 @@ export default function FleetFormPage({
     setDlgOpen(true);
   }
 
+  async function uploadDocumentAttachment(
+    docType: DriverDoctType,
+    files: File[]
+  ): Promise<number | undefined> {
+    if (!files.length) return undefined;
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const url = `${ATTACHMENTS_URL}?doc_type=${encodeURIComponent(docType)}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `Failed to upload ${docType} attachments (${res.status} ${res.statusText}) ${text}`
+      );
+    }
+
+    const json = (await res.json()) as { id?: number };
+    if (typeof json.id !== "number") {
+      throw new Error(
+        `Unexpected response when uploading ${docType} attachments`
+      );
+    }
+    return json.id;
+  }
+
+  async function appendFilesToExistingAttachment(
+    docAttachmentId: number,
+    files: File[]
+  ): Promise<void> {
+    if (!files.length) return;
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const url = `${ATTACHMENTS_URL}/${encodeURIComponent(
+      String(docAttachmentId)
+    )}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `Failed to append attachments (${res.status} ${res.statusText}) ${text}`
+      );
+    }
+  }
+
+  async function deleteRemoteAttachment(
+    docAttachmentId: number,
+    attachmentId: number
+  ) {
+    const url = `${ATTACHMENTS_URL}/${encodeURIComponent(
+      String(docAttachmentId)
+    )}/attachments/${encodeURIComponent(String(attachmentId))}`;
+
+    const res = await fetch(url, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`
+      );
+    }
+  }
+
+  async function handleRemoveExistingDriverDoc(item: ExistingFileItem) {
+    if (!item.groupId) {
+      setDriverDocumentExistingFiles((prev) =>
+        prev.filter((it) => it.id !== item.id)
+      );
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await deleteRemoteAttachment(item.groupId, item.id);
+      setDriverDocumentExistingFiles((prev) =>
+        prev.filter((it) => it.id !== item.id)
+      );
+    } catch (e) {
+      console.error(e);
+      openErrorDialog(e);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function onSave() {
     try {
       setSubmitting(true);
@@ -155,10 +243,51 @@ export default function FleetFormPage({
           return;
         }
       }
+      console.log(driverDocumentFiles);
+      if (mode === "create") {
+        if (driverDocumentFiles.length > 0) {
+          const unitId = await uploadDocumentAttachment(
+            "driver_document",
+            driverDocumentFiles
+          );
+          if (typeof unitId === "number") {
+            ctrl.set("driver_document_attachment_id", unitId);
+          }
+        }
+      } else if (mode === "edit") {
+        const snapNow = ctrl.snapshot();
+        console.log("BEFORE : ", snapNow);
+        const currentDocumentAttachmentId =
+          (snapNow.values.driver_document_attachment_id as
+            | number
+            | undefined) ??
+          initialData?.driver_document_attachment_id ??
+          0;
 
-      const data = await ctrl.submit(mode, fleetId);
-      onSuccess?.(data); // JANGAN diubah: tetap panggil onSuccess bila ada
+        if (driverDocumentFiles.length > 0) {
+          if (currentDocumentAttachmentId && currentDocumentAttachmentId > 0) {
+            await appendFilesToExistingAttachment(
+              currentDocumentAttachmentId,
+              driverDocumentFiles
+            );
+          } else {
+            const unitId = await uploadDocumentAttachment(
+              "driver_document",
+              driverDocumentFiles
+            );
+            if (typeof unitId === "number") {
+              ctrl.set("driver_document_attachment_id", unitId);
+            }
+          }
+        }
+        console.log("AFTER : ", snapNow);
+      }
+
+      const data = await ctrl.submit(mode, driverId);
+      onSuccess?.(data);
       openSuccessDialog();
+
+      setDriverDocumentFiles([]);
     } catch (e) {
       console.error(e);
       openErrorDialog(e);
@@ -182,9 +311,35 @@ export default function FleetFormPage({
       drivers_license_expiry: initialData?.drivers_license_expiry ?? "",
       login: initialData?.login ?? "",
       password: "",
+      driver_document_attachment_id:
+        initialData?.driver_document_attachment_id ?? null,
+      // driver_document_attachment:
+      //   initialData?.driver_document_attachment ?? null,
     });
     setConfirm("");
-  }, [initialData, ctrl]);
+    if (mode === "edit") {
+      const docGroup = initialData.driver_document_attachment;
+      setDriverDocumentHeaderName(initialData.driver_document_attachment?.name);
+
+      if (docGroup?.attachments?.length) {
+        setDriverDocumentExistingFiles(
+          docGroup.attachments.map((att) => ({
+            id: att.id,
+            name: att.name,
+            url: att.url,
+            mimetype: att.mimetype,
+            groupId: docGroup.id,
+          }))
+        );
+      } else {
+        setDriverDocumentExistingFiles([]);
+      }
+      // } else {
+      //   setDriverDocumentHeaderName(undefined);
+      //   setDriverDocumentExistingFiles([]);
+      // }
+    }
+  }, [initialData, ctrl, mode]);
 
   function handleDiscard() {
     router.push("/fleetndriver/driver/list");
@@ -388,6 +543,15 @@ export default function FleetFormPage({
                 hint={
                   t("orders.upload_hint_10mb") ??
                   "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
+                }
+                existingHeader={
+                  mode === "edit" ? driverDocumentHeaderName : undefined
+                }
+                existingItems={
+                  mode === "edit" ? driverDocumentExistingFiles : undefined
+                }
+                onRemoveExisting={
+                  mode === "edit" ? handleRemoveExistingDriverDoc : undefined
                 }
                 onReject={(msgs) => console.warn("rejected:", msgs)}
                 className="gap-3 justify-end"

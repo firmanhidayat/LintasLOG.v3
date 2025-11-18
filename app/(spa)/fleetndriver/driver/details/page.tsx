@@ -6,12 +6,31 @@ import type { DriverValues } from "@/features/driver/DriverFormController";
 
 const DRIVER_DETAIL_URL = process.env.NEXT_PUBLIC_TMS_DRIVERS_URL ?? "";
 
+type DriverAttachmentGroup = {
+  id: number;
+  name: string;
+  doc_type: string;
+  attachments?: {
+    id: number;
+    name: string;
+    mimetype: string;
+    res_model: string;
+    res_id: number;
+    access_token: string;
+    url: string;
+  }[];
+};
+
+type DriverInitialData = Partial<DriverValues> & {
+  driver_document_attachment?: DriverAttachmentGroup;
+};
+
 export default function DriverDetailPage() {
   const sp = useSearchParams();
   const router = useRouter();
   const driverId = sp.get("id") ?? "";
 
-  const [initialData, setInitialData] = useState<Partial<DriverValues> | null>(
+  const [initialData, setInitialData] = useState<DriverInitialData | null>(
     null
   );
   const [loading, setLoading] = useState(true);
@@ -31,7 +50,8 @@ export default function DriverDetailPage() {
         );
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
         const j = await res.json();
-        const mapped: Partial<DriverValues> = {
+        // const mapped: Partial<DriverValues> = {
+        const mapped: DriverInitialData = {
           name: j?.name ?? null,
           no_ktp: j?.no_ktp ?? null,
           mobile: j?.mobile ?? "",
@@ -43,6 +63,9 @@ export default function DriverDetailPage() {
           drivers_license: j?.drivers_license ?? "",
           drivers_license_expiry: j?.drivers_license_expiry ?? "",
           login: j?.login ?? "",
+          driver_document_attachment_id:
+            j?.driver_document_attachment_id ?? null,
+          driver_document_attachment: j?.driver_document_attachment ?? null,
         };
         if (alive) setInitialData(mapped);
       } catch (e: unknown) {
@@ -63,7 +86,7 @@ export default function DriverDetailPage() {
   return (
     <DriverFormPage
       mode="edit"
-      fleetId={driverId}
+      driverId={driverId}
       initialData={initialData}
       onSuccess={() =>
         router.replace(

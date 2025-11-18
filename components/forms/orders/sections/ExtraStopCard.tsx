@@ -18,7 +18,6 @@ export type ExtraStop = {
   destPicName: string;
   destPicPhone: string;
 
-  /** ⬇️ mandatory ETD/ETA per stop */
   tglETDMuat: string; // "YYYY-MM-DDTHH:mm" (local)
   tglETABongkar: string; // "YYYY-MM-DDTHH:mm" (local)
 
@@ -46,31 +45,10 @@ type Props = {
   stop: ExtraStop;
   onChange: (patch: Partial<ExtraStop>) => void;
   error?: string;
-
-  /** city context (sudah dinormalisasi di parent) */
   cityIdMuat: number | null;
   cityIdBongkar: number | null;
-
   lokasiMuatDisabled: boolean;
   lokasiBongkarDisabled: boolean;
-
-  // originAddressName: string;
-  // originStreet: string;
-  // originStreet2: string;
-  // originDistrictName: string;
-  // originZipCode: string;
-  // originLatitude: string;
-  // originLongitude: string;
-
-  // destAddressName: string;
-  // destStreet: string;
-  // destStreet2: string;
-  // destDistrictName: string;
-  // destZipCode: string;
-  // destLatitude: string;
-  // destLongitude: string;
-
-  /** ⬇️ Mandatory controller utk ETD/ETA */
   tglETDMuat: string;
   setTglETDMuat: (v: string) => void;
   tglETABongkar: string;
