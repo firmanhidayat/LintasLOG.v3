@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { getLang, t } from "@/lib/i18n";
 import { goSignIn } from "@/lib/goSignIn";
 import { CellText } from "@/components/shared/CellText";
-import Button from "@/components/ui/Button";
 
 export type SortDir = "asc" | "desc";
 
@@ -17,8 +16,6 @@ export type ColumnDef<T> = {
   sortable?: boolean;
   className?: string;
   isAction?: boolean;
-  mandatory?: boolean;
-  defaultVisible?: boolean;
 };
 
 export type ListFetchParams = {
@@ -38,12 +35,10 @@ type ConfirmState = {
   open: boolean;
   targetId: string | number | null;
   targetName?: string;
-  type?: "delete" | "details";
-  detailsContent?: React.ReactNode;
 };
 
 type PaginationTheme = {
-  maxPageButtons?: number;
+  maxPageButtons?: number; // default 7
 };
 
 // ===================== Hooks & Utils =====================
@@ -167,18 +162,6 @@ export function ListTemplate<
   rowNavigateTo,
   onRowClick,
   rowClassName,
-
-  /** NEW: Column visibility features */
-  enableColumnVisibility = false,
-  columnVisibilityStorageKey,
-
-  /** NEW: Action buttons configuration */
-  enableEditAction = false,
-  enableDetailsAction = false,
-  enableDeleteAction = false,
-  onEditAction,
-  onDetailsAction,
-  getDetailsContent,
 }: {
   fetchBase: string;
   deleteBase: string;
@@ -201,6 +184,8 @@ export function ListTemplate<
     meta: { index: number }
   ) => React.ReactElement | null;
 
+  /** === NEW === */
+  /** Nama field key selain "id" (mis. "key", "uuid", "code") */
   rowKey?: string;
   getRowId?: (row: T, index: number) => string | number | undefined | null;
   rowNavigateTo?: (
@@ -221,19 +206,10 @@ export function ListTemplate<
     event: React.MouseEvent<HTMLTableRowElement>;
   }) => void;
   rowClassName?: (row: T, index: number) => string | undefined;
-  enableColumnVisibility?: boolean;
-  columnVisibilityStorageKey?: string;
-
-  /** NEW: Action buttons configuration */
-  enableEditAction?: boolean;
-  enableDetailsAction?: boolean;
-  enableDeleteAction?: boolean;
-  onEditAction?: (id: string | number, row: T, index: number) => void;
-  onDetailsAction?: (id: string | number, row: T, index: number) => void;
-  getDetailsContent?: (row: T, index: number) => React.ReactNode;
 }) {
   const router = useRouter();
 
+  // ======== Sort defaults: rowKey DESC if not explicitly set ========
   const defaultSortBy = initialSort?.by ?? rowKey;
   const defaultSortDir: SortDir = initialSort?.dir ?? "desc";
 
@@ -260,78 +236,6 @@ export function ListTemplate<
     if (staticData) setLocalStatic(staticData);
   }, [staticData]);
 
-  const [columnVisibility, setColumnVisibility] = useState<
-    Record<string, boolean>
-  >({});
-  const [showColumnSettings, setShowColumnSettings] = useState(false);
-
-  useEffect(() => {
-    if (!enableColumnVisibility) return;
-
-    const storedVisibility = columnVisibilityStorageKey
-      ? localStorage.getItem(columnVisibilityStorageKey)
-      : null;
-
-    if (storedVisibility) {
-      try {
-        setColumnVisibility(JSON.parse(storedVisibility));
-      } catch {
-        initializeDefaultVisibility();
-      }
-    } else {
-      initializeDefaultVisibility();
-    }
-  }, [enableColumnVisibility, columnVisibilityStorageKey, columns]);
-
-  function initializeDefaultVisibility() {
-    const defaultVisibility: Record<string, boolean> = {};
-    columns.forEach((col) => {
-      defaultVisibility[col.id] = col.mandatory ?? col.defaultVisible ?? true;
-    });
-    setColumnVisibility(defaultVisibility);
-  }
-
-  useEffect(() => {
-    if (!enableColumnVisibility || !columnVisibilityStorageKey) return;
-
-    try {
-      localStorage.setItem(
-        columnVisibilityStorageKey,
-        JSON.stringify(columnVisibility)
-      );
-    } catch (error) {
-      console.warn("Failed to save column visibility to localStorage:", error);
-    }
-  }, [columnVisibility, enableColumnVisibility, columnVisibilityStorageKey]);
-
-  const visibleColumns = useMemo(() => {
-    if (!enableColumnVisibility) return columns;
-    return columns.filter((col) => columnVisibility[col.id] !== false);
-  }, [columns, columnVisibility, enableColumnVisibility]);
-
-  // Add action column if any action is enabled
-  const finalColumns = useMemo(() => {
-    const hasActions =
-      enableEditAction || enableDetailsAction || enableDeleteAction;
-    if (!hasActions) return visibleColumns;
-
-    const actionColumn: ColumnDef<T> = {
-      id: "_actions",
-      label: t("common.actions") || "Actions",
-      cell: (row: T) => null, // Will be handled separately in render
-      className: "sticky right-0 bg-white min-w-[120px] z-10",
-      isAction: true,
-      mandatory: true,
-    };
-
-    return [...visibleColumns, actionColumn];
-  }, [
-    visibleColumns,
-    enableEditAction,
-    enableDetailsAction,
-    enableDeleteAction,
-  ]);
-
   const sourceItems: T[] = staticData ? localStatic ?? [] : items;
 
   const filteredItems = useMemo(() => {
@@ -350,6 +254,7 @@ export function ListTemplate<
     const mul = sortDir === "asc" ? 1 : -1;
     const arr = [...filteredItems];
 
+    // Case 1: ada kolom sortable + sortValue
     if (col && col.sortable && col.sortValue) {
       arr.sort(
         (a, b) => compareAuto(col.sortValue!(a), col.sortValue!(b)) * mul
@@ -357,6 +262,7 @@ export function ListTemplate<
       return arr;
     }
 
+    // Case 2 (NEW): fallback sort khusus untuk rowKey meskipun tidak ada kolom
     if (sortBy === rowKey) {
       arr.sort((a, b) => {
         const av = (a as Record<string, unknown>)[rowKey];
@@ -367,6 +273,8 @@ export function ListTemplate<
       });
       return arr;
     }
+
+    // Jika tidak memenuhi syarat, kembalikan apa adanya
     return arr;
   }, [filteredItems, sortBy, sortDir, columns, rowKey]);
 
@@ -457,33 +365,6 @@ export function ListTemplate<
     }
   }
 
-  function toggleColumnVisibility(colId: string) {
-    setColumnVisibility((prev) => ({
-      ...prev,
-      [colId]: !prev[colId],
-    }));
-  }
-
-  function showAllColumns() {
-    const allVisible: Record<string, boolean> = {};
-    columns.forEach((col) => {
-      allVisible[col.id] = true;
-    });
-    setColumnVisibility(allVisible);
-  }
-
-  function hideAllColumns() {
-    const minimalVisible: Record<string, boolean> = {};
-    columns.forEach((col) => {
-      minimalVisible[col.id] = col.mandatory ?? false;
-    });
-    setColumnVisibility(minimalVisible);
-  }
-
-  function resetColumnVisibility() {
-    initializeDefaultVisibility();
-  }
-
   async function handleDelete(id: string | number | null) {
     if (id == null) return;
     try {
@@ -558,12 +439,7 @@ export function ListTemplate<
       });
       const displayName = d.name ?? (row ? getRowName(row) : undefined);
 
-      setConfirm({
-        open: true,
-        targetId: id,
-        targetName: displayName,
-        type: "delete",
-      });
+      setConfirm({ open: true, targetId: id, targetName: displayName });
     }
     window.addEventListener("llog.openDeleteConfirm", onOpen as EventListener);
     return () =>
@@ -573,6 +449,7 @@ export function ListTemplate<
       );
   }, [sourceItems, getRowName, rowKey]);
 
+  // === Helpers for clickable row ===
   function extractRowId(row: T, index: number) {
     const fallback = (row as Record<string, unknown>)[rowKey] as
       | string
@@ -587,6 +464,7 @@ export function ListTemplate<
     row: T,
     index: number
   ) {
+    // Abaikan jika klik berasal dari elemen interaktif
     const target = event.target as HTMLElement;
     if (target.closest("[data-stop-rowclick]")) {
       return;
@@ -663,137 +541,18 @@ export function ListTemplate<
 
   function renderCellContent(row: T, col: ColumnDef<T>) {
     const node = col.cell(row);
+
+    // Jangan potong untuk kolom aksi
     if (col.isAction) return node;
+
+    // Jika text/number → pakai CellText (ada tooltip + truncate)
     if (typeof node === "string" || typeof node === "number") {
+      // return <CellText value={node} max={90} className="w-[360px]" />;
       return <CellText value={node} max={90} />;
     }
+
+    // Selain itu (elemen React) → render apa adanya
     return node;
-  }
-
-  function handleEditAction(row: T, index: number) {
-    const id = extractRowId(row, index);
-    if (id == null) return;
-    onEditAction?.(id, row, index);
-  }
-
-  function handleDetailsAction(row: T, index: number) {
-    const id = extractRowId(row, index);
-    if (id == null) return;
-
-    if (getDetailsContent) {
-      const detailsContent = getDetailsContent(row, index);
-      setConfirm({
-        open: true,
-        targetId: id,
-        targetName: getRowName(row),
-        type: "details",
-        detailsContent,
-      });
-    } else {
-      onDetailsAction?.(id, row, index);
-    }
-  }
-
-  function handleDeleteAction(row: T, index: number) {
-    const id = extractRowId(row, index);
-    if (id == null) return;
-    setConfirm({
-      open: true,
-      targetId: id,
-      targetName: getRowName(row),
-      type: "delete",
-    });
-  }
-
-  function renderActionButtons(row: T, index: number) {
-    const hasActions =
-      enableEditAction || enableDetailsAction || enableDeleteAction;
-    if (!hasActions) return null;
-
-    return (
-      <div className="flex items-center justify-end gap-1 min-w-[120px]">
-        {enableEditAction && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEditAction(row, index);
-            }}
-            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-            title={t("common.edit") || "Edit"}
-            data-stop-rowclick
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              />
-            </svg>
-          </button>
-        )}
-
-        {enableDetailsAction && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDetailsAction(row, index);
-            }}
-            className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors"
-            title={t("common.details") || "Details"}
-            data-stop-rowclick
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </button>
-        )}
-
-        {enableDeleteAction && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteAction(row, index);
-            }}
-            className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-            title={t("common.delete") || "Delete"}
-            data-stop-rowclick
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </button>
-        )}
-      </div>
-    );
   }
 
   return (
@@ -826,17 +585,6 @@ export function ListTemplate<
             <option value={100}>100</option>
             <option value={200}>200</option>
           </select>
-          {enableColumnVisibility && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowColumnSettings(true)}
-              className="rounded-md border border-gray-300 px-3 py-1 text-md hover:bg-gray-150"
-              title="Pengaturan kolom"
-            >
-              ⋮ {t("common.kolom.button.setting")}
-            </Button>
-          )}
         </div>
       </div>
 
@@ -845,28 +593,25 @@ export function ListTemplate<
         className="relative max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-gray-200 bg-white shadow-sm"
         style={{ scrollbarGutter: "stable both-edges" }}
       >
-        <table className="table-auto min-w-full w-max text-md border-collapse">
+        <table className="table-auto min-w-full w-max text-md  border-collapse">
           <thead className="bg-primary/20 font-bold text-md border-b-4 border-transparent">
             <tr>
               {/* kolom nomor urut */}
               <th
                 scope="col"
-                className="w-12 px-3 py-2 text-left sticky left-0 bg-primary/20 z-30"
+                className="w-12 px-3 py-2 text-left"
                 aria-label="Row number"
                 title="#"
               >
                 #
               </th>
-              {finalColumns.map((c) => {
+              {columns.map((c) => {
                 const active = sortBy === c.id;
-                const isActionCol = c.id === "_actions";
                 return (
                   <th
                     key={c.id}
                     scope="col"
-                    className={`px-3 py-2 text-left ${c.className ?? ""} ${
-                      isActionCol ? "sticky right-0 bg-primary/20 z-20" : ""
-                    }`}
+                    className={`px-3 py-2 text-left ${c.className ?? ""}`}
                   >
                     {c.sortable ? (
                       <button
@@ -892,8 +637,8 @@ export function ListTemplate<
             {loading ? (
               <tr>
                 <td
-                  colSpan={finalColumns.length + 1}
-                  className="p-4 text-center text-gray-500"
+                  colSpan={columns.length + 1}
+                  className="p-4 text-center  text-gray-500"
                 >
                   {t("common.loading")}
                 </td>
@@ -901,7 +646,7 @@ export function ListTemplate<
             ) : error ? (
               <tr>
                 <td
-                  colSpan={finalColumns.length + 1}
+                  colSpan={columns.length + 1}
                   className="p-4 text-center text-red-600"
                 >
                   {error}
@@ -910,7 +655,7 @@ export function ListTemplate<
             ) : viewItems.length === 0 ? (
               <tr>
                 <td
-                  colSpan={finalColumns.length + 1}
+                  colSpan={columns.length + 1}
                   className="p-4 text-center text-shadow-md text-gray-500"
                 >
                   {t("common.noData")}
@@ -952,23 +697,17 @@ export function ListTemplate<
                       }
                     >
                       {/* sel nomor urut */}
-                      <td className="px-2 py-1 align-top font-medium text-md text-gray-700 tabular-nums sticky left-0 bg-white z-10">
+                      <td className="px-2 py-1 align-top font-medium text-md text-gray-700 tabular-nums">
                         {seq}
                       </td>
-                      {finalColumns.map((c) => (
+                      {columns.map((c) => (
                         <td
                           key={c.id}
                           className={`px-2 py-1 align-top font-normal text-md text-gray-700 ${
                             c.className ?? ""
-                          } ${
-                            c.id === "_actions"
-                              ? "sticky right-0 bg-white z-10 border-l border-gray-200"
-                              : ""
                           }`}
                         >
-                          {c.id === "_actions"
-                            ? renderActionButtons(row, idx)
-                            : renderCellContent(row, c)}
+                          {renderCellContent(row, c)}
                         </td>
                       ))}
                     </tr>
@@ -1048,32 +787,13 @@ export function ListTemplate<
         </div>
       </div>
 
-      {/* NEW: Column Settings Dialog */}
-      {showColumnSettings && enableColumnVisibility && (
-        <ColumnSettingsDialog
-          columns={columns}
-          columnVisibility={columnVisibility}
-          onToggleColumn={toggleColumnVisibility}
-          onShowAll={showAllColumns}
-          onHideAll={hideAllColumns}
-          onReset={resetColumnVisibility}
-          onClose={() => setShowColumnSettings(false)}
-        />
-      )}
-
       {/* Confirm Dialog */}
       {confirm.open && (
-        <ConfirmDialog
-          type={confirm.type || "delete"}
+        <ConfirmDeleteDialog
           name={confirm.targetName}
           loading={loading}
-          detailsContent={confirm.detailsContent}
           onCancel={() => setConfirm({ open: false, targetId: null })}
-          onOk={() =>
-            confirm.type === "delete"
-              ? handleDelete(confirm.targetId)
-              : setConfirm({ open: false, targetId: null })
-          }
+          onOk={() => handleDelete(confirm.targetId)}
         />
       )}
     </div>
@@ -1104,54 +824,17 @@ export function ListTemplate<
     );
   }
 
-  function ConfirmDialog({
-    type = "delete",
+  function ConfirmDeleteDialog({
     name,
     onCancel,
     onOk,
     loading: isLoading,
-    detailsContent,
   }: {
-    type?: "delete" | "details";
     name?: string;
     onCancel: () => void;
     onOk: () => void;
     loading?: boolean;
-    detailsContent?: React.ReactNode;
   }) {
-    if (type === "details") {
-      return (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-2xl rounded-lg bg-white p-5 shadow-xl">
-            <h3 className="mb-4 text-lg font-semibold text-gray-800">
-              {t("common.details")} {name && `- ${name}`}
-            </h3>
-            <div className="mb-4 max-h-96 overflow-y-auto">
-              {detailsContent || (
-                <p className="text-gray-600">
-                  {t("common.noDetailsAvailable")}
-                </p>
-              )}
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
-                disabled={isLoading}
-              >
-                {t("common.close")}
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -1171,7 +854,7 @@ export function ListTemplate<
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+              className="rounded-md border px-3 py-1.5 text-sm"
               disabled={isLoading}
             >
               {t("common.cancel")}
@@ -1184,114 +867,6 @@ export function ListTemplate<
             >
               {isLoading ? t("common.loading") : "OK"}
             </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  function ColumnSettingsDialog({
-    columns,
-    columnVisibility,
-    onToggleColumn,
-    onShowAll,
-    onHideAll,
-    onReset,
-    onClose,
-  }: {
-    columns: ColumnDef<T>[];
-    columnVisibility: Record<string, boolean>;
-    onToggleColumn: (colId: string) => void;
-    onShowAll: () => void;
-    onHideAll: () => void;
-    onReset: () => void;
-    onClose: () => void;
-  }) {
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">
-              {t("common.dialog.columns.setup.title")}
-            </h3>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={onClose}
-              className="rounded-full p-1 hover:bg-gray-100"
-              aria-label="Tutup"
-            >
-              ✕
-            </Button>
-          </div>
-
-          <div className="mb-4 max-h-96 overflow-y-auto">
-            <div className="space-y-1">
-              {columns.map((col) => (
-                <label
-                  key={col.id}
-                  className="flex items-center gap-2 rounded-md p-1 hover:bg-gray-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={columnVisibility[col.id] !== false}
-                    onChange={() => onToggleColumn(col.id)}
-                    disabled={col.mandatory}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <span
-                    className={`flex-1 ${col.mandatory ? "font-semibold" : ""}`}
-                  >
-                    {col.label}
-                    {col.mandatory && (
-                      <span className="ml-1 text-xs text-gray-500">
-                        {t("common.dialog.columns.setup.spanmandatory")}
-                      </span>
-                    )}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 border-t pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onShowAll}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
-              {t("common.dialog.columns.setup.showall")}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onHideAll}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
-              {t("common.dialog.columns.setup.hideall")}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onReset}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
-              {t("common.dialog.columns.setup.resetdefault")}
-            </Button>
-            <Button
-              type="button"
-              variant="solid"
-              onClick={onClose}
-              className="ml-auto rounded-md bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary/90"
-            >
-              {t("common.dialog.columns.setup.button.save")}
-            </Button>
           </div>
         </div>
       </div>

@@ -42,6 +42,7 @@ export default function AddressesListPage() {
       sortValue: (r) => (r.name ?? "").toLowerCase(),
       className: "w-[60px]",
       cell: (r) => r.name ?? "-",
+      mandatory: true,
     },
     {
       id: "street",
@@ -50,6 +51,7 @@ export default function AddressesListPage() {
       sortValue: (r) => (r.street ?? "").toLowerCase(),
       className: "w-[60px]",
       cell: (r) => r.street ?? "-",
+      mandatory: true,
     },
     {
       id: "street2",
@@ -58,6 +60,7 @@ export default function AddressesListPage() {
       sortValue: (r) => (r.street2 ?? "").toLowerCase(),
       className: "w-[60px]",
       cell: (r) => r.street2 ?? "-",
+      defaultVisible: true,
     },
     {
       id: "district",
@@ -71,6 +74,7 @@ export default function AddressesListPage() {
       },
       className: "w-[60px]",
       cell: (r) => renderDistrict(r),
+      defaultVisible: true,
     },
     {
       id: "zip",
@@ -79,6 +83,7 @@ export default function AddressesListPage() {
       sortValue: (r) => (r.zip ?? "").toLowerCase(),
       className: "w-[60px]",
       cell: (r) => r.zip ?? "-",
+      defaultVisible: true,
     },
     {
       id: "email",
@@ -87,6 +92,7 @@ export default function AddressesListPage() {
       sortValue: (r) => (r.email ?? "").toLowerCase(),
       className: "w-[60px]",
       cell: (r) => r.email ?? "-",
+      defaultVisible: true,
     },
     {
       id: "mobile",
@@ -95,77 +101,78 @@ export default function AddressesListPage() {
       sortValue: (r) => (r.mobile ?? r.phone ?? "").toLowerCase(),
       className: "w-[60px]",
       cell: (r) => r.mobile ?? r.phone ?? "-",
+      defaultVisible: true,
     },
-    {
-      id: "actions",
-      label: "",
-      isAction: true,
-      className: "w-24",
-      cell: (it) => (
-        <div className="flex items-center gap-2">
-          {it.id != null ? (
-            <Link
-              data-stop-rowclick
-              href={`/orders/addresses/details?id=${encodeURIComponent(
-                String(it.id)
-              )}`}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-              aria-label="Edit address"
-              title="Edit"
-            >
-              <Icon name="pencil" className="h-3 w-3" />
-            </Link>
-          ) : (
-            <button
-              data-stop-rowclick
-              type="button"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-              title="Edit (unavailable)"
-              disabled
-            >
-              <Icon name="pencil" className="h-3 w-3" />
-            </button>
-          )}
+    // {
+    //   id: "actions",
+    //   label: "",
+    //   isAction: true,
+    //   className: "w-24",
+    //   cell: (it) => (
+    //     <div className="flex items-center gap-2">
+    //       {it.id != null ? (
+    //         <Link
+    //           data-stop-rowclick
+    //           href={`/orders/addresses/details?id=${encodeURIComponent(
+    //             String(it.id)
+    //           )}`}
+    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+    //           aria-label="Edit address"
+    //           title="Edit"
+    //         >
+    //           <Icon name="pencil" className="h-3 w-3" />
+    //         </Link>
+    //       ) : (
+    //         <button
+    //           data-stop-rowclick
+    //           type="button"
+    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+    //           title="Edit (unavailable)"
+    //           disabled
+    //         >
+    //           <Icon name="pencil" className="h-3 w-3" />
+    //         </button>
+    //       )}
 
-          {it.id != null ? (
-            <button
-              data-stop-rowclick
-              type="button"
-              onClick={() => {
-                // ListTemplate kini menangani event ini & membuka modal konfirmasi
-                const evt = new CustomEvent("llog.openDeleteConfirm", {
-                  detail: { id: it.id, name: it.name },
-                });
-                window.dispatchEvent(evt);
-              }}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-              aria-label="Delete address"
-              title="Delete"
-            >
-              <Icon
-                name="trash"
-                className="h-3 w-3 text-red-600"
-                strokeWidth={1.5}
-              />
-            </button>
-          ) : (
-            <button
-              data-stop-rowclick
-              type="button"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-              title="Delete (unavailable)"
-              disabled
-            >
-              <Icon
-                name="trash"
-                className="h-3 w-3 text-red-600"
-                strokeWidth={1.5}
-              />
-            </button>
-          )}
-        </div>
-      ),
-    },
+    //       {it.id != null ? (
+    //         <button
+    //           data-stop-rowclick
+    //           type="button"
+    //           onClick={() => {
+    //             // ListTemplate kini menangani event ini & membuka modal konfirmasi
+    //             const evt = new CustomEvent("llog.openDeleteConfirm", {
+    //               detail: { id: it.id, name: it.name },
+    //             });
+    //             window.dispatchEvent(evt);
+    //           }}
+    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+    //           aria-label="Delete address"
+    //           title="Delete"
+    //         >
+    //           <Icon
+    //             name="trash"
+    //             className="h-3 w-3 text-red-600"
+    //             strokeWidth={1.5}
+    //           />
+    //         </button>
+    //       ) : (
+    //         <button
+    //           data-stop-rowclick
+    //           type="button"
+    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+    //           title="Delete (unavailable)"
+    //           disabled
+    //         >
+    //           <Icon
+    //             name="trash"
+    //             className="h-3 w-3 text-red-600"
+    //             strokeWidth={1.5}
+    //           />
+    //         </button>
+    //       )}
+    //     </div>
+    //   ),
+    // },
   ];
   if (!i18nReady) return null;
   const leftHeader = (
@@ -187,12 +194,50 @@ export default function AddressesListPage() {
         key={"addresses-" + (t("lang") || "id")}
         fetchBase={`${USER_ADDRESS_URL}`}
         deleteBase={`${USER_ADDRESS_URL}`}
+        enableEditAction={true}
+        enableDetailsAction={true}
+        enableDeleteAction={true}
+        onEditAction={(id, row, index) => {
+          const ed_url = `/orders/addresses/details?id=${encodeURIComponent(
+            String(id)
+          )}`;
+          router.push(ed_url);
+        }}
+        onDetailsAction={(id, row, index) => {
+          console.log("{1} {2} {3}", id, row, index);
+        }}
+        getDetailsContent={(row, index) => {
+          return (
+            <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Name</span>
+                <span className="text-sm text-gray-900">{row.name}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Address
+                </span>
+                <span className="text-sm text-gray-900">
+                  {row.street} {row.street2 ?? ""}
+                  <br />
+                  {row.district_name}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Email</span>
+                <span className="text-sm text-gray-900">{row.email}</span>
+              </div>
+            </div>
+          );
+        }}
         columns={columns}
         searchPlaceholder={t("addresses.search.placeholder")}
         rowsPerPageLabel={t("addresses.rowsPerPage")}
         leftHeader={leftHeader}
         initialPageSize={80}
         initialSort={{ by: "id", dir: "desc" }}
+        enableColumnVisibility={true}
+        columnVisibilityStorageKey="addresses"
         postFetchTransform={(list) => list}
         rowNavigateTo={(id) => ({
           pathname: "orders/addresses/details",

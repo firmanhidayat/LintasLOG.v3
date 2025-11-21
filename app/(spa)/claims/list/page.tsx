@@ -8,29 +8,18 @@ import {
   type ColumnDef,
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link";
-import { Icon } from "@/components/icons/Icon";
+import { RecordItem } from "@/types/recorditem";
+import { StatusStep } from "@/types/status-delivery";
+import { useRouter } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
-const USE_STATIC = true;
-
-type ClaimStatus =
-  | "Pending"
-  | "Submitted"
-  | "In Review"
-  | "Approved"
-  | "Rejected"
-  | "Paid"
-  | "Closed";
-
+const CLAIMS_URL = process.env.NEXT_PUBLIC_TMS_CLAIMS_URL ?? "";
 type ClaimRow = {
   id: number | string;
-  claim_no: string; // No. Claim
-  jo_no: string; // No. JO
-  claim_date?: string; // ISO date
-  description?: string; // Description
-  order_type?: string; // Jenis Order
-  amount_total?: number; // Amount Total
-  status: ClaimStatus | string; // Status
+  description?: string;
+  date?: string;
+  purchase_order?: RecordItem;
+  amount?: number;
+  states: StatusStep;
 };
 
 function fmtDate(d?: string) {
@@ -78,185 +67,133 @@ function StatusPill({ value }: { value: string }) {
   );
 }
 
-/** Dummy data (aktif jika NEXT_PUBLIC_DUMMY=1) */
-const DEMO_CLAIMS: ClaimRow[] = [
-  {
-    id: 101,
-    claim_no: "CLM-2025-0001",
-    jo_no: "JO-2025-0002",
-    claim_date: "2025-10-06",
-    description: "Kerusakan kemasan sebagian",
-    order_type: "LTL",
-    amount_total: 450_000,
-    status: "In Review",
-  },
-  {
-    id: 102,
-    claim_no: "CLM-2025-0002",
-    jo_no: "JO-2025-0003",
-    claim_date: "2025-10-05",
-    description: "Keterlambatan 1 hari",
-    order_type: "FTL",
-    amount_total: 250_000,
-    status: "Approved",
-  },
-  {
-    id: 103,
-    claim_no: "CLM-2025-0003",
-    jo_no: "JO-2025-0001",
-    claim_date: "2025-10-04",
-    description: "Hilang 1 karton",
-    order_type: "Container",
-    amount_total: 1_250_000,
-    status: "Pending",
-  },
-];
-
 export default function ClaimsListPage() {
+  const router = useRouter();
   const { i18nReady, activeLang } = useI18nReady();
-
-  // FIX 1: panggil useMemo TANPA kondisi.
-  // FIX 2: gunakan i18nReady DI DALAM memo agar t() hanya dipanggil jika siap.
-  // FIX 3: "baca" activeLang (dipakai di ekspresi) supaya dependency valid.
   const columns = useMemo<ColumnDef<ClaimRow>[]>(() => {
     const L = (key: string, fallback: string) =>
       i18nReady && activeLang ? t(key) || fallback : fallback;
 
     return [
       {
-        id: "claim_no",
+        id: "description",
         label: L("claims.columns.claimNo", "No. Claim"),
         sortable: true,
-        sortValue: (r) => r.claim_no.toLowerCase(),
+        // sortValue: (r) => r.description?.toLowerCase(),
         className: "w-40",
         cell: (r) => (
-          <div className="font-medium text-gray-900">{r.claim_no}</div>
+          <div className="font-medium text-gray-900">{r.description}</div>
         ),
+        mandatory: true,
       },
       {
-        id: "jo_no",
+        id: "purchase_order",
         label: L("claims.columns.joNo", "No. JO"),
         sortable: true,
-        sortValue: (r) => r.jo_no.toLowerCase(),
+        // sortValue: (r) => r.purchase_order?.name.toLowerCase(),
         className: "w-36",
-        cell: (r) => r.jo_no,
+        cell: (r) => r.purchase_order?.name,
+        mandatory: true,
       },
       {
-        id: "claim_date",
+        id: "date",
         label: L("claims.columns.claimDate", "Claim Date"),
         sortable: true,
-        sortValue: (r) => r.claim_date ?? "",
+        sortValue: (r) => r.date ?? "",
         className: "w-36",
-        cell: (r) => fmtDate(r.claim_date),
+        cell: (r) => fmtDate(r.date),
+        defaultVisible: true,
       },
+
       {
-        id: "description",
-        label: L("claims.columns.description", "Description"),
-        sortable: true,
-        sortValue: (r) => (r.description ?? "").toLowerCase(),
-        className: "min-w-60",
-        cell: (r) => r.description?.trim() || "-",
-      },
-      {
-        id: "order_type",
-        label: L("claims.columns.orderType", "Jenis Order"),
-        sortable: true,
-        sortValue: (r) => (r.order_type ?? "").toLowerCase(),
-        className: "w-36",
-        cell: (r) => r.order_type ?? "-",
-      },
-      {
-        id: "amount_total",
+        id: "amount",
         label: L("claims.columns.amountTotal", "Amount Total"),
         sortable: true,
-        sortValue: (r) => String(r.amount_total ?? ""),
+        sortValue: (r) => String(r.amount ?? ""),
         className: "w-40 text-right",
-        cell: (r) => (
-          <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
-        ),
+        cell: (r) => <span className="tabular-nums">{fmtPrice(r.amount)}</span>,
+        defaultVisible: true,
       },
       {
-        id: "status",
+        id: "states",
         label: L("claims.columns.status", "Status"),
         sortable: true,
-        sortValue: (r) => String(r.status),
+        sortValue: (r) => String(r.states.label),
         className: "w-40",
-        cell: (r) => <StatusPill value={String(r.status)} />,
+        cell: (r) => <StatusPill value={String(r.states.label)} />,
+        defaultVisible: true,
       },
-      {
-        id: "actions",
-        label: "",
-        isAction: true,
-        className: "w-20",
-        cell: (it) => (
-          <div className="flex items-center gap-2">
-            {it.id != null ? (
-              <Link
-                data-stop-rowclick
-                href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Edit address"
-                title="Edit"
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </Link>
-            ) : (
-              <button
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Edit (unavailable)"
-                disabled
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </button>
-            )}
+      // {
+      //   id: "actions",
+      //   label: "",
+      //   isAction: true,
+      //   className: "w-20",
+      //   cell: (it) => (
+      //     <div className="flex items-center gap-2">
+      //       {it.id != null ? (
+      //         <Link
+      //           data-stop-rowclick
+      //           href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
+      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+      //           aria-label="Edit address"
+      //           title="Edit"
+      //         >
+      //           <Icon name="pencil" className="h-3 w-3" />
+      //         </Link>
+      //       ) : (
+      //         <button
+      //           data-stop-rowclick
+      //           type="button"
+      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+      //           title="Edit (unavailable)"
+      //           disabled
+      //         >
+      //           <Icon name="pencil" className="h-3 w-3" />
+      //         </button>
+      //       )}
 
-            {it.id != null ? (
-              <button
-                data-stop-rowclick
-                type="button"
-                onClick={() => {
-                  // ListTemplate kini menangani event ini & membuka modal konfirmasi
-                  const evt = new CustomEvent("llog.openDeleteConfirm", {
-                    detail: { id: it.id, name: it.claim_no },
-                  });
-                  window.dispatchEvent(evt);
-                }}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Delete address"
-                title="Delete"
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            ) : (
-              <button
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Delete (unavailable)"
-                disabled
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            )}
-          </div>
-        ),
-      },
+      //       {it.id != null ? (
+      //         <button
+      //           data-stop-rowclick
+      //           type="button"
+      //           onClick={() => {
+      //             // ListTemplate kini menangani event ini & membuka modal konfirmasi
+      //             const evt = new CustomEvent("llog.openDeleteConfirm", {
+      //               detail: { id: it.id, name: it.purchase_order?.name },
+      //             });
+      //             window.dispatchEvent(evt);
+      //           }}
+      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+      //           aria-label="Delete address"
+      //           title="Delete"
+      //         >
+      //           <Icon
+      //             name="trash"
+      //             className="h-3 w-3 text-red-600"
+      //             strokeWidth={1.5}
+      //           />
+      //         </button>
+      //       ) : (
+      //         <button
+      //           data-stop-rowclick
+      //           type="button"
+      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+      //           title="Delete (unavailable)"
+      //           disabled
+      //         >
+      //           <Icon
+      //             name="trash"
+      //             className="h-3 w-3 text-red-600"
+      //             strokeWidth={1.5}
+      //           />
+      //         </button>
+      //       )}
+      //     </div>
+      //   ),
+      // },
     ];
   }, [i18nReady, activeLang]);
-
-  // Setelah semua hook dipanggil, baru boleh guard render
   if (!i18nReady) return null;
-
   const leftHeader = (
     <div className="flex items-center gap-2">
       <Link
@@ -267,26 +204,52 @@ export default function ClaimsListPage() {
       </Link>
     </div>
   );
-
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<ClaimRow>
-        fetchBase={`${API_BASE}/api-tms/claims/list`} // diabaikan jika staticData aktif
-        deleteBase={`${API_BASE}/api-tms/claims`} // diabaikan jika staticData aktif
+        fetchBase={`${CLAIMS_URL}`}
+        deleteBase={`${CLAIMS_URL}`}
+        enableEditAction={true}
+        enableDetailsAction={true}
+        enableDeleteAction={true}
+        onEditAction={(id, row, index) => {
+          const ed_url = `/claims/details?id=${encodeURIComponent(String(id))}`;
+          router.push(ed_url);
+        }}
+        onDetailsAction={(id, row, index) => {
+          console.log("{1} {2} {3}", id, row, index);
+        }}
+        getDetailsContent={(row, index) => {
+          return (
+            <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Order</span>
+                <span className="text-sm text-gray-900">
+                  {row.purchase_order?.name}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Date</span>
+                <span className="text-sm text-gray-900">
+                  {fmtDate(row.date)}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Description
+                </span>
+                <span className="text-sm text-gray-900">{row.description}</span>
+              </div>
+            </div>
+          );
+        }}
         columns={columns}
         searchPlaceholder={t("claims.search.placeholder") || "Cari claim..."}
         rowsPerPageLabel={t("claims.rowsPerPage") || "Baris per halaman"}
         leftHeader={leftHeader}
-        initialSort={{ by: "claim_date", dir: "desc" }}
-        getRowName={(r) => r.claim_no}
-        staticData={USE_STATIC ? DEMO_CLAIMS : undefined}
-        staticSearch={(row, q) =>
-          row.claim_no.toLowerCase().includes(q) ||
-          row.jo_no.toLowerCase().includes(q) ||
-          (row.description ?? "").toLowerCase().includes(q) ||
-          (row.order_type ?? "").toLowerCase().includes(q) ||
-          String(row.status).toLowerCase().includes(q)
-        }
+        initialSort={{ by: "date", dir: "desc" }}
+        enableColumnVisibility={true}
+        columnVisibilityStorageKey="claims-shipper-trans"
         rowNavigateTo={(id) => ({ pathname: "claims/details", query: { id } })}
       />
     </div>

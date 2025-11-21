@@ -132,5 +132,17 @@
         "zip": "ZIP",
         "drivers_license": "Driver License",
         "drivers_license_expiry": "Driver License Expiry"
+    },
+    "pl": {
+        "no": "No.",
+        "name": "Name",
+        "moda": "Moda",
+        "cargo_type": "Cargo Type",
+        "origin": "Origin",
+        "destination": "Destination",
+        "min_qty": "Min. Qty",
+        "price": "Price",
+        "date_start": "Valid from",
+        "date_end": "Valid to"
     }
 }

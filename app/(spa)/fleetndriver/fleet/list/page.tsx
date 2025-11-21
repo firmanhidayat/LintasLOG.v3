@@ -47,6 +47,7 @@ export default function FleetListPage() {
         sortValue: (info) => String(info.name ?? ""),
         cell: (info) => info.name,
         className: "w-65",
+        mandatory: true,
       },
       {
         id: "model_year",
@@ -55,6 +56,7 @@ export default function FleetListPage() {
         sortValue: (info) => String(info.model_year ?? ""),
         cell: (info) => info.model_year,
         className: "w-25",
+        mandatory: true,
       },
       {
         id: "license_plate",
@@ -63,6 +65,7 @@ export default function FleetListPage() {
         sortValue: (info) => String(info.license_plate ?? ""),
         cell: (info) => info.license_plate,
         className: "w-35",
+        defaultVisible: true,
       },
       {
         id: "acquisition_date",
@@ -71,6 +74,7 @@ export default function FleetListPage() {
         sortValue: (info) => String(info.acquisition_date ?? ""),
         cell: (info) => fmtDate(info.acquisition_date as string),
         className: "w-30",
+        defaultVisible: true,
       },
       {
         id: "write_off_date",
@@ -79,82 +83,83 @@ export default function FleetListPage() {
         sortValue: (info) => String(info.write_off_date ?? ""),
         cell: (info) => fmtDate(info.write_off_date as string),
         className: "w-30",
+        defaultVisible: true,
       },
-      {
-        id: "actions",
-        label: "",
-        header: "",
-        isAction: true,
-        className: "w-20",
-        cell: (it) => (
-          <div className="flex items-center gap-2">
-            {it.id != null ? (
-              <Link
-                // hidden
-                data-stop-rowclick
-                href={`/fleetndriver/fleet/details?id=${encodeURIComponent(
-                  String(it.id)
-                )}`}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Edit fleet"
-                title="Edit"
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </Link>
-            ) : (
-              <button
-                // hidden
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Edit (unavailable)"
-                disabled
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </button>
-            )}
+      // {
+      //   id: "actions",
+      //   label: "",
+      //   header: "",
+      //   isAction: true,
+      //   className: "w-20",
+      //   cell: (it) => (
+      //     <div className="flex items-center gap-2">
+      //       {it.id != null ? (
+      //         <Link
+      //           // hidden
+      //           data-stop-rowclick
+      //           href={`/fleetndriver/fleet/details?id=${encodeURIComponent(
+      //             String(it.id)
+      //           )}`}
+      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+      //           aria-label="Edit fleet"
+      //           title="Edit"
+      //         >
+      //           <Icon name="pencil" className="h-3 w-3" />
+      //         </Link>
+      //       ) : (
+      //         <button
+      //           // hidden
+      //           data-stop-rowclick
+      //           type="button"
+      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+      //           title="Edit (unavailable)"
+      //           disabled
+      //         >
+      //           <Icon name="pencil" className="h-3 w-3" />
+      //         </button>
+      //       )}
 
-            {it.id != null ? (
-              <button
-                // hidden
-                data-stop-rowclick
-                type="button"
-                onClick={() => {
-                  // ListTemplate kini menangani event ini & membuka modal konfirmasi
-                  const evt = new CustomEvent("llog.openDeleteConfirm", {
-                    detail: { id: it.id, name: it.model.name },
-                  });
-                  window.dispatchEvent(evt);
-                }}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Delete address"
-                title="Delete"
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            ) : (
-              <button
-                // hidden
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Delete (unavailable)"
-                disabled
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            )}
-          </div>
-        ),
-      },
+      //       {it.id != null ? (
+      //         <button
+      //           // hidden
+      //           data-stop-rowclick
+      //           type="button"
+      //           onClick={() => {
+      //             // ListTemplate kini menangani event ini & membuka modal konfirmasi
+      //             const evt = new CustomEvent("llog.openDeleteConfirm", {
+      //               detail: { id: it.id, name: it.model.name },
+      //             });
+      //             window.dispatchEvent(evt);
+      //           }}
+      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
+      //           aria-label="Delete address"
+      //           title="Delete"
+      //         >
+      //           <Icon
+      //             name="trash"
+      //             className="h-3 w-3 text-red-600"
+      //             strokeWidth={1.5}
+      //           />
+      //         </button>
+      //       ) : (
+      //         <button
+      //           // hidden
+      //           data-stop-rowclick
+      //           type="button"
+      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
+      //           title="Delete (unavailable)"
+      //           disabled
+      //         >
+      //           <Icon
+      //             name="trash"
+      //             className="h-3 w-3 text-red-600"
+      //             strokeWidth={1.5}
+      //           />
+      //         </button>
+      //       )}
+      //     </div>
+      //   ),
+      // },
     ];
   }, [activeLang]);
   if (!i18nReady) return null;
@@ -175,11 +180,62 @@ export default function FleetListPage() {
       <ListTemplate<FleetsRow>
         fetchBase={`${FLEETS_URL}`}
         deleteBase={`${FLEETS_URL}`}
+        enableEditAction={true}
+        enableDetailsAction={true}
+        enableDeleteAction={true}
+        onEditAction={(id, row, index) => {
+          const ed_url = `/fleetndriver/fleet/details?id=${encodeURIComponent(
+            String(id)
+          )}`;
+          router.push(ed_url);
+        }}
+        onDetailsAction={(id, row, index) => {
+          console.log("{1} {2} {3}", id, row, index);
+        }}
+        getDetailsContent={(row, index) => {
+          return (
+            <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Name</span>
+                <span className="text-sm text-gray-900">{row.name}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Model</span>
+                <span className="text-sm text-gray-900">{row.model.name}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Model Year
+                </span>
+                <span className="text-sm text-gray-900">{row.model_year}</span>
+              </div>
+
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Kir Expiry
+                </span>
+                <span className="text-sm text-gray-900">
+                  {fmtDate(row.kir_expiry)}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  License Plate
+                </span>
+                <span className="text-sm text-gray-900">
+                  {row.license_plate}
+                </span>
+              </div>
+            </div>
+          );
+        }}
         columns={columns}
         searchPlaceholder={t("invoices.search.placeholder")}
         rowsPerPageLabel={t("invoices.rowsPerPage")}
         leftHeader={leftHeader}
         initialSort={{ by: "id", dir: "desc" }}
+        enableColumnVisibility={true}
+        columnVisibilityStorageKey="fleet-trans"
         getRowName={(r) => r.model.name}
         rowNavigateTo={(id) => ({
           pathname: "fleetndriver/fleet/details",

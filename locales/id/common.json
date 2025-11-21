@@ -45,7 +45,31 @@
         "saved_desc": "Data berhasil disimpan",
         "failed_to_save": "Telah terjadi kesalahan",
         "search_fleet": "Pilih kendaraan",
-        "search_driver": "Pilih pengemudi"
+        "search_driver": "Pilih pengemudi",
+        "kolom": {
+            "button": {
+                "setting": "Atur Kolom"
+            }
+        },
+        "dialog": {
+            "columns": {
+                "setup": {
+                    "title": "Pengaturan Kolom",
+                    "spanmandatory": "(wajib)",
+                    "showall": "Tampilkan Semua",
+                    "hideall": "Sembunyikan Semua",
+                    "resetdefault": "Reset ke Default",
+                    "button": {
+                        "save": "Simpan"
+                    }
+                }
+            }
+        },
+        "actions": "",
+        "details": "Info",
+        "close": "Tutupe",
+        "edit": "Ubah",
+        "delete": "Hapus"
     },
     "form": {
         "required": "wajib diisi",

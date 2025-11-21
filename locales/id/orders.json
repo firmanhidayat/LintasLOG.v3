@@ -132,5 +132,17 @@
         "zip": "Kode Pos",
         "drivers_license": "SIM",
         "drivers_license_expiry": "SIM Kadaluwarsa"
+    },
+    "pl": {
+        "no": "No.",
+        "name": "Nama",
+        "moda": "Moda",
+        "cargo_type": "Jenis cargo",
+        "origin": "Asal",
+        "destination": "Tujuan",
+        "min_qty": "Jumlah minimal",
+        "price": "Harga",
+        "date_start": "Tanggal awal",
+        "date_end": "Tanggal akhir"
     }
 }

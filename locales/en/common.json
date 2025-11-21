@@ -45,7 +45,31 @@
         "saved_desc": "Save successfully",
         "failed_to_save": "Something went wrong",
         "search_fleet": "Pick a fleet",
-        "search_driver": "Pick a driver"
+        "search_driver": "Pick a driver",
+        "kolom": {
+            "button": {
+                "setting": "Column Setting"
+            }
+        },
+        "dialog": {
+            "columns": {
+                "setup": {
+                    "title": "Columns Setting",
+                    "spanmandatory": "(mandatory)",
+                    "showall": "Show All",
+                    "hideall": "Hide All",
+                    "resetdefault": "Reset to Default",
+                    "button": {
+                        "save": "Save"
+                    }
+                }
+            }
+        },
+        "actions": "",
+        "details": "Info",
+        "close": "Close",
+        "edit": "Modify",
+        "delete": "Delete"
     },
     "form": {
         "required": "required",

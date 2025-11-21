@@ -7,8 +7,6 @@ import {
   ListTemplate,
   type ColumnDef,
 } from "@/components/datagrid/ListTemplate";
-import Link from "next/link"; // ⟵ dihapus, diganti Button
-import { Icon } from "@/components/icons/Icon";
 import { OrderRow, POrderRow } from "@/types/orders";
 import { fmtDate, fmtPrice } from "@/lib/helpers";
 import { GetStatesInLine } from "@/components/ui/DeliveryState";
@@ -36,6 +34,7 @@ export default function OrdersListPage() {
       sortable: true,
       sortValue: (r) => r.name ?? "",
       className: "w-[60px]",
+      mandatory: true,
       cell: (r) => <div className="font-medium text-gray-900">{r.name}</div>,
     },
     {
@@ -44,6 +43,7 @@ export default function OrdersListPage() {
       sortable: true,
       sortValue: (r) => r.pickup_date_planne ?? "",
       className: "w-[60px]",
+      defaultVisible: true,
       cell: (r) =>
         r.route_ids.length > 0
           ? r.route_ids[0].is_main_route
@@ -57,6 +57,7 @@ export default function OrdersListPage() {
       sortable: true,
       sortValue: (r) => (r.origin_city?.name ?? "").toLowerCase(),
       className: "w-[60px]",
+      defaultVisible: true,
       cell: (r) => (
         <span className="text-gray-700">{r.origin_city?.name ?? "-"}</span>
       ),
@@ -67,6 +68,7 @@ export default function OrdersListPage() {
       sortable: true,
       sortValue: (r) => r.drop_off_date_planne ?? "",
       className: "w-[60px]",
+      defaultVisible: true,
       cell: (r) =>
         r.route_ids.length > 0
           ? r.route_ids[0].is_main_route
@@ -80,6 +82,7 @@ export default function OrdersListPage() {
       sortable: true,
       sortValue: (r) => (r.dest_city?.name ?? "").toLowerCase(),
       className: "w-[60px]",
+      defaultVisible: true,
       cell: (r) => (
         <span className="text-gray-700">{r.dest_city?.name ?? "-"}</span>
       ),
@@ -88,6 +91,7 @@ export default function OrdersListPage() {
       id: "special_request",
       label: t("orders.columns.specialRequest") || "Permintaan Khusus",
       sortable: true,
+      defaultVisible: true,
       sortValue: (r) => (r.requirement_other ?? "").toLowerCase(),
       className: "w-[100px]",
       cell: (r) => r.requirement_other?.trim() || "-",
@@ -96,6 +100,7 @@ export default function OrdersListPage() {
       id: "price",
       label: t("orders.columns.price") || "Harga",
       sortable: true,
+      defaultVisible: true,
       sortValue: (r) => String(r.amount_total ?? ""),
       className: "w-[56px] text-right",
       cell: (r) => (
@@ -106,6 +111,7 @@ export default function OrdersListPage() {
       id: "status",
       label: t("orders.columns.status") || "Status",
       sortable: true,
+      mandatory: true,
       sortValue: (r) =>
         r.tms_states.find((s) => s.is_current)?.key || "unknown",
       className: "w-[32px]",
@@ -120,7 +126,7 @@ export default function OrdersListPage() {
         ),
     },
   ];
-  // Tambahkan container wrapper dan perbaiki width
+
   const columns: ColumnDef<OrderRow>[] = [
     {
       id: "jo_no",
@@ -131,6 +137,7 @@ export default function OrdersListPage() {
       cell: (r) => (
         <div className="font-medium text-gray-900 truncate">{r.name}</div>
       ),
+      mandatory: true,
     },
     {
       id: "pickup_date",
@@ -147,6 +154,7 @@ export default function OrdersListPage() {
             : "-"}
         </div>
       ),
+      defaultVisible: true,
     },
     {
       id: "pickup_to",
@@ -159,6 +167,7 @@ export default function OrdersListPage() {
           {r.origin_city?.name ?? "-"}
         </span>
       ),
+      defaultVisible: true,
     },
     {
       id: "drop_date",
@@ -175,6 +184,7 @@ export default function OrdersListPage() {
             : "-"}
         </div>
       ),
+      defaultVisible: true,
     },
     {
       id: "drop_to",
@@ -187,6 +197,7 @@ export default function OrdersListPage() {
           {r.dest_city?.name ?? "-"}
         </span>
       ),
+      defaultVisible: true,
     },
     {
       id: "special_request",
@@ -197,6 +208,7 @@ export default function OrdersListPage() {
       cell: (r) => (
         <div className="truncate">{r.requirement_other?.trim() || "-"}</div>
       ),
+      defaultVisible: false,
     },
     {
       id: "price",
@@ -209,6 +221,7 @@ export default function OrdersListPage() {
           {fmtPrice(r.amount_total)}
         </span>
       ),
+      defaultVisible: true,
     },
 
     {
@@ -229,6 +242,7 @@ export default function OrdersListPage() {
           )}
         </div>
       ),
+      mandatory: true,
     },
     // {
     //   id: "blankColumn",
@@ -236,73 +250,74 @@ export default function OrdersListPage() {
     //   className: "min-w-[80px] max-w-[100px] text-center",
     //   cell: (r) => <span>&nbsp;</span>,
     // },
-    {
-      id: "actions",
-      label: "",
-      isAction: true,
-      className: "min-w-[70px] max-w-[90px] sticky right-0",
-      cell: (it) => (
-        <div className="flex items-center gap-2 justify-end  bg-white">
-          {it.id != null ? (
-            <Link
-              data-stop-rowclick
-              href={`/orders/details?id=${encodeURIComponent(String(it.id))}`}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100 shrink-0"
-              aria-label="Edit address"
-              title="Edit"
-            >
-              <Icon name="pencil" className="h-3 w-3" />
-            </Link>
-          ) : (
-            <button
-              data-stop-rowclick
-              type="button"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50 shrink-0"
-              title="Edit (unavailable)"
-              disabled
-            >
-              <Icon name="pencil" className="h-3 w-3" />
-            </button>
-          )}
+    // {
+    //   id: "actions",
+    //   label: "",
+    //   isAction: true,
+    //   className: "min-w-[70px] max-w-[90px] sticky right-0",
+    //   mandatory: true,
+    //   cell: (it) => (
+    //     <div className="flex items-center gap-2 justify-end  bg-white">
+    //       {it.id != null ? (
+    //         <Link
+    //           data-stop-rowclick
+    //           href={`/orders/details?id=${encodeURIComponent(String(it.id))}`}
+    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100 shrink-0"
+    //           aria-label="Edit address"
+    //           title="Edit"
+    //         >
+    //           <Icon name="pencil" className="h-3 w-3" />
+    //         </Link>
+    //       ) : (
+    //         <button
+    //           data-stop-rowclick
+    //           type="button"
+    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50 shrink-0"
+    //           title="Edit (unavailable)"
+    //           disabled
+    //         >
+    //           <Icon name="pencil" className="h-3 w-3" />
+    //         </button>
+    //       )}
 
-          {it.id != null ? (
-            <button
-              data-stop-rowclick
-              type="button"
-              onClick={() => {
-                const evt = new CustomEvent("llog.openDeleteConfirm", {
-                  detail: { id: it.id, name: it.name },
-                });
-                window.dispatchEvent(evt);
-              }}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100 shrink-0"
-              aria-label="Delete address"
-              title="Delete"
-            >
-              <Icon
-                name="trash"
-                className="h-3 w-3 text-red-600"
-                strokeWidth={1.5}
-              />
-            </button>
-          ) : (
-            <button
-              data-stop-rowclick
-              type="button"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50 shrink-0"
-              title="Delete (unavailable)"
-              disabled
-            >
-              <Icon
-                name="trash"
-                className="h-3 w-3 text-red-600"
-                strokeWidth={1.5}
-              />
-            </button>
-          )}
-        </div>
-      ),
-    },
+    //       {it.id != null ? (
+    //         <button
+    //           data-stop-rowclick
+    //           type="button"
+    //           onClick={() => {
+    //             const evt = new CustomEvent("llog.openDeleteConfirm", {
+    //               detail: { id: it.id, name: it.name },
+    //             });
+    //             window.dispatchEvent(evt);
+    //           }}
+    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100 shrink-0"
+    //           aria-label="Delete address"
+    //           title="Delete"
+    //         >
+    //           <Icon
+    //             name="trash"
+    //             className="h-3 w-3 text-red-600"
+    //             strokeWidth={1.5}
+    //           />
+    //         </button>
+    //       ) : (
+    //         <button
+    //           data-stop-rowclick
+    //           type="button"
+    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50 shrink-0"
+    //           title="Delete (unavailable)"
+    //           disabled
+    //         >
+    //           <Icon
+    //             name="trash"
+    //             className="h-3 w-3 text-red-600"
+    //             strokeWidth={1.5}
+    //           />
+    //         </button>
+    //       )}
+    //     </div>
+    //   ),
+    // },
   ];
 
   if (!i18nReady) return null;
@@ -327,12 +342,54 @@ export default function OrdersListPage() {
           key={"orders-" + (t("lang") || "id")}
           fetchBase={`${GET_ORDERS_URL}`}
           deleteBase={`${GET_ORDERS_URL}`}
+          enableEditAction={true}
+          enableDetailsAction={true}
+          enableDeleteAction={true}
+          onEditAction={(id, row, index) => {
+            const ed_url = `/orders/details?id=${encodeURIComponent(
+              String(id)
+            )}`;
+            router.push(ed_url);
+          }}
+          onDetailsAction={(id, row, index) => {
+            console.log("{1} {2} {3}", id, row, index);
+          }}
+          getDetailsContent={(row, index) => {
+            return (
+              <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-500">
+                    Order
+                  </span>
+                  <span className="text-sm text-gray-900">{row.name}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-500">
+                    Origin
+                  </span>
+                  <span className="text-sm text-gray-900">
+                    {row.origin_city?.name}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-500">
+                    Destination
+                  </span>
+                  <span className="text-sm text-gray-900">
+                    {row.dest_city?.name}
+                  </span>
+                </div>
+              </div>
+            );
+          }}
           columns={columns}
           searchPlaceholder={t("orders.search.placeholder")}
           rowsPerPageLabel={t("orders.rowsPerPage")}
           leftHeader={leftHeader}
           initialPageSize={80}
           initialSort={{ by: "id", dir: "desc" }}
+          enableColumnVisibility={true}
+          columnVisibilityStorageKey="order-shipper"
           postFetchTransform={(list) => list}
           rowNavigateTo={(id) => ({
             pathname: "orders/details",
@@ -344,10 +401,53 @@ export default function OrdersListPage() {
           key={"orders-" + (t("lang") || "id")}
           fetchBase={`${GET_P_ORDERS_URL}`}
           deleteBase={`${GET_P_ORDERS_URL}`}
+          enableEditAction={true}
+          enableDetailsAction={true}
+          enableDeleteAction={true}
+          onEditAction={(id, row, index) => {
+            // router.push(`/edit/${id}`);
+            const ed_url = `/orders/details?id=${encodeURIComponent(
+              String(id)
+            )}`;
+            router.push(ed_url);
+          }}
+          onDetailsAction={(id, row, index) => {
+            console.log("{1} {2} {3}", id, row, index);
+          }}
+          getDetailsContent={(row, index) => {
+            return (
+              <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-500">
+                    Order
+                  </span>
+                  <span className="text-sm text-gray-900">{row.name}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-500">
+                    Origin
+                  </span>
+                  <span className="text-sm text-gray-900">
+                    {row.origin_city?.name}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-500">
+                    Destination
+                  </span>
+                  <span className="text-sm text-gray-900">
+                    {row.dest_city?.name}
+                  </span>
+                </div>
+              </div>
+            );
+          }}
           columns={columnsPO}
           searchPlaceholder={t("orders.search.placeholder")}
           rowsPerPageLabel={t("orders.rowsPerPage")}
           // leftHeader={isShipper ? leftHeader : undefined}
+          enableColumnVisibility={true}
+          columnVisibilityStorageKey="order-transporter"
           initialPageSize={80}
           initialSort={{ by: "id", dir: "desc" }}
           postFetchTransform={(list) => list}

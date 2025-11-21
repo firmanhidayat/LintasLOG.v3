@@ -7,9 +7,7 @@ import {
   ListTemplate,
   type ColumnDef,
 } from "@/components/datagrid/ListTemplate";
-import Link from "next/link";
-import { Icon } from "@/components/icons/Icon";
-import { CityItem, ModaItem, OrderTypeItem } from "@/types/orders";
+import { CityItem, ModaItem } from "@/types/orders";
 import { fmtDate, fmtPrice } from "@/lib/helpers";
 
 const PL_URL = process.env.NEXT_PUBLIC_TMS_PRICELIST_URL ?? "";
@@ -17,8 +15,8 @@ const PL_URL = process.env.NEXT_PUBLIC_TMS_PRICELIST_URL ?? "";
 type PriceListRow = {
   id: number | string;
   name: string;
-  order_type: OrderTypeItem;
   moda: ModaItem;
+  cargo_type: string;
   origin_district: CityItem;
   dest_district: CityItem;
   min_quantity: number | string;
@@ -26,20 +24,7 @@ type PriceListRow = {
   date_start: string;
   date_end: string;
 };
-const DEMO_PRICELIST: PriceListRow[] = [
-  {
-    id: 1,
-    name: "Jasa Pengiriman TLS",
-    order_type: { id: 1, name: "LTL" },
-    moda: { id: 1, name: "Truck" },
-    origin_district: { id: 1, name: "Jakarta" },
-    dest_district: { id: 2, name: "Bandung" },
-    min_quantity: 0,
-    price: 1500000,
-    date_start: "2024-01-01",
-    date_end: "2024-12-31",
-  },
-];
+
 export default function FinancePriceListPage() {
   const { i18nReady, activeLang } = useI18nReady();
 
@@ -47,157 +32,94 @@ export default function FinancePriceListPage() {
     return [
       {
         id: "id",
-        label: t("No."),
+        label: t("pl.no"),
         sortable: true,
         sortValue: (info) => String(info.id ?? ""),
         cell: (info) => info.id,
         className: "w-44",
+        defaultVisible: false,
       },
       {
         id: "name",
-        label: t("Name"),
+        label: t("pl.name"),
         sortable: true,
         sortValue: (info) => String(info.name ?? ""),
         cell: (info) => info.name,
         className: "w-44",
+        mandatory: true,
       },
-      {
-        id: "order_type",
-        label: t("Order Type"),
-        sortable: true,
-        sortValue: (info) => String(info.id ?? ""),
-        cell: (info) => info.order_type.name,
-        className: "w-44",
-      },
+      // {
+      //   id: "order_type",
+      //   label: t("Order Type"),
+      //   sortable: true,
+      //   sortValue: (info) => String(info.id ?? ""),
+      //   cell: (info) => info.order_type.name,
+      //   className: "w-44",
+      //   mandatory: true,
+      // },
       {
         id: "moda",
-        label: t("Moda"),
+        label: t("pl.moda"),
         sortable: true,
         sortValue: (info) => String(info.id ?? ""),
         cell: (info) => info.moda.name,
         className: "w-44",
+        defaultVisible: true,
       },
       {
         id: "origin_district",
-        label: t("Origin"),
+        label: t("pl.origin"),
         sortable: true,
         sortValue: (info) => String(info.id ?? ""),
         cell: (info) => info.origin_district.name,
         className: "w-44",
+        defaultVisible: true,
       },
       {
         id: "dest_district",
-        label: t("Destination"),
+        label: t("pl.destination"),
         sortable: true,
         sortValue: (info) => String(info.id ?? ""),
         cell: (info) => info.dest_district.name,
         className: "w-44",
+        defaultVisible: true,
       },
       {
         id: "date_start",
-        label: t("Valid From"),
+        label: t("pl.date_start"),
         sortable: true,
         sortValue: (info) => String(info.id ?? ""),
         cell: (info) => fmtDate(info.date_start as string),
         className: "w-44",
+        defaultVisible: false,
       },
       {
         id: "date_end",
-        label: t("Valid To"),
+        label: t("pl.date_end"),
         sortable: true,
         sortValue: (info) => String(info.id ?? ""),
         cell: (info) => fmtDate(info.date_end as string),
         className: "w-44",
+        defaultVisible: false,
       },
 
       {
         id: "min_quantity",
-        label: t("Price"),
+        label: t("pl.min_qty"),
         sortable: true,
         sortValue: (info) => String(info.min_quantity ?? ""),
         cell: (info) => fmtPrice(info.min_quantity as number),
         className: "w-44",
+        defaultVisible: false,
       },
       {
         id: "price",
-        label: t("Price"),
+        label: t("pl.price"),
         sortable: true,
         sortValue: (info) => String(info.id ?? ""),
         cell: (info) => fmtPrice(info.price as number),
         className: "w-44",
-      },
-      {
-        id: "actions",
-        label: "",
-        header: "",
-        isAction: true,
-        className: "w-20",
-        cell: (it) => (
-          <div className="flex items-center gap-2">
-            {it.id != null ? (
-              <Link
-                hidden
-                data-stop-rowclick
-                href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Edit address"
-                title="Edit"
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </Link>
-            ) : (
-              <button
-                hidden
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Edit (unavailable)"
-                disabled
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </button>
-            )}
-
-            {it.id != null ? (
-              <button
-                hidden
-                data-stop-rowclick
-                type="button"
-                onClick={() => {
-                  // ListTemplate kini menangani event ini & membuka modal konfirmasi
-                  const evt = new CustomEvent("llog.openDeleteConfirm", {
-                    detail: { id: it.id, name: it.order_type.name },
-                  });
-                  window.dispatchEvent(evt);
-                }}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Delete address"
-                title="Delete"
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            ) : (
-              <button
-                hidden
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Delete (unavailable)"
-                disabled
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            )}
-          </div>
-        ),
+        mandatory: true,
       },
     ];
   }, [activeLang]);
@@ -206,20 +128,58 @@ export default function FinancePriceListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<PriceListRow>
-        fetchBase={`${PL_URL}`} // diabaikan saat staticData dipakai
-        deleteBase={`${PL_URL}`} // diabaikan saat staticData dipakai
+        fetchBase={`${PL_URL}`}
+        deleteBase={`${PL_URL}`}
+        enableEditAction={false}
+        enableDetailsAction={true}
+        enableDeleteAction={false}
+        // onEditAction={(id, row, index) => {
+        //   const ed_url = `/claims/details?id=${encodeURIComponent(String(id))}`;
+        //   router.push(ed_url);
+        // }}
+        onDetailsAction={(id, row, index) => {
+          console.log("{1} {2} {3}", id, row, index);
+        }}
+        getDetailsContent={(row, index) => {
+          return (
+            <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Name</span>
+                <span className="text-sm text-gray-900">{row.name}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Cargo Type
+                </span>
+                <span className="text-sm text-gray-900">{row.cargo_type}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Moda</span>
+                <span className="text-sm text-gray-900">{row.moda.name}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Min. Quantity
+                </span>
+                <span className="text-sm text-gray-900">
+                  {row.min_quantity}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Price</span>
+                <span className="text-sm text-gray-900">{row.price}</span>
+              </div>
+            </div>
+          );
+        }}
         columns={columns}
         searchPlaceholder={t("invoices.search.placeholder")}
         rowsPerPageLabel={t("invoices.rowsPerPage")}
         // leftHeader={leftHeader}
         // initialSort={{ by: "order_type", dir: "desc" }}
-        getRowName={(r) => r.order_type.name}
-        staticData={DEMO_PRICELIST}
-        staticSearch={(row, q) =>
-          row.order_type.name.toLowerCase().includes(q) ||
-          (row.moda.name ?? "").toLowerCase().includes(q) ||
-          row.origin_district.name.toLowerCase().includes(q)
-        }
+        enableColumnVisibility={true}
+        columnVisibilityStorageKey="price-lists-trans"
+        getRowName={(r) => r.name}
         // rowNavigateTo={(id) => ({
         //   pathname: "finance/pricelist/details",
         //   query: { id },
