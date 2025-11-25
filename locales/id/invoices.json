@@ -4,13 +4,17 @@
             "title": "Buat Invoice"
         },
         "columns": {
-            "invoiceNo": "No. Klaim",
-            "joNo": "No. JO",
-            "customer": "Pelanggan",
-            "orderType": "Tipe Order",
-            "amountTotal": "Total",
-            "paymentStatus": "Status Pembayaran",
-            "invoiceStatus": "Status Invoice"
+            "name": "Nama",
+            "invoice_date" : "Tanggal invoice",
+            "invoice_date_due": "Tanggal kadaluwarsa",
+            "ref": "Referensi",
+            "invoice_origin": "Asal",
+            "amount_untaxed": "Amount untaxed",
+            "amount_tax": "Amount tax",
+            "amount_total": "Total",
+            "state": "Status",
+            "payment_state": "Status Pembayaran",
+            "document_attachment": "Document"
         },
         "search": {
             "placeholder": "cari..."

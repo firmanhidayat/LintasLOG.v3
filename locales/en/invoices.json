@@ -4,13 +4,17 @@
             "title": "Create Invoice"
         },
         "columns": {
-            "invoiceNo": "No. Claim",
-            "joNo": "No. JO",
-            "customer": "Customer",
-            "orderType": "Order Type",
-            "amountTotal": "Amount Total",
-            "paymentStatus": "Payment Status",
-            "invoiceStatus": "Invoice Status"
+            "name": "Name",
+            "invoice_date" : "Invoice Date",
+            "invoice_date_due": "Invoice due date",
+            "ref": "Ref",
+            "invoice_origin": "Invoice origin",
+            "amount_untaxed": "Amount untaxed",
+            "amount_tax": "Amount tax",
+            "amount_total": "Total",
+            "state": "Status",
+            "payment_state": "Payment status",
+            "document_attachment": "Document"
         },
         "search": {
             "placeholder": "search..."

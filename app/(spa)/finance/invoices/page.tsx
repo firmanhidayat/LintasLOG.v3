@@ -11,6 +11,7 @@ import Link from "next/link";
 import { Icon } from "@/components/icons/Icon";
 import { useRouter } from "next/navigation";
 import { fmtDate, fmtPrice } from "@/lib/helpers";
+import { ClaimAttachmentGroup } from "@/features/claims/ClaimsFormController";
 
 const BILLS_URL = process.env.NEXT_PUBLIC_TMS_INV_BILL_URL ?? "";
 type moveType = "out_invoice" | "out_refund" | "in_invoice" | "in_refund";
@@ -33,7 +34,8 @@ type InvoiceRow = {
   amount_total: number;
   state: string;
   payment_state: string;
-  states: keyStates;
+  // states: keyStates;
+  document_attachment: ClaimAttachmentGroup;
 };
 
 // function Pill({ value }: { value: TwoState }) {
@@ -59,7 +61,7 @@ export default function InvoicesListPage() {
     return [
       {
         id: "name",
-        label: t("vendorbill.columns.name"),
+        label: t("invoices.columns.name"),
         sortable: true,
         sortValue: (r) => r.name.toLowerCase(),
         className: "w-44",
@@ -68,7 +70,7 @@ export default function InvoicesListPage() {
       },
       {
         id: "invoice_date",
-        label: t("vendorbill.columns.invoice_date"),
+        label: t("invoices.columns.invoice_date"),
         sortable: true,
         sortValue: (r) => r.invoice_date ?? "",
         className: "w-36",
@@ -77,7 +79,7 @@ export default function InvoicesListPage() {
       },
       {
         id: "invoice_date_due",
-        label: t("vendorbill.columns.invoice_date_due"),
+        label: t("invoices.columns.invoice_date_due"),
         sortable: true,
         sortValue: (r) => r.invoice_date_due ?? "",
         className: "w-36",
@@ -86,7 +88,7 @@ export default function InvoicesListPage() {
       },
       {
         id: "ref",
-        label: t("vendorbill.columns.ref"),
+        label: t("invoices.columns.ref"),
         sortable: true,
         sortValue: (r) => r.ref ?? "",
         className: "w-36",
@@ -95,7 +97,7 @@ export default function InvoicesListPage() {
       },
       {
         id: "invoice_origin",
-        label: t("vendorbill.columns.invoice_origin"),
+        label: t("invoices.columns.invoice_origin"),
         sortable: true,
         sortValue: (r) => r.invoice_origin ?? "",
         className: "w-36",
@@ -104,7 +106,7 @@ export default function InvoicesListPage() {
       },
       {
         id: "amount_untaxed",
-        label: t("vendorbill.columns.amount_untaxed"),
+        label: t("invoices.columns.amount_untaxed"),
         sortable: true,
         sortValue: (r) => String(r.amount_untaxed),
         className: "w-36 text-right",
@@ -115,7 +117,7 @@ export default function InvoicesListPage() {
       },
       {
         id: "amount_tax",
-        label: t("vendorbill.columns.amount_tax"),
+        label: t("invoices.columns.amount_tax"),
         sortable: true,
         sortValue: (r) => String(r.amount_tax),
         className: "w-44 text-right",
@@ -126,7 +128,7 @@ export default function InvoicesListPage() {
       },
       {
         id: "amount_total",
-        label: t("vendorbill.columns.amount_total"),
+        label: t("invoices.columns.amount_total"),
         sortable: true,
         sortValue: (r) => String(r.amount_total),
         className: "w-44 text-right",
@@ -137,7 +139,7 @@ export default function InvoicesListPage() {
       },
       {
         id: "state",
-        label: t("vendorbill.columns.state"),
+        label: t("invoices.columns.state"),
         sortable: true,
         sortValue: (r) => r.state,
         className: "w-36",
@@ -146,7 +148,7 @@ export default function InvoicesListPage() {
       },
       {
         id: "payment_state",
-        label: t("vendorbill.columns.payment_state"),
+        label: t("invoices.columns.payment_state"),
         sortable: true,
         sortValue: (r) => r.payment_state,
         className: "w-36",
@@ -155,11 +157,11 @@ export default function InvoicesListPage() {
       },
       {
         id: "states",
-        label: t("vendorbill.columns.states"),
+        label: t("invoices.columns.document_attachment"),
         sortable: true,
-        sortValue: (r) => r.states?.label ?? "",
+        sortValue: (r) => r.document_attachment.name ?? "",
         className: "w-36",
-        cell: (r) => r.states?.label ?? "",
+        cell: (r) => r.document_attachment.name ?? "",
         defaultVisible: false,
       },
     ];
@@ -182,7 +184,7 @@ export default function InvoicesListPage() {
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<InvoiceRow>
         key={activeLang}
-        fetchBase={`${BILLS_URL}?move_type=out_invoice`}
+        fetchBase={`${BILLS_URL}?move_type=out_invoice&move_type=out_refund`}
         deleteBase={`${BILLS_URL}`}
         enableEditAction={false}
         enableDetailsAction={true}
