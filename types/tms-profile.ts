@@ -35,3 +35,4 @@ export type TmsProfileCore = {
   // user_groups?: readonly string[];
 };
 export type TmsProfile = Readonly<TmsProfileCore & Record<string, unknown>>;
+export type TmsUserType = "shipper" | "transporter";

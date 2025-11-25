@@ -32,6 +32,6 @@
     },
     "types": ["google.maps"]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/(spa)/maccount/edit/page.tsx.bak", "components/datagrid/ListTemplate.tsx.bak", "components/datagrid/ListTemplate.tsx.bak2"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/(spa)/maccount/edit/page.tsx.bak", "components/datagrid/ListTemplate.tsx.bak", "components/datagrid/ListTemplate.tsx.bak2", "app/(spa)/claims/create/page.tsx.bak"],
   "exclude": ["node_modules"]
 }

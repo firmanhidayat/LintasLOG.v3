@@ -309,7 +309,6 @@ export function ListTemplate<
     return columns.filter((col) => columnVisibility[col.id] !== false);
   }, [columns, columnVisibility, enableColumnVisibility]);
 
-  // Add action column if any action is enabled
   const finalColumns = useMemo(() => {
     const hasActions =
       enableEditAction || enableDetailsAction || enableDeleteAction;
@@ -318,8 +317,9 @@ export function ListTemplate<
     const actionColumn: ColumnDef<T> = {
       id: "_actions",
       label: t("common.actions") || "Actions",
-      cell: (row: T) => null, // Will be handled separately in render
-      className: "sticky right-0 bg-white min-w-[120px] z-10",
+      cell: (row: T) => null,
+      className:
+        "sticky right-0 bg-white w-[96px] max-w-[96px] text-right z-10",
       isAction: true,
       mandatory: true,
     };
@@ -711,7 +711,8 @@ export function ListTemplate<
     if (!hasActions) return null;
 
     return (
-      <div className="flex items-center justify-end gap-1 min-w-[120px]">
+      // <div className="flex items-center justify-end gap-1 min-w-[120px]">
+      <div className="flex items-center justify-end gap-1 w-full whitespace-nowrap">
         {enableEditAction && (
           <button
             type="button"

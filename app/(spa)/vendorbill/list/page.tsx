@@ -9,208 +9,147 @@ import {
   ListTemplate,
   type ColumnDef,
 } from "@/components/datagrid/ListTemplate";
-import { Icon } from "@/components/icons/Icon";
+import { useRouter } from "next/navigation";
+import { fmtDate, fmtPrice } from "@/lib/helpers";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
-//
-/** ===== Types ===== */
-type TwoState = "Approved" | "Paid";
+const BILLS_URL = process.env.NEXT_PUBLIC_TMS_INV_BILL_URL ?? "";
+type moveType = "out_invoice" | "out_refund" | "in_invoice" | "in_refund";
 
+type keyStates = {
+  key: string;
+  label: string;
+  is_current: boolean;
+};
 type VendorBillRow = {
   id: number | string;
-  bill_no: string; // No. Bill
-  jo_no?: string; // No. JO
-  bill_date?: string; // Tanggal (ISO)
-  amount_total?: number; // Amount Total
-  status: TwoState; // Status (Approved, Paid)
+  name: string;
+  move_type: moveType;
+  invoice_date?: string;
+  invoice_date_due?: string;
+  ref?: string;
+  invoice_origin?: string;
+  amount_untaxed: number;
+  amount_tax: number;
+  amount_total: number;
+  state: string;
+  payment_state: string;
+  states: keyStates;
 };
 
-/** ===== Helpers ===== */
-function fmtDate(d?: string) {
-  if (!d) return "-";
-  const dt = new Date(d);
-  const dd = String(dt.getDate()).padStart(2, "0");
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const yyyy = dt.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-}
-function fmtPrice(v?: number) {
-  if (v == null) return "-";
-  try {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(v);
-  } catch {
-    return String(v);
-  }
-}
-function Pill({ value }: { value: TwoState }) {
-  const color =
-    value === "Approved"
-      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-      : "bg-blue-100 text-blue-700 border-blue-200"; // Paid
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}
-    >
-      {value}
-    </span>
-  );
-}
-
-/** ===== Dummy data ===== */
-const DEMO_VENDOR_BILLS: VendorBillRow[] = [
-  {
-    id: 8101,
-    bill_no: "BILL/2025/0007",
-    jo_no: "JO-2025-0015",
-    bill_date: "2025-10-05",
-    amount_total: 4_200_000,
-    status: "Approved",
-  },
-  {
-    id: 8102,
-    bill_no: "BILL/2025/0008",
-    jo_no: "JO-2025-0011",
-    bill_date: "2025-10-04",
-    amount_total: 6_750_000,
-    status: "Paid",
-  },
-  {
-    id: 8103,
-    bill_no: "BILL/2025/0009",
-    jo_no: "JO-2025-0009",
-    bill_date: "2025-10-06",
-    amount_total: 2_950_000,
-    status: "Approved",
-  },
-];
-
 export default function VendorBillListPage() {
+  const router = useRouter();
   const { i18nReady, activeLang } = useI18nReady();
   const columns = useMemo<ColumnDef<VendorBillRow>[]>(() => {
     return [
       {
-        id: "bill_no",
-        label: t("vendorbill.columns.billNo"),
+        id: "name",
+        label: t("vendorbill.columns.name"),
         sortable: true,
-        sortValue: (r) => r.bill_no.toLowerCase(),
+        sortValue: (r) => r.name.toLowerCase(),
         className: "w-44",
+        cell: (r) => <div className="font-medium text-gray-900">{r.name}</div>,
+        mandatory: true,
+      },
+      {
+        id: "invoice_date",
+        label: t("vendorbill.columns.invoice_date"),
+        sortable: true,
+        sortValue: (r) => r.invoice_date ?? "",
+        className: "w-36",
+        cell: (r) => fmtDate(r.invoice_date),
+        defaultVisible: true,
+      },
+      {
+        id: "invoice_date_due",
+        label: t("vendorbill.columns.invoice_date_due"),
+        sortable: true,
+        sortValue: (r) => r.invoice_date_due ?? "",
+        className: "w-36",
+        cell: (r) => fmtDate(r.invoice_date_due),
+        defaultVisible: true,
+      },
+      {
+        id: "ref",
+        label: t("vendorbill.columns.ref"),
+        sortable: true,
+        sortValue: (r) => r.ref ?? "",
+        className: "w-36",
+        cell: (r) => r.ref,
+        defaultVisible: false,
+      },
+      {
+        id: "invoice_origin",
+        label: t("vendorbill.columns.invoice_origin"),
+        sortable: true,
+        sortValue: (r) => r.invoice_origin ?? "",
+        className: "w-36",
+        cell: (r) => r.invoice_origin,
+        defaultVisible: false,
+      },
+      {
+        id: "amount_untaxed",
+        label: t("vendorbill.columns.amount_untaxed"),
+        sortable: true,
+        sortValue: (r) => String(r.amount_untaxed),
+        className: "w-36 text-right",
         cell: (r) => (
-          <div className="font-medium text-gray-900">{r.bill_no}</div>
+          <span className="tabular-nums">{fmtPrice(r.amount_untaxed)}</span>
         ),
+        defaultVisible: true,
       },
       {
-        id: "jo_no",
-        label: t("vendorbill.columns.joNo"),
+        id: "amount_tax",
+        label: t("vendorbill.columns.amount_tax"),
         sortable: true,
-        sortValue: (r) => (r.jo_no ?? "").toLowerCase(),
-        className: "w-36",
-        cell: (r) => r.jo_no ?? "-",
-      },
-      {
-        id: "bill_date",
-        label: t("vendorbill.columns.date"),
-        sortable: true,
-        sortValue: (r) => r.bill_date ?? "",
-        className: "w-36",
-        cell: (r) => fmtDate(r.bill_date),
+        sortValue: (r) => String(r.amount_tax),
+        className: "w-44 text-right",
+        cell: (r) => (
+          <span className="tabular-nums">{fmtPrice(r.amount_tax)}</span>
+        ),
+        defaultVisible: true,
       },
       {
         id: "amount_total",
-        label: t("vendorbill.columns.amountTotal"),
+        label: t("vendorbill.columns.amount_total"),
         sortable: true,
-        sortValue: (r) => String(r.amount_total ?? ""),
+        sortValue: (r) => String(r.amount_total),
         className: "w-44 text-right",
         cell: (r) => (
           <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
         ),
+        defaultVisible: true,
       },
       {
-        id: "status",
-        label: t("vendorbill.columns.status"),
+        id: "state",
+        label: t("vendorbill.columns.state"),
         sortable: true,
-        sortValue: (r) => r.status,
+        sortValue: (r) => r.state,
         className: "w-36",
-        cell: (r) => <Pill value={r.status} />,
+        cell: (r) => r.state,
+        defaultVisible: true,
       },
       {
-        id: "actions",
-        label: "",
-        isAction: true,
-        className: "w-20",
-        cell: (it) => (
-          <div className="flex items-center gap-2">
-            {it.id != null ? (
-              <Link
-                data-stop-rowclick
-                // href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
-                href="#"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Edit address"
-                title="Edit"
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </Link>
-            ) : (
-              <button
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Edit (unavailable)"
-                disabled
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </button>
-            )}
-
-            {it.id != null ? (
-              <button
-                data-stop-rowclick
-                type="button"
-                onClick={() => {
-                  // ListTemplate kini menangani event ini & membuka modal konfirmasi
-                  const evt = new CustomEvent("llog.openDeleteConfirm", {
-                    detail: { id: it.id, name: it.bill_no },
-                  });
-                  window.dispatchEvent(evt);
-                }}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Delete address"
-                title="Delete"
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            ) : (
-              <button
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Delete (unavailable)"
-                disabled
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            )}
-          </div>
-        ),
+        id: "payment_state",
+        label: t("vendorbill.columns.payment_state"),
+        sortable: true,
+        sortValue: (r) => r.payment_state,
+        className: "w-36",
+        cell: (r) => r.payment_state,
+        defaultVisible: false,
+      },
+      {
+        id: "states",
+        label: t("vendorbill.columns.states"),
+        sortable: true,
+        sortValue: (r) => r.states?.label ?? "",
+        className: "w-36",
+        cell: (r) => r.states?.label ?? "",
+        defaultVisible: false,
       },
     ];
   }, [i18nReady, activeLang]);
 
-  // Guard render setelah hooks
   if (!i18nReady) return null;
-
   const leftHeader = (
     <div className="flex items-center gap-2">
       <Link
@@ -221,13 +160,50 @@ export default function VendorBillListPage() {
       </Link>
     </div>
   );
-
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<VendorBillRow>
-        key={activeLang} // reset state internal ListTemplate jika ganti bahasa
-        fetchBase={`${API_BASE}/api-tms/finance/vendorbills`} // diabaikan saat staticData dipakai
-        deleteBase={`${API_BASE}/api-tms/finance/vendorbills`} // diabaikan saat staticData dipakai
+        key={activeLang}
+        fetchBase={`${BILLS_URL}?move_type=in_invoice`}
+        deleteBase={`${BILLS_URL}`}
+        enableEditAction={false}
+        enableDetailsAction={true}
+        enableDeleteAction={false}
+        onEditAction={(id, row, index) => {
+          const ed_url = `/vendorbill/details?id=${encodeURIComponent(
+            String(id)
+          )}`;
+          router.push(ed_url);
+        }}
+        onDetailsAction={(id, row, index) => {
+          console.log("{1} {2} {3}", id, row, index);
+        }}
+        getDetailsContent={(row, index) => {
+          return (
+            <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Bill Name
+                </span>
+                <span className="text-sm text-gray-900">{row.name}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Date</span>
+                <span className="text-sm text-gray-900">
+                  {fmtDate(row.invoice_date)}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Amount Total
+                </span>
+                <span className="text-sm text-gray-900">
+                  {row.amount_total}
+                </span>
+              </div>
+            </div>
+          );
+        }}
         columns={columns}
         searchPlaceholder={
           t("vendorbill.search.placeholder") || "Cari vendor bill..."
@@ -235,17 +211,8 @@ export default function VendorBillListPage() {
         rowsPerPageLabel={t("vendorbill.rowsPerPage") || "Baris per halaman"}
         leftHeader={leftHeader}
         initialSort={{ by: "bill_date", dir: "desc" }}
-        getRowName={(r) => r.bill_no}
-        staticData={DEMO_VENDOR_BILLS}
-        staticSearch={(row, q) =>
-          row.bill_no.toLowerCase().includes(q) ||
-          (row.jo_no ?? "").toLowerCase().includes(q) ||
-          (row.bill_date ?? "").toLowerCase().includes(q) ||
-          String(row.amount_total ?? "")
-            .toLowerCase()
-            .includes(q) ||
-          row.status.toLowerCase().includes(q)
-        }
+        enableColumnVisibility={true}
+        columnVisibilityStorageKey="vendorbills-shipper-trans"
         rowNavigateTo={(id) => ({
           pathname: "vendorbill/details",
           query: { id },

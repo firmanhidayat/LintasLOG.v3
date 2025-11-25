@@ -9,52 +9,36 @@ import {
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link";
 import { RecordItem } from "@/types/recorditem";
-import { StatusStep } from "@/types/status-delivery";
+// import { StatusStep } from "@/types/status-delivery";
 import { useRouter } from "next/navigation";
+import { fmtDate, fmtPrice, capitalizeIfLowercase } from "@/lib/helpers";
+import { ClaimAttachmentGroup } from "@/features/claims/ClaimsFormController";
 
 const CLAIMS_URL = process.env.NEXT_PUBLIC_TMS_CLAIMS_URL ?? "";
 type ClaimRow = {
   id: number | string;
-  description?: string;
+  name?: string;
   date?: string;
   purchase_order?: RecordItem;
   amount?: number;
-  states: StatusStep;
+  // states: StatusStep;
+  state: string;
+  document_attachment: ClaimAttachmentGroup;
 };
 
-function fmtDate(d?: string) {
-  if (!d) return "-";
-  const dt = new Date(d);
-  const dd = String(dt.getDate()).padStart(2, "0");
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const yyyy = dt.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-}
-function fmtPrice(v?: number) {
-  if (v == null) return "-";
-  try {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(v);
-  } catch {
-    return String(v);
-  }
-}
 function StatusPill({ value }: { value: string }) {
   const color =
-    value === "Pending"
+    value === "draft"
       ? "bg-gray-100 text-gray-700 border-gray-200"
-      : value === "Submitted"
+      : value === "reviewed"
       ? "bg-blue-100 text-blue-700 border-blue-200"
-      : value === "In Review"
-      ? "bg-amber-100 text-amber-700 border-amber-200"
-      : value === "Approved"
+      : // : value === "approved"
+      // ? "bg-amber-100 text-amber-700 border-amber-200"
+      value === "approved"
       ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-      : value === "Rejected"
+      : value === "reject"
       ? "bg-red-100 text-red-700 border-red-200"
-      : value === "Paid"
+      : value === "paid"
       ? "bg-cyan-100 text-cyan-700 border-cyan-200"
       : "bg-violet-100 text-violet-700 border-violet-200";
 
@@ -62,7 +46,7 @@ function StatusPill({ value }: { value: string }) {
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}
     >
-      {value}
+      {capitalizeIfLowercase(value)}
     </span>
   );
 }
@@ -76,14 +60,11 @@ export default function ClaimsListPage() {
 
     return [
       {
-        id: "description",
+        id: "name",
         label: L("claims.columns.claimNo", "No. Claim"),
         sortable: true,
-        // sortValue: (r) => r.description?.toLowerCase(),
         className: "w-40",
-        cell: (r) => (
-          <div className="font-medium text-gray-900">{r.description}</div>
-        ),
+        cell: (r) => <div className="font-medium text-gray-900">{r.name}</div>,
         mandatory: true,
       },
       {
@@ -115,82 +96,23 @@ export default function ClaimsListPage() {
         defaultVisible: true,
       },
       {
-        id: "states",
-        label: L("claims.columns.status", "Status"),
+        id: "document_attachment",
+        label: L("claims.columns.document_attachment", "Document"),
         sortable: true,
-        sortValue: (r) => String(r.states.label),
+        // sortValue: (r) => String(r.document_attachment.name),
         className: "w-40",
-        cell: (r) => <StatusPill value={String(r.states.label)} />,
+        cell: (r) => <span>{r.document_attachment?.name ?? "-"}</span>,
         defaultVisible: true,
       },
-      // {
-      //   id: "actions",
-      //   label: "",
-      //   isAction: true,
-      //   className: "w-20",
-      //   cell: (it) => (
-      //     <div className="flex items-center gap-2">
-      //       {it.id != null ? (
-      //         <Link
-      //           data-stop-rowclick
-      //           href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
-      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-      //           aria-label="Edit address"
-      //           title="Edit"
-      //         >
-      //           <Icon name="pencil" className="h-3 w-3" />
-      //         </Link>
-      //       ) : (
-      //         <button
-      //           data-stop-rowclick
-      //           type="button"
-      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-      //           title="Edit (unavailable)"
-      //           disabled
-      //         >
-      //           <Icon name="pencil" className="h-3 w-3" />
-      //         </button>
-      //       )}
-
-      //       {it.id != null ? (
-      //         <button
-      //           data-stop-rowclick
-      //           type="button"
-      //           onClick={() => {
-      //             // ListTemplate kini menangani event ini & membuka modal konfirmasi
-      //             const evt = new CustomEvent("llog.openDeleteConfirm", {
-      //               detail: { id: it.id, name: it.purchase_order?.name },
-      //             });
-      //             window.dispatchEvent(evt);
-      //           }}
-      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-      //           aria-label="Delete address"
-      //           title="Delete"
-      //         >
-      //           <Icon
-      //             name="trash"
-      //             className="h-3 w-3 text-red-600"
-      //             strokeWidth={1.5}
-      //           />
-      //         </button>
-      //       ) : (
-      //         <button
-      //           data-stop-rowclick
-      //           type="button"
-      //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-      //           title="Delete (unavailable)"
-      //           disabled
-      //         >
-      //           <Icon
-      //             name="trash"
-      //             className="h-3 w-3 text-red-600"
-      //             strokeWidth={1.5}
-      //           />
-      //         </button>
-      //       )}
-      //     </div>
-      //   ),
-      // },
+      {
+        id: "state",
+        label: L("claims.columns.status", "Status"),
+        sortable: true,
+        sortValue: (r) => String(r.state),
+        className: "w-40",
+        cell: (r) => <StatusPill value={String(r.state)} />,
+        defaultVisible: true,
+      },
     ];
   }, [i18nReady, activeLang]);
   if (!i18nReady) return null;
@@ -223,7 +145,15 @@ export default function ClaimsListPage() {
           return (
             <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
               <div className="flex flex-col">
-                <span className="text-xs font-medium text-gray-500">Order</span>
+                <span className="text-xs font-medium text-gray-500">
+                  No. Claim
+                </span>
+                <span className="text-sm text-gray-900">{row.name}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  No. JO
+                </span>
                 <span className="text-sm text-gray-900">
                   {row.purchase_order?.name}
                 </span>
@@ -236,9 +166,11 @@ export default function ClaimsListPage() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-500">
-                  Description
+                  Amount
                 </span>
-                <span className="text-sm text-gray-900">{row.description}</span>
+                <span className="text-sm text-gray-900">
+                  {fmtPrice(row.amount)}
+                </span>
               </div>
             </div>
           );
@@ -246,7 +178,7 @@ export default function ClaimsListPage() {
         columns={columns}
         searchPlaceholder={t("claims.search.placeholder") || "Cari claim..."}
         rowsPerPageLabel={t("claims.rowsPerPage") || "Baris per halaman"}
-        leftHeader={leftHeader}
+        // leftHeader={leftHeader}
         initialSort={{ by: "date", dir: "desc" }}
         enableColumnVisibility={true}
         columnVisibilityStorageKey="claims-shipper-trans"

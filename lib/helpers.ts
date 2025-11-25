@@ -67,3 +67,12 @@ function toNumberSafe(s: string): number {
 
   return Number(normalized);
 }
+
+export function capitalizeIfLowercase(text: string): string {
+  if (!text) return "";
+  const trimmed = text.trim();
+  const isAllLowercase = trimmed === trimmed.toLowerCase();
+  return isAllLowercase
+    ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
+    : trimmed;
+}

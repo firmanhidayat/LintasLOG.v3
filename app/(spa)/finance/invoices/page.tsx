@@ -9,214 +9,162 @@ import {
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link";
 import { Icon } from "@/components/icons/Icon";
-import { fmtPrice } from "@/lib/helpers";
+import { useRouter } from "next/navigation";
+import { fmtDate, fmtPrice } from "@/lib/helpers";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+const BILLS_URL = process.env.NEXT_PUBLIC_TMS_INV_BILL_URL ?? "";
+type moveType = "out_invoice" | "out_refund" | "in_invoice" | "in_refund";
 
-/** ===== Types ===== */
-type TwoState = "Approved" | "Paid";
-
+type keyStates = {
+  key: string;
+  label: string;
+  is_current: boolean;
+};
 type InvoiceRow = {
   id: number | string;
-  invoice_no: string; // No. Invoice
-  jo_no?: string; // No. JO
-  partner_name?: string; // Customer
-  order_type?: string; // Jenis Order
-  amount_total?: number; // Amount Total
-  payment_status: TwoState; // Payment Status
-  invoice_status: TwoState; // Invoice Status
+  name: string;
+  move_type: moveType;
+  invoice_date?: string;
+  invoice_date_due?: string;
+  ref?: string;
+  invoice_origin?: string;
+  amount_untaxed: number;
+  amount_tax: number;
+  amount_total: number;
+  state: string;
+  payment_state: string;
+  states: keyStates;
 };
 
-function Pill({ value }: { value: TwoState }) {
-  const color =
-    value === "Approved"
-      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-      : "bg-blue-100 text-blue-700 border-blue-200"; // Paid
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}
-    >
-      {value}
-    </span>
-  );
-}
-
-/** ===== Dummy data ===== */
-const DEMO_INVOICES: InvoiceRow[] = [
-  {
-    id: 7001,
-    invoice_no: "INV/2025/0010",
-    jo_no: "JO-2025-0015",
-    partner_name: "PT Andalan Makmur",
-    order_type: "LTL",
-    amount_total: 3_250_000,
-    payment_status: "Approved",
-    invoice_status: "Approved",
-  },
-  {
-    id: 7002,
-    invoice_no: "INV/2025/0011",
-    jo_no: "JO-2025-0011",
-    partner_name: "CV Nusantara Jaya",
-    order_type: "FTL",
-    amount_total: 7_900_000,
-    payment_status: "Paid",
-    invoice_status: "Paid",
-  },
-  {
-    id: 7003,
-    invoice_no: "INV/2025/0012",
-    jo_no: "JO-2025-0009",
-    partner_name: "PT Sentosa Abadi",
-    order_type: "Container",
-    amount_total: 12_450_000,
-    payment_status: "Approved",
-    invoice_status: "Paid",
-  },
-];
+// function Pill({ value }: { value: TwoState }) {
+//   const color =
+//     value === "Approved"
+//       ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+//       : "bg-blue-100 text-blue-700 border-blue-200"; // Paid
+//   return (
+//     <span
+//       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}
+//     >
+//       {value}
+//     </span>
+//   );
+// }
 
 export default function InvoicesListPage() {
+  const router = useRouter();
   const { i18nReady, activeLang } = useI18nReady();
-
-  // Definisikan columns tanpa conditional hook.
-  // t() hanya dipanggil saat i18n ready untuk hindari warning build.
   const columns = useMemo<ColumnDef<InvoiceRow>[]>(() => {
     const L = (key: string, fallback: string) =>
       i18nReady && activeLang ? t(key) || fallback : fallback;
-
     return [
       {
-        id: "invoice_no",
-        label: L("invoices.columns.invoiceNo", "No. Invoice"),
+        id: "name",
+        label: t("vendorbill.columns.name"),
         sortable: true,
-        sortValue: (r) => r.invoice_no.toLowerCase(),
+        sortValue: (r) => r.name.toLowerCase(),
         className: "w-44",
+        cell: (r) => <div className="font-medium text-gray-900">{r.name}</div>,
+        mandatory: true,
+      },
+      {
+        id: "invoice_date",
+        label: t("vendorbill.columns.invoice_date"),
+        sortable: true,
+        sortValue: (r) => r.invoice_date ?? "",
+        className: "w-36",
+        cell: (r) => fmtDate(r.invoice_date),
+        defaultVisible: true,
+      },
+      {
+        id: "invoice_date_due",
+        label: t("vendorbill.columns.invoice_date_due"),
+        sortable: true,
+        sortValue: (r) => r.invoice_date_due ?? "",
+        className: "w-36",
+        cell: (r) => fmtDate(r.invoice_date_due),
+        defaultVisible: true,
+      },
+      {
+        id: "ref",
+        label: t("vendorbill.columns.ref"),
+        sortable: true,
+        sortValue: (r) => r.ref ?? "",
+        className: "w-36",
+        cell: (r) => r.ref,
+        defaultVisible: false,
+      },
+      {
+        id: "invoice_origin",
+        label: t("vendorbill.columns.invoice_origin"),
+        sortable: true,
+        sortValue: (r) => r.invoice_origin ?? "",
+        className: "w-36",
+        cell: (r) => r.invoice_origin,
+        defaultVisible: false,
+      },
+      {
+        id: "amount_untaxed",
+        label: t("vendorbill.columns.amount_untaxed"),
+        sortable: true,
+        sortValue: (r) => String(r.amount_untaxed),
+        className: "w-36 text-right",
         cell: (r) => (
-          <div className="font-medium text-gray-900">{r.invoice_no}</div>
+          <span className="tabular-nums">{fmtPrice(r.amount_untaxed)}</span>
         ),
+        defaultVisible: true,
       },
       {
-        id: "jo_no",
-        label: L("invoices.columns.joNo", "No. JO"),
+        id: "amount_tax",
+        label: t("vendorbill.columns.amount_tax"),
         sortable: true,
-        sortValue: (r) => (r.jo_no ?? "").toLowerCase(),
-        className: "w-36",
-        cell: (r) => r.jo_no ?? "-",
-      },
-      {
-        id: "partner_name",
-        label: L("invoices.columns.customer", "Customer"),
-        sortable: true,
-        sortValue: (r) => (r.partner_name ?? "").toLowerCase(),
-        className: "min-w-52",
-        cell: (r) => r.partner_name ?? "-",
-      },
-      {
-        id: "order_type",
-        label: L("invoices.columns.orderType", "Jenis Order"),
-        sortable: true,
-        sortValue: (r) => (r.order_type ?? "").toLowerCase(),
-        className: "w-36",
-        cell: (r) => r.order_type ?? "-",
+        sortValue: (r) => String(r.amount_tax),
+        className: "w-44 text-right",
+        cell: (r) => (
+          <span className="tabular-nums">{fmtPrice(r.amount_tax)}</span>
+        ),
+        defaultVisible: true,
       },
       {
         id: "amount_total",
-        label: L("invoices.columns.amountTotal", "Amount Total"),
+        label: t("vendorbill.columns.amount_total"),
         sortable: true,
-        sortValue: (r) => String(r.amount_total ?? ""),
+        sortValue: (r) => String(r.amount_total),
         className: "w-44 text-right",
         cell: (r) => (
           <span className="tabular-nums">{fmtPrice(r.amount_total)}</span>
         ),
+        defaultVisible: true,
       },
       {
-        id: "payment_status",
-        label: L("invoices.columns.paymentStatus", "Payment Status"),
+        id: "state",
+        label: t("vendorbill.columns.state"),
         sortable: true,
-        sortValue: (r) => r.payment_status,
-        className: "w-44",
-        cell: (r) => <Pill value={r.payment_status} />,
+        sortValue: (r) => r.state,
+        className: "w-36",
+        cell: (r) => r.state,
+        defaultVisible: true,
       },
       {
-        id: "invoice_status",
-        label: L("invoices.columns.invoiceStatus", "Invoice Status"),
+        id: "payment_state",
+        label: t("vendorbill.columns.payment_state"),
         sortable: true,
-        sortValue: (r) => r.invoice_status,
-        className: "w-44",
-        cell: (r) => <Pill value={r.invoice_status} />,
+        sortValue: (r) => r.payment_state,
+        className: "w-36",
+        cell: (r) => r.payment_state,
+        defaultVisible: false,
       },
       {
-        id: "actions",
-        label: "",
-        isAction: true,
-        className: "w-20",
-        cell: (it) => (
-          <div className="flex items-center gap-2">
-            {it.id != null ? (
-              <Link
-                data-stop-rowclick
-                href={`/claims/details?id=${encodeURIComponent(String(it.id))}`}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Edit address"
-                title="Edit"
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </Link>
-            ) : (
-              <button
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Edit (unavailable)"
-                disabled
-              >
-                <Icon name="pencil" className="h-3 w-3" />
-              </button>
-            )}
-
-            {it.id != null ? (
-              <button
-                data-stop-rowclick
-                type="button"
-                onClick={() => {
-                  // ListTemplate kini menangani event ini & membuka modal konfirmasi
-                  const evt = new CustomEvent("llog.openDeleteConfirm", {
-                    detail: { id: it.id, name: it.invoice_no },
-                  });
-                  window.dispatchEvent(evt);
-                }}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-                aria-label="Delete address"
-                title="Delete"
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            ) : (
-              <button
-                data-stop-rowclick
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-                title="Delete (unavailable)"
-                disabled
-              >
-                <Icon
-                  name="trash"
-                  className="h-3 w-3 text-red-600"
-                  strokeWidth={1.5}
-                />
-              </button>
-            )}
-          </div>
-        ),
+        id: "states",
+        label: t("vendorbill.columns.states"),
+        sortable: true,
+        sortValue: (r) => r.states?.label ?? "",
+        className: "w-36",
+        cell: (r) => r.states?.label ?? "",
+        defaultVisible: false,
       },
     ];
   }, [i18nReady, activeLang]);
 
-  // Guard render setelah hook dipanggil
   if (!i18nReady) return null;
 
   const leftHeader = (
@@ -233,27 +181,58 @@ export default function InvoicesListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<InvoiceRow>
-        fetchBase={`${API_BASE}/api-tms/finance/invoices`} // diabaikan saat staticData dipakai
-        deleteBase={`${API_BASE}/api-tms/finance/invoices`} // diabaikan saat staticData dipakai
+        key={activeLang}
+        fetchBase={`${BILLS_URL}?move_type=out_invoice`}
+        deleteBase={`${BILLS_URL}`}
+        enableEditAction={false}
+        enableDetailsAction={true}
+        enableDeleteAction={false}
+        onEditAction={(id, row, index) => {
+          const ed_url = `/finance/invoices/details?id=${encodeURIComponent(
+            String(id)
+          )}`;
+          router.push(ed_url);
+        }}
+        onDetailsAction={(id, row, index) => {
+          console.log("{1} {2} {3}", id, row, index);
+        }}
+        getDetailsContent={(row, index) => {
+          return (
+            <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Bill Name
+                </span>
+                <span className="text-sm text-gray-900">{row.name}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">Date</span>
+                <span className="text-sm text-gray-900">
+                  {fmtDate(row.invoice_date)}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-gray-500">
+                  Amount Total
+                </span>
+                <span className="text-sm text-gray-900">
+                  {row.amount_total}
+                </span>
+              </div>
+            </div>
+          );
+        }}
         columns={columns}
         searchPlaceholder={
-          t("invoices.search.placeholder") || "Cari invoice..."
+          t("vendorbill.search.placeholder") || "Cari invoices bill..."
         }
-        rowsPerPageLabel={t("invoices.rowsPerPage") || "Baris per halaman"}
+        rowsPerPageLabel={t("vendorbill.rowsPerPage") || "Baris per halaman"}
         leftHeader={leftHeader}
-        initialSort={{ by: "invoice_no", dir: "desc" }}
-        getRowName={(r) => r.invoice_no}
-        staticData={DEMO_INVOICES}
-        staticSearch={(row, q) =>
-          row.invoice_no.toLowerCase().includes(q) ||
-          (row.partner_name ?? "").toLowerCase().includes(q) ||
-          (row.jo_no ?? "").toLowerCase().includes(q) ||
-          (row.order_type ?? "").toLowerCase().includes(q) ||
-          String(row.payment_status).toLowerCase().includes(q) ||
-          String(row.invoice_status).toLowerCase().includes(q)
-        }
+        initialSort={{ by: "bill_date", dir: "desc" }}
+        enableColumnVisibility={true}
+        columnVisibilityStorageKey="invoices-shipper-trans"
         rowNavigateTo={(id) => ({
-          pathname: "finance/invoices/details",
+          pathname: "vendorbill/details",
           query: { id },
         })}
       />

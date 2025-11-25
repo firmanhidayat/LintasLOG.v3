@@ -13,7 +13,6 @@ import {
   IconSummary,
   IconClaims,
   IconDocs,
-  IconDownPayment,
   IconFinance,
   IconInvoice,
   IconList,
@@ -24,6 +23,7 @@ import {
   IconFleet,
   IconDriver,
 } from "./icons/Icon";
+import { TmsUserType } from "@/types/tms-profile";
 
 export default function Sidebar({
   open = false,
@@ -97,6 +97,11 @@ const SidebarContent = memo(function SidebarContent() {
   const [openMap, setOpenMap] = useState<OpenMap>(DEFAULT_OPEN);
   const loaded = useMemo(() => typeof window !== "undefined", []);
   const [activeLang, setActiveLang] = useState<Lang>(() => getLang());
+  const { profile } = useAuth();
+    const userType = useMemo(() => {
+      if (profile) return profile.tms_user_type;
+      return undefined;
+    }, [profile]);
 
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
@@ -120,7 +125,6 @@ const SidebarContent = memo(function SidebarContent() {
   useEffect(() => {
     const match = (prefix: string) =>
       pathname === prefix || (prefix !== "/" && pathname.startsWith(prefix));
-    // const next: OpenMap = { ...openMap };
     const next: OpenMap = { ...DEFAULT_OPEN };
     if (match("/dashboard") || pathname === "/") next.dashboard = true;
     if (match("/orders")) next.orders = true;
@@ -139,8 +143,8 @@ const SidebarContent = memo(function SidebarContent() {
           ? "claims"
           : match("/finance")
           ? "finance"
-          : match("/downpayment")
-          ? "downpayment"
+          // : match("/downpayment")
+          // ? "downpayment"
           : match("/vendorbill")
           ? "vendorbill"
           : match("/fleetndriver")
@@ -179,7 +183,7 @@ const SidebarContent = memo(function SidebarContent() {
   return (
     <div className="flex w-full flex-col">
       <div className="px-4 pt-4 pb-10">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center gap-3">
           <Image
             src={lintaslogo}
             alt="Lintas-LOG Logo"
@@ -188,6 +192,7 @@ const SidebarContent = memo(function SidebarContent() {
             className="h-12 w-auto"
             priority
           />
+          
         </div>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
@@ -249,59 +254,65 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
-        <NavGroup
-          href="#"
-          label={t("nav.finance.title")}
-          icon={IconFinance}
-          items={[
-            {
-              label: t("nav.finance.invoices"),
-              href: "/finance/invoices",
-              icon: IconInvoice,
-            },
-            {
-              label: t("nav.finance.pricelist"),
-              href: "/finance/pricelist",
-              icon: IconList,
-            },
-          ]}
-          open={openMap.finance}
-          onToggle={toggle("finance")}
-          duration={240}
-          easing="cubic-bezier(.2,.8,.2,1)"
-        />
-        {/* <NavGroup
-          href="#"
-          label={t("nav.downpayment.title")}
-          icon={IconDownPayment}
-          items={[
-            {
-              label: t("nav.downpayment.list"),
-              href: "/downpayment/list",
-              icon: IconList,
-            },
-          ]}
-          open={openMap.downpayment}
-          onToggle={toggle("downpayment")}
-          duration={240}
-          easing="cubic-bezier(.2,.8,.2,1)"
-        /> */}
-        <NavGroup
-          href="#"
-          label={t("nav.vendorbill.title")}
-          icon={IconVendorBill}
-          items={[
-            {
-              label: t("nav.vendorbill.list"),
-              href: "/vendorbill/list",
-              icon: IconList,
-            },
-          ]}
-          open={openMap.vendorbill}
-          onToggle={toggle("vendorbill")}
-          duration={240}
-          easing="cubic-bezier(.2,.8,.2,1)"
-        />
+        {currentUserType==="shipper" && (
+          <NavGroup
+            href="#"
+            label={t("nav.finance.title")}
+            icon={IconFinance}
+            items={[
+              {
+                label: t("nav.finance.invoices"),
+                href: "/finance/invoices",
+                icon: IconInvoice,
+              },
+              {
+                label: t("nav.finance.pricelist"),
+                href: "/finance/pricelist",
+                icon: IconList,
+              },
+            ]}
+            open={openMap.finance}
+            onToggle={toggle("finance")}
+            duration={240}
+            easing="cubic-bezier(.2,.8,.2,1)"
+          />
+        )}
+        {currentUserType==="transporter" && (
+          <NavGroup
+            href="#"
+            label={t("nav.finance.title")}
+            icon={IconFinance}
+            items={[
+              {
+                label: t("nav.finance.pricelist"),
+                href: "/finance/pricelist",
+                icon: IconList,
+              },
+            ]}
+            open={openMap.finance}
+            onToggle={toggle("finance")}
+            duration={240}
+            easing="cubic-bezier(.2,.8,.2,1)"
+          />
+        )}
+        {currentUserType==="transporter" && (
+          <NavGroup
+            href="#"
+            label={t("nav.vendorbill.title")}
+            icon={IconVendorBill}
+            items={[
+              {
+                label: t("nav.vendorbill.list"),
+                href: "/vendorbill/list",
+                icon: IconList,
+              },
+            ]}
+            open={openMap.vendorbill}
+            onToggle={toggle("vendorbill")}
+            duration={240}
+            easing="cubic-bezier(.2,.8,.2,1)"
+          />
+        )}
         {currentUserType === "transporter" && (
           <NavGroup
             href="#"
@@ -326,7 +337,9 @@ const SidebarContent = memo(function SidebarContent() {
           />
         )}
       </nav>
-
+      <div className="inline-flex w-full items-center justify-center border-t border-white/10 px-4 py-3">
+        <span className="text-amber-100 text-sm mt-1 font-extrabold uppercase border-1 p-1 rounded-md border-white/50">{(userType as TmsUserType)}</span>
+      </div>
       <div className="mt-auto border-t border-white/10 px-4 py-3">
         <NavLink
           href="/docs"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import {
@@ -9,8 +9,11 @@ import {
 } from "@/components/datagrid/ListTemplate";
 import { CityItem, ModaItem } from "@/types/orders";
 import { fmtDate, fmtPrice } from "@/lib/helpers";
+import { useAuth } from "@/components/providers/AuthProvider";
+
 
 const PL_URL = process.env.NEXT_PUBLIC_TMS_PRICELIST_URL ?? "";
+const PL_PO_URL = process.env.NEXT_PUBLIC_TMS_PO_PRICELIST_URL ?? "";
 
 type PriceListRow = {
   id: number | string;
@@ -26,7 +29,15 @@ type PriceListRow = {
 };
 
 export default function FinancePriceListPage() {
+  const useAuths = useAuth()
   const { i18nReady, activeLang } = useI18nReady();
+  const [fetchBase, setFetchBase] = useState(PL_URL);
+   useEffect(() => {
+    // const usrType = sessionStorage.getItem("llog.usrtype");
+    const usrType = useAuths.currentUserType;
+    if (usrType === "transporter") setFetchBase(PL_PO_URL);
+    else if (usrType === "shipper") setFetchBase(PL_URL);
+  }, []);
 
   const columns = useMemo<ColumnDef<PriceListRow>[]>(() => {
     return [
@@ -128,8 +139,10 @@ export default function FinancePriceListPage() {
   return (
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<PriceListRow>
-        fetchBase={`${PL_URL}`}
-        deleteBase={`${PL_URL}`}
+        // fetchBase={`${PL_URL}`}
+        // deleteBase={`${PL_URL}`}
+        fetchBase={fetchBase}
+        deleteBase={fetchBase}
         enableEditAction={false}
         enableDetailsAction={true}
         enableDeleteAction={false}

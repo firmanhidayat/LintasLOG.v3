@@ -34,6 +34,7 @@ import type {
   PartnerItem,
   OrderAttachmentGroup,
   OrderAttachmentItem,
+  RoleOrderProps,
 } from "@/types/orders";
 
 import {
@@ -46,6 +47,7 @@ import { StatusStep } from "@/types/status-delivery";
 import { ExtraStop } from "./sections/ExtraStopCard";
 import { RecordItem } from "@/types/recorditem";
 import { ExistingFileItem } from "@/components/form/MultiFileUpload";
+import { TmsUserType } from "@/types/tms-profile";
 type ExtraStopWithId = ExtraStop & { uid: string };
 
 // ====== NEW: Cargo Type Prefill (by id -> RecordItem) ======
@@ -286,7 +288,6 @@ function ResponseDialog({
   );
 }
 
-/** ===== NEW: Lightweight Modal Dialog (seragam Fleet/Driver) ===== */
 function ModalDialog({
   open,
   kind = "success",
@@ -347,12 +348,10 @@ function fillUrlTemplate(tpl: string, id?: string | number): string {
   return tpl;
 }
 
-/** Prefill helper dari 'initialData' project kamu ke state form komponen */
 type RouteItem = NonNullable<
   NonNullable<OrdersCreateFormProps["initialData"]>["route_ids"]
 >[number];
 
-// Ambil AddressItem dari route: utamakan object, fallback ke id
 function addrFromRoute(
   r: RouteItem | undefined,
   which: "origin" | "dest"
@@ -368,13 +367,13 @@ function normalizeKey(s: unknown): string {
   return String(s ?? "")
     .toLowerCase()
     .trim()
-    .replace(/[\s_-]+/g, ""); // "On Review" -> "onreview"
+    .replace(/[\s_-]+/g, "");
 }
 
 function extractApiSteps(
   d: NonNullable<OrdersCreateFormProps["initialData"]>
 ): StatusStep[] {
-  const items = (d.states ?? []) as StatusStep[]; // ← tanpa any
+  const items = (d.states ?? []) as StatusStep[];
 
   return items.map((it): StatusStep => {
     if (typeof it === "string") {
@@ -390,8 +389,6 @@ function toExistingFileItems(
   attachment: OrderAttachmentGroup | OrderAttachmentItem[] | null | undefined
 ): ExistingFileItem[] {
   if (!attachment) return [];
-
-  // Mode lama: array langsung [ { id, name, url, mimetype }, ... ]
   if (Array.isArray(attachment)) {
     return attachment.map((att) => ({
       id: att.id,
@@ -400,8 +397,6 @@ function toExistingFileItems(
       mimetype: att.mimetype,
     }));
   }
-
-  // Mode baru: group { id, name, doc_type, attachments: [...] }
   const items = attachment.attachments ?? [];
   return items.map((att) => ({
     id: att.id,
@@ -415,6 +410,17 @@ function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>
 ) {
   console.log("data:", data);
+
+  let claimCount = 0;
+  if ("reviewed_claim_ids_count" in data) {
+    const v = (data as { claim_ids_count?: unknown }).claim_ids_count;
+    if (typeof v === "number") {
+      claimCount = v;
+    } else if (typeof v === "string") {
+      const n = Number(v);
+      if (Number.isFinite(n)) claimCount = n;
+    }
+  }
 
   const form = {
     states: data.states ? extractApiSteps(data) : ([] as StatusStep[]),
@@ -458,8 +464,6 @@ function prefillFromInitial(
 
     muatanNama: data.cargo_name ?? "",
     muatanDeskripsi: data.cargo_description ?? "",
-    // IMPORTANT: biarkan null, akan diprefill oleh useCargoTypePrefill
-    // jenisMuatan: null as RecordItem | null,
     jenisMuatan:
       data.cargo_type ??
       (data.cargo_type_id ? ({ id: data.cargo_type_id } as RecordItem) : null),
@@ -486,7 +490,7 @@ function prefillFromInitial(
     picMuatTelepon: "",
     picBongkarNama: "",
     picBongkarTelepon: "",
-    // extraStops: [] as ExtraStopWithId[],
+
     existingPackingList: [] as ExistingFileItem[],
     existingDeliveryNotes: [] as ExistingFileItem[],
 
@@ -498,6 +502,7 @@ function prefillFromInitial(
     extraStops: [] as ExtraStop[],
     isReadOnly: false,
     mainRouteId: null as number | null,
+    reviewed_claim_ids_count: claimCount,
   };
 
   console.log("form before:", form);
@@ -537,19 +542,16 @@ function prefillFromInitial(
   form.dest_latitude = main?.dest_latitude ?? main?.dest_latitude ?? "";
   form.dest_longitude = main?.dest_longitude ?? "";
 
-  // Fallback: kalau tidak ada route main, coba dari top-level origin/dest_address
   if (!form.lokMuat)
     form.lokMuat = (data.origin_address as AddressItem) ?? null;
   if (!form.lokBongkar)
     form.lokBongkar = (data.dest_address as AddressItem) ?? null;
 
-  // Amount Details readonly
   form.amount_shipping = data.amount_shipping ?? "";
   form.amount_shipping_multi_charge = data.amount_shipping_multi_charge ?? "";
   form.amount_tax = data.amount_tax ?? "";
   form.amount_total = data.amount_total ?? "";
 
-  // Extra routes
   const extras: RouteItem[] = routes.filter((r) => !r.is_main_route);
   form.extraStops = extras.map(
     (r): ExtraStop => ({
@@ -668,15 +670,21 @@ function itemToMsg(it: ApiErrorItem): string | null {
 }
 
 /** ===================== Component ===================== */
-export default function OrdersCreateForm({
-  mode = "create",
+// export default function OrdersCreateForm({
+//   mode = "create",
+//   orderId,
+//   initialData,
+//   onSuccess,
+// }: OrdersCreateFormProps) {
+export default function PurchaseOrderForm<T extends TmsUserType>({
+  mode = "edit",
   orderId,
   initialData,
   onSuccess,
-}: OrdersCreateFormProps) {
+  userType,
+}: RoleOrderProps<T> & { userType: T }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Baca id dari query (?id=123) jika orderId prop tidak disuplai
   const qsId = searchParams?.get("id") ?? null;
   const effectiveOrderId = useMemo<string | number | undefined>(() => {
     return orderId ?? qsId ?? undefined;
@@ -684,10 +692,8 @@ export default function OrdersCreateForm({
 
   const { profile } = useAuth();
 
-  // i18n// i18n
   const { ready: i18nReady } = useI18nReady();
   const { hasChatImpulse, setHasChatImpulse } = useChatImpulseChannel();
-  // pakai reducer utk trigger re-render tanpa state variabel yang unused
   const forceRerender = React.useReducer((x: number) => x + 1, 0)[1];
   useEffect(() => {
     const off = onLangChange(() => forceRerender());
@@ -698,7 +704,6 @@ export default function OrdersCreateForm({
     (profile as { tz?: string } | undefined)?.tz || "Asia/Jakarta";
 
   // ===== Local states =====
-
   const [noJO, setNoJO] = useState<string>("");
   const [customer, setCustomer] = useState<string>("");
   const [namaPenerima, setNamaPenerima] = useState<string>("");
@@ -709,7 +714,6 @@ export default function OrdersCreateForm({
   const [jenisOrder, setJenisOrder] = useState<OrderTypeItem | null>(null);
   const [armada, setArmada] = useState<ModaItem | null>(null);
 
-  // DateTime (ISO lokal "YYYY-MM-DDTHH:mm")
   const [tglMuat, setTglMuat] = useState<string>("");
   const [tglBongkar, setTglBongkar] = useState<string>("");
 
@@ -731,6 +735,8 @@ export default function OrdersCreateForm({
   const [destLatitude, setDestLatitude] = useState<string>("");
   const [destLongitude, setDestLongitude] = useState<string>("");
   const [mainRouteId, setMainRouteId] = useState<number | null>(null);
+
+  const [reviewClaimIdsCount, setReviewClaimIdsCount] = useState<number>(0);
 
   // Kontak utama (PIC)
   const [picMuatNama, setPicMuatNama] = useState<string>("");
@@ -874,7 +880,21 @@ export default function OrdersCreateForm({
   );
 
   const [chatOpen, setChatOpen] = useState(false);
-  const canShowChat = isReadOnly || respIsSuccess; // sama dengan: hidden={isReadOnly ? false : !respIsSuccess}
+  const canShowChat = isReadOnly || respIsSuccess;
+
+  const canShowReviewClaims = mode === "edit";
+  const canShowListReviewClaims = reviewClaimIdsCount > 0;
+
+  function onHandleShowReviewClaimListButton() {
+    // TODO : show list if claim_ids_count > 0
+  }
+
+  function onHandleReviewClaimButton() {
+    localStorage.removeItem("order-id");
+    localStorage.setItem("order-id", String(effectiveOrderId));
+    console.log(localStorage);
+    router.push("/claims/create/");
+  }
 
   function handleChangeKotaMuat(city: CityItem | null) {
     setKotaMuat(city);
@@ -989,6 +1009,10 @@ export default function OrdersCreateForm({
     setDeliveryNoteAttachmentId(f.deliveryNoteAttachmentId);
     setPackingListAttachmentName(f.packingListAttachmentName);
     setDeliveryNoteAttachmentName(f.deliveryNoteAttachmentName);
+
+    if (userType === "shipper") {
+      setReviewClaimIdsCount(Number(f.reviewed_claim_ids_count ?? 0));
+    }
 
     console.log("f data: ", f);
     console.log("initialData.states:", initialData.states);
@@ -1478,14 +1502,12 @@ export default function OrdersCreateForm({
   }
 
   /** ===================== Submit (Create/Edit) ===================== */
-  // async function doSubmitToApi(apiPayload: ApiPayload) {
+
   async function doSubmitToApi() {
     if (mode === "create" && !POST_ORDER_URL) {
       setRespIsSuccess(false);
       setRespTitle(t("common.error") ?? "Error");
-      setRespMessage(
-        "Endpoint form order belum dikonfigurasi (NEXT_PUBLIC_TMS_ORDER_FORM_URL)."
-      );
+      setRespMessage("Endpoint form order belum dikonfigurasi ().");
       setRespOpen(true);
       return;
     }
@@ -1498,7 +1520,7 @@ export default function OrdersCreateForm({
       setRespIsSuccess(false);
       setRespTitle(t("common.error") ?? "Error");
       setRespMessage(
-        "Edit mode butuh id dan endpoint update (NEXT_PUBLIC_TMS_ORDER_UPDATE_URL) atau fallback ke POST_ORDER_URL/{id}."
+        "Edit mode butuh id dan endpoint update () atau fallback ke ()/{id}."
       );
       setRespOpen(true);
       return;
@@ -2021,6 +2043,26 @@ export default function OrdersCreateForm({
                           <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
                         </span>
                       )}
+                    </Button>
+                  )}
+
+                  {/* {canShowReviewClaims && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={onHandleReviewClaimButton}
+                    >
+                      Create Claim
+                    </Button>
+                  )} */}
+
+                  {canShowListReviewClaims && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={onHandleShowReviewClaimListButton}
+                    >
+                      {`Claims (${reviewClaimIdsCount})`}
                     </Button>
                   )}
                 </div>

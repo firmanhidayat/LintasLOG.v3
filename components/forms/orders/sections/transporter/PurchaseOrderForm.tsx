@@ -11,6 +11,7 @@ import {
   OrdersCreateFormProps,
   OrderTypeItem,
   PartnerItem,
+  RoleOrderProps,
 } from "@/types/orders";
 import {
   apiToLocalIsoMinute,
@@ -35,6 +36,7 @@ import LookupAutocomplete, {
 } from "@/components/form/LookupAutocomplete";
 import { IconCar, IconUser } from "@/components/icons/Icon";
 import { ModalDialog } from "@/components/ui/ModalDialog";
+import { TmsUserType } from "@/types/tms-profile";
 type ExtraStopWithId = ExtraStop & { uid: string };
 type ChatImpulseDetail = { active?: boolean; unread?: number };
 function useChatImpulseChannel(channel: string = "orders:chat-impulse") {
@@ -115,6 +117,20 @@ const toRecordItem = (v: unknown): RecordItem | null => {
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>
 ) {
+  // claim_ids_count?: number | null | 0; // ini untuk Transporter
+  // reviewed_claim_ids_count? : number | null | 0; // ini untuk Shipper
+
+  let claimCount = 0;
+  if ("claim_ids_count" in data) {
+    const v = (data as { claim_ids_count?: unknown }).claim_ids_count;
+    if (typeof v === "number") {
+      claimCount = v;
+    } else if (typeof v === "string") {
+      const n = Number(v);
+      if (Number.isFinite(n)) claimCount = n;
+    }
+  }
+
   const form = {
     driver_partner: toRecordItem(data.driver_partner),
     fleet_vehicle: toRecordItem(data.fleet_vehicle),
@@ -185,6 +201,7 @@ function prefillFromInitial(
     picBongkarTelepon: "",
     extraStops: [] as ExtraStop[],
     isReadOnly: false,
+    claim_ids_count: claimCount,
   };
 
   const routes: RouteItem[] = Array.isArray(data.route_ids)
@@ -275,12 +292,19 @@ function prefillFromInitial(
   return form;
 }
 
-export default function PurchaseOrderForm({
+// export default function PurchaseOrderForm({
+//   mode = "edit",
+//   orderId,
+//   initialData,
+//   onSuccess,
+// }: OrdersCreateFormProps) {
+export default function PurchaseOrderForm<T extends TmsUserType>({
   mode = "edit",
   orderId,
   initialData,
   onSuccess,
-}: OrdersCreateFormProps) {
+  userType,
+}: RoleOrderProps<T> & { userType: T }) {
   const DETAIL_URL_TPL = process.env.NEXT_PUBLIC_TMS_P_ORDER_FORM_URL!;
   const POST_CHAT_URL = process.env.NEXT_PUBLIC_TMS_ORDER_CHAT_URL ?? "";
   const AUTOSET_STATUSES = new Set(["pickup", "delivery", "received"]);
@@ -321,6 +345,7 @@ export default function PurchaseOrderForm({
   const [picBongkarNama, setPicBongkarNama] = useState<string>("");
   const [picBongkarTelepon, setPicBongkarTelepon] = useState<string>("");
   const [multiPickupDrop, setMultiPickupDrop] = useState<boolean>(false);
+  const [claimIdsCount, setClaimIdsCount] = useState<number>(0);
   const [extraStops, setExtraStops] = useState<ExtraStopWithId[]>(() =>
     (
       [
@@ -425,6 +450,20 @@ export default function PurchaseOrderForm({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPending, startTransition] = React.useTransition();
 
+  const canShowClaims = mode === "edit";
+  const canShowListClaims = claimIdsCount > 0;
+
+  function onHandleShowClaimListButton() {
+    // TODO : show list if claim_ids_count > 0
+  }
+
+  function onHandleClaimButton() {
+    localStorage.removeItem("order-id");
+    localStorage.setItem("order-id", String(effectiveOrderId));
+    console.log(localStorage);
+    router.push("/claims/create/");
+  }
+
   const hydrateFromPrefill = React.useCallback(
     (f: ReturnType<typeof prefillFromInitial>) => {
       setNamaPenerima(f.namaPenerima);
@@ -491,10 +530,6 @@ export default function PurchaseOrderForm({
         setMultiPickupDrop(false);
       }
 
-      // setVehicles(f.fleet_vehicle);
-      // setDrivers(f.driver_partner);
-      // setFleet(f.fleet_vehicle);
-      // setDriver(f.driver_partner);
       setVehicles(toRecordItem(f.fleet_vehicle));
       setDrivers(toRecordItem(f.driver_partner));
       setFleet(toRecordItem(f.fleet_vehicle));
@@ -763,7 +798,6 @@ export default function PurchaseOrderForm({
   const [uVehicle, setFleet] = useState<RecordItem | null>(null);
   const [uDriver, setDriver] = useState<RecordItem | null>(null);
   const [fdOpen, setFdOpen] = useState(false);
-  // ==== InfoGrid tanpa any, untuk menata pasangan label/value ====
 
   type KV = ReadonlyArray<readonly [label: string, value: string]>;
   const InfoGrid: React.FC<{ items: KV }> = ({ items }) => (
@@ -779,7 +813,6 @@ export default function PurchaseOrderForm({
     </dl>
   );
 
-  // Tabs utk layar kecil (<md). Di desktop kita tampilkan 2 kolom langsung.
   type FdTab = "fleet" | "driver";
   const [fdTab, setFdTab] = useState<FdTab>("fleet");
   /** For Fleet and Driver Dialog */
@@ -859,10 +892,17 @@ export default function PurchaseOrderForm({
     setFleet(f.fleet_vehicle);
     setDriver(f.driver_partner);
 
+    // setClaimIdsCount(String(initialData?.claim_ids_count ?? 0));
+    // setClaimIdsCount(Number(initialData?.claim_ids_count ?? 0));
+
+    if (userType === "transporter") {
+      setClaimIdsCount(Number(f.claim_ids_count ?? 0));
+    }
+
     setSteps(f.states);
     setStatusCurrent(f.states.find((s) => s.is_current)?.key);
     setLoadingDetail(false);
-  }, [initialData]);
+  }, [initialData, userType]);
 
   useEffect(() => {
     if (mode !== "edit" || initialData) return;
@@ -939,6 +979,11 @@ export default function PurchaseOrderForm({
           setAmountTax(f.amount_tax);
           setAmountTotal(f.amount_total);
           setLayananLainnya(f.requirement_other);
+
+          if (userType === "transporter") {
+            setClaimIdsCount(Number(f?.claim_ids_count ?? 0));
+          }
+
           setLayananKhusus((ls) => ({
             ...ls,
             Helm: f.requirement_helmet,
@@ -965,7 +1010,8 @@ export default function PurchaseOrderForm({
       }
     })();
     return () => abort.abort();
-  }, [mode, effectiveOrderId, initialData, router.replace]);
+  }, 
+  [mode, effectiveOrderId, initialData, router.replace, userType]);
 
   // for candidate Fleet and Driver
   useEffect(() => {
@@ -979,13 +1025,6 @@ export default function PurchaseOrderForm({
     }
   }, [statusCurrent, effectiveOrderId]);
 
-  // useEffect(() => {
-  //   const s = (statusCurrent ?? "").trim().toLowerCase();
-  //   if (mode === "edit" && (AUTOSET_STATUSES.has(s) || s === "preparation")) {
-  //     if (uDriver !== undefined) setDrivers(uDriver);
-  //     if (uVehicle !== undefined) setVehicles(uVehicle);
-  //   }
-  // }, [mode, statusCurrent, uDriver, uVehicle]);
   useEffect(() => {
     const s = (statusCurrent ?? "").trim().toLowerCase();
     if (mode === "edit" && (AUTOSET_STATUSES.has(s) || s === "preparation")) {
@@ -1012,15 +1051,6 @@ export default function PurchaseOrderForm({
     return `${base}/${action}`;
   }
 
-  // function safeLabel(x: RecordItem | null | undefined, fallback: string) {
-  //   if (!x) return "-";
-  //   const name = String(x.name ?? "")
-  //     .trim()
-  //     .toLowerCase();
-  //   if (name && name !== "false") return String(x.name);
-  //   const id = x.id ?? "";
-  //   return id ? `${fallback} #${id}` : fallback;
-  // }
   function safeLabel(x: unknown, fallback: string) {
     const r = toRecordItem(x);
     if (!r) return fallback;
@@ -1032,7 +1062,6 @@ export default function PurchaseOrderForm({
   // Primitive guard
   const isPrimitive = (v: unknown): v is string | number | boolean =>
     typeof v === "string" || typeof v === "number" || typeof v === "boolean";
-  // Format value dari unknown -> string (tanpa any)
   const fmtValue = (v: unknown): string => {
     if (v === null || v === undefined) return "-";
     if (isPrimitive(v)) {
@@ -1094,7 +1123,6 @@ export default function PurchaseOrderForm({
     return fallback;
   }
 
-  // Fetch detail saat dialog dibuka, aman dg credential & i18n header
   useEffect(() => {
     if (!fdOpen) return;
     const fId = Number(vehicles?.id);
@@ -1515,6 +1543,26 @@ export default function PurchaseOrderForm({
                       </span>
                     )}
                   </Button>
+
+                  {canShowClaims && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={onHandleClaimButton}
+                    >
+                      Create Claim
+                    </Button>
+                  )}
+
+                  {canShowListClaims && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={onHandleShowClaimListButton}
+                    >
+                      {`Claims (${claimIdsCount})`}
+                    </Button>
+                  )}
                 </div>
 
                 {/* RIGHT: Reject & Accept */}

@@ -10,7 +10,8 @@
             "description": "Deskripsi",
             "orderType": "Jenis Order",
             "amountTotal": "Jumlah",
-            "status": "Status"
+            "status": "Status",
+            "document_attachment": "No. Dokumen"
         },
         "search": {
             "placeholder": "cari.."

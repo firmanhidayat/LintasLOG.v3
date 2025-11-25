@@ -302,32 +302,9 @@ export default function LoginPage() {
                 ></Field.Input>
                 <Field.Error></Field.Error>
               </Field.Root>
-
-              {/* <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.currentTarget.value)}
-                className={`mt-1 w-full rounded-md border px-3 py-2 focus:border-primary focus:ring-primary ${
-                  fieldErr.email ? "border-red-400" : "border-gray-300"
-                }`}
-                placeholder={t("form.email.placeholder")}
-                autoComplete="username"
-                required
-              />
-              {fieldErr.email && (
-                <p className="mt-1 text-xs text-red-600">{fieldErr.email}</p>
-              )} */}
             </div>
 
             <div>
-              {/* <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                {t("form.password.label")}
-              </label> */}
-
               <Field.Root
                 id="password"
                 value={password}
@@ -344,23 +321,6 @@ export default function LoginPage() {
                 ></Field.Input>
                 <Field.Error></Field.Error>
               </Field.Root>
-
-              {/* <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.currentTarget.value)}
-                className={`mt-1 w-full rounded-md border px-3 py-2 focus:border-primary focus:ring-primary ${
-                  fieldErr.password ? "border-red-400" : "border-gray-300"
-                }`}
-                placeholder={t("form.password.placeholder")}
-                autoComplete="current-password"
-                minLength={4}
-                required
-              />
-              {fieldErr.password && (
-                <p className="mt-1 text-xs text-red-600">{fieldErr.password}</p>
-              )} */}
             </div>
 
             <div className="flex items-center justify-between">

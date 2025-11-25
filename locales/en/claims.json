@@ -10,7 +10,8 @@
             "description": "Description",
             "orderType": "Order Type",
             "amountTotal": "Amount Total",
-            "status": "Status"
+            "status": "Status",
+            "document_attachment": "No. Document"
         },
         "search": {
             "placeholder": "search.."

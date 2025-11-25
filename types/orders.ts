@@ -1,5 +1,8 @@
 import { RecordItem } from "./recorditem";
 import { StatusStep } from "./status-delivery";
+import { TmsUserType } from "./tms-profile";
+
+// import type { TmsUserType } from "@/types/tms-profile";
 
 export type OrderAttachmentItem = {
   id: number;
@@ -190,6 +193,9 @@ export type OrdersCreateFormProps = {
     order_type: OrderTypeItem;
     cargo_type: RecordItem;
     cargo_type_id: number;
+    
+   
+
     cargo_name: string;
     cargo_description: string;
     cargo_cbm: number;
@@ -221,7 +227,6 @@ export type OrdersCreateFormProps = {
     driver_partner?: RecordItem;
     fleet_vehicle?: RecordItem;
 
-    // 🔥 Tambahan (top-level) untuk prefill alamat dari API
     origin_address?: AddressItem;
     dest_address?: AddressItem;
 
@@ -255,7 +260,6 @@ export type OrdersCreateFormProps = {
       dest_pic_name?: string;
       dest_pic_phone?: string;
 
-      // 🔥 Tambahan (per-route) untuk prefill alamat dari API
       origin_address?: AddressItem;
       dest_address?: AddressItem;
 
@@ -284,3 +288,35 @@ export type OrdersCreateFormProps = {
   /** Callback opsional setelah sukses submit */
   onSuccess?: (result?: unknown) => void;
 };
+
+export type TransporterInitialData = NonNullable<OrdersCreateFormProps["initialData"]> & {
+  claim_ids_count?: number | null;
+};
+export type ShipperInitialData = NonNullable<OrdersCreateFormProps["initialData"]> & {
+  reviewed_claim_ids_count?: number | null;
+};
+export type TransporterOrderProps = Omit<OrdersCreateFormProps, "initialData"> & {
+  initialData?: TransporterInitialData | null;
+};
+export type ShipperOrderProps = Omit<OrdersCreateFormProps, "initialData"> & {
+  initialData?: ShipperInitialData | null;
+};
+export type RoleOrderProps<T extends TmsUserType> = T extends "shipper"
+  ? ShipperOrderProps
+  : TransporterOrderProps;
+// interface TransporterOrderProps extends OrdersCreateFormProps {
+//   initialData?: OrdersCreateFormProps["initialData"] & {
+//     claim_ids_count?: number | null;
+//   };
+// }
+
+// interface ShipperOrderProps extends OrdersCreateFormProps {
+//   initialData?: OrdersCreateFormProps["initialData"] & {
+//     reviewed_claim_ids_count?: number | null;
+//   };
+// }
+
+// export type RoleOrderProps<T extends TmsUserType> = 
+//   T extends "shipper" 
+//     ? ShipperOrderProps 
+//     : TransporterOrderProps;
