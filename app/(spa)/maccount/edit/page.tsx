@@ -26,9 +26,10 @@ export default function ProfileDetailPage() {
           name: j?.name ?? null,
           email: j?.email ?? null,
           phone: j?.phone ?? null,
+          mobile: j?.mobile ?? null,
           tz: j?.tz ?? null,
           vat: j?.vat ?? null,
-          tms_user_type: j?.tmes_user_type,
+          tms_user_type: j?.tms_user_type,
           shipper_transporter_document_attachment:
             j?.shipper_transporter_document_attachment ?? null,
           shipper_transporter_document_attachment_id:

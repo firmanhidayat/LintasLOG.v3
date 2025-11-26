@@ -45,6 +45,7 @@ export default function ProfileFormPage({
     name: initialData?.name ?? "",
     email: initialData?.email ?? "",
     phone: initialData?.phone ?? "",
+    mobile: initialData?.mobile ?? "",
     vat: initialData?.vat ?? "",
     tz: initialData?.tz ?? "",
     tms_user_type: initialData.tms_user_type ?? "",
@@ -377,6 +378,18 @@ export default function ProfileFormPage({
                     <Field.Control>
                       <Field.Input className="w-full" />
                       <Field.Error>{snap.errors.mobile}</Field.Error>
+                    </Field.Control>
+                  </Field.Root>
+                  <Field.Root
+                    value={snap.values.phone as string}
+                    onChange={(v) => ctrl.set("phone", v)}
+                  >
+                    <Field.Label>
+                      {t("pages.maccount.edit.label.phone")}
+                    </Field.Label>
+                    <Field.Control>
+                      <Field.Input className="w-full" />
+                      <Field.Error>{snap.errors.phone}</Field.Error>
                     </Field.Control>
                   </Field.Root>
                   <Field.Root
