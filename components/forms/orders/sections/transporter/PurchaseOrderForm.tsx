@@ -308,6 +308,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const DETAIL_URL_TPL = process.env.NEXT_PUBLIC_TMS_P_ORDER_FORM_URL!;
   const POST_CHAT_URL = process.env.NEXT_PUBLIC_TMS_ORDER_CHAT_URL ?? "";
   const AUTOSET_STATUSES = new Set(["pickup", "delivery", "received"]);
+  const AUTOSET_TMS_STATE_FOR_BTNCLAIM = new Set(["accept","preparation","pickup","delivery","received"]);
   const router = useRouter();
   const searchParams = useSearchParams();
   const qsId = searchParams?.get("id") ?? null;
@@ -891,9 +892,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setDrivers(f.driver_partner);
     setFleet(f.fleet_vehicle);
     setDriver(f.driver_partner);
-
-    // setClaimIdsCount(String(initialData?.claim_ids_count ?? 0));
-    // setClaimIdsCount(Number(initialData?.claim_ids_count ?? 0));
 
     if (userType === "transporter") {
       setClaimIdsCount(Number(f.claim_ids_count ?? 0));
@@ -1544,7 +1542,9 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                     )}
                   </Button>
 
-                  {canShowClaims && (
+                  {canShowClaims && AUTOSET_TMS_STATE_FOR_BTNCLAIM.has(
+                  (statusCurrent ?? "").trim().toLowerCase()
+                ) && (
                     <Button
                       type="button"
                       variant="outline"
