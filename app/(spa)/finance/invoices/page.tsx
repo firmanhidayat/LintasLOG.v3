@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 import { Icon } from "@/components/icons/Icon";
 import { useRouter } from "next/navigation";
-import { fmtDate, fmtPrice } from "@/lib/helpers";
+import { capitalizeIfLowercase, fmtDate, fmtPrice } from "@/lib/helpers";
 import { ClaimAttachmentGroup } from "@/features/claims/ClaimsFormController";
 
 const BILLS_URL = process.env.NEXT_PUBLIC_TMS_INV_BILL_URL ?? "";
@@ -38,19 +38,51 @@ type InvoiceRow = {
   document_attachment: ClaimAttachmentGroup;
 };
 
-// function Pill({ value }: { value: TwoState }) {
-//   const color =
-//     value === "Approved"
-//       ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-//       : "bg-blue-100 text-blue-700 border-blue-200"; // Paid
-//   return (
-//     <span
-//       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}
-//     >
-//       {value}
-//     </span>
-//   );
-// }
+function StatusPill({ value }: { value: string }) {
+  const color =
+    value === "draft"
+      ? "bg-gray-100 text-gray-700 border-gray-200"
+      : value === "posted"
+      ? "bg-blue-100 text-blue-700 border-blue-200"
+      :value === "cancel"
+      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+      : "bg-violet-100 text-violet-700 border-violet-200";
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}
+    >
+      {capitalizeIfLowercase(value)}
+    </span>
+  );
+}
+
+function PaymentStatusPill({ value }: { value: string }) {
+  const color =
+    value === "not_paid"
+      ? "bg-gray-100 text-gray-700 border-gray-200"
+      : value === "in_payment"
+      ? "bg-blue-100 text-blue-700 border-blue-200"
+      : value === "paid"
+      ? "bg-amber-100 text-amber-700 border-amber-200"
+      :value === "partial"
+      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+      : value === "reversed"
+      ? "bg-red-100 text-red-700 border-red-200"
+      : value === "invoicing_legacy"
+      ? "bg-cyan-100 text-cyan-700 border-cyan-200"
+      : "bg-violet-100 text-violet-700 border-violet-200";
+  const ret_value =
+  value==="not_paid" ? "Not Paid": value==="in_payment" ? "In Payment" : value==="paid" ? "Paid" : value=== "partial" ? "Partially Paid" : value=== "reversed" ? 
+  "Reversed" : value==="invoicing_legacy" ? "Invoicing App Legacy" : "--Undefined--" ;
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}
+    >
+      {capitalizeIfLowercase(ret_value)}
+    </span>
+  );
+}
 
 export default function InvoicesListPage() {
   const router = useRouter();
@@ -143,7 +175,7 @@ export default function InvoicesListPage() {
         sortable: true,
         sortValue: (r) => r.state,
         className: "w-36",
-        cell: (r) => r.state,
+        cell: (r) => <StatusPill value={String(r.state)}/>,
         defaultVisible: true,
       },
       {
@@ -152,18 +184,18 @@ export default function InvoicesListPage() {
         sortable: true,
         sortValue: (r) => r.payment_state,
         className: "w-36",
-        cell: (r) => r.payment_state,
+        cell: (r) => <PaymentStatusPill value={String(r.payment_state)} />,
         defaultVisible: false,
       },
-      {
-        id: "states",
-        label: t("invoices.columns.document_attachment"),
-        sortable: true,
-        sortValue: (r) => r.document_attachment.name ?? "",
-        className: "w-36",
-        cell: (r) => r.document_attachment.name ?? "",
-        defaultVisible: false,
-      },
+      // {
+      //   id: "states",
+      //   label: t("invoices.columns.document_attachment"),
+      //   sortable: true,
+      //   sortValue: (r) => r.document_attachment.name ?? "",
+      //   className: "w-36",
+      //   cell: (r) => r.document_attachment.name ?? "",
+      //   defaultVisible: false,
+      // },
     ];
   }, [i18nReady, activeLang]);
 
@@ -189,33 +221,33 @@ export default function InvoicesListPage() {
         enableEditAction={false}
         enableDetailsAction={true}
         enableDeleteAction={false}
-        onEditAction={(id, row, index) => {
-          const ed_url = `/finance/invoices/details?id=${encodeURIComponent(
-            String(id)
-          )}`;
-          router.push(ed_url);
-        }}
-        onDetailsAction={(id, row, index) => {
-          console.log("{1} {2} {3}", id, row, index);
-        }}
+        // onEditAction={(id, row, index) => {
+        //   const ed_url = `/finance/invoices/details?id=${encodeURIComponent(
+        //     String(id)
+        //   )}`;
+        //   router.push(ed_url);
+        // }}
+        // onDetailsAction={(id, row, index) => {
+        //   console.log("{1} {2} {3}", id, row, index);
+        // }}
         getDetailsContent={(row, index) => {
           return (
             <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-500">
-                  Bill Name
+                  {t("invoices.columns.name")}
                 </span>
                 <span className="text-sm text-gray-900">{row.name}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-medium text-gray-500">Date</span>
+                <span className="text-xs font-medium text-gray-500">{t("invoices.columns.invoice_date")}</span>
                 <span className="text-sm text-gray-900">
                   {fmtDate(row.invoice_date)}
                 </span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-500">
-                  Amount Total
+                  {t("invoices.columns.amount_total")}
                 </span>
                 <span className="text-sm text-gray-900">
                   {row.amount_total}
@@ -229,14 +261,14 @@ export default function InvoicesListPage() {
           t("vendorbill.search.placeholder") || "Cari invoices bill..."
         }
         rowsPerPageLabel={t("vendorbill.rowsPerPage") || "Baris per halaman"}
-        leftHeader={leftHeader}
+        // leftHeader={leftHeader}
         initialSort={{ by: "bill_date", dir: "desc" }}
         enableColumnVisibility={true}
         columnVisibilityStorageKey="invoices-shipper-trans"
-        rowNavigateTo={(id) => ({
-          pathname: "vendorbill/details",
-          query: { id },
-        })}
+        // rowNavigateTo={(id) => ({
+        //   pathname: "vendorbill/details",
+        //   query: { id },
+        // })}
       />
     </div>
   );

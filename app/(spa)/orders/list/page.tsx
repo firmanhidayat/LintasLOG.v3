@@ -343,7 +343,7 @@ export default function OrdersListPage() {
           fetchBase={`${GET_ORDERS_URL}`}
           deleteBase={`${GET_ORDERS_URL}`}
           enableEditAction={true}
-          enableDetailsAction={true}
+          enableDetailsAction={false}
           enableDeleteAction={true}
           onEditAction={(id, row, index) => {
             const ed_url = `/orders/details?id=${encodeURIComponent(
@@ -402,7 +402,7 @@ export default function OrdersListPage() {
           fetchBase={`${GET_P_ORDERS_URL}`}
           deleteBase={`${GET_P_ORDERS_URL}`}
           enableEditAction={true}
-          enableDetailsAction={true}
+          enableDetailsAction={false}
           enableDeleteAction={true}
           onEditAction={(id, row, index) => {
             // router.push(`/edit/${id}`);

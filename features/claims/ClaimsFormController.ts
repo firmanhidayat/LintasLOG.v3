@@ -1,7 +1,7 @@
 import { AbstractFormController } from "@/core/AbstractFormController";
 import type { RecordItem } from "@/types/recorditem";
 import { StatusStep } from "@/types/status-delivery";
-import { useEphemeralLocalStorage } from "@/hooks/useEphemeralLocalStorage";
+// import { useEphemeralLocalStorage } from "@/hooks/useEphemeralLocalStorage";
 
 const CLAIMS_URL_BY_PO = process.env.NEXT_PUBLIC_TMS_P_ORDER_FORM_URL!!;
 const CLAIMS_URL = process.env.NEXT_PUBLIC_TMS_CLAIMS_URL!!;
@@ -97,10 +97,10 @@ export class ClaimsFormController extends AbstractFormController<
       e.amount = "Required";
     }
     if (!values.description) {
-      e.amount = "Required";
+      e.description = "Required";
     }
     if (this.formMode === "create" && !values.document_attachment_id) {
-      e.description = "Required";
+      e.document_attachment_id = "Required";
     }
 
     return e;

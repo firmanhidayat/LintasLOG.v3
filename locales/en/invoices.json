@@ -4,13 +4,34 @@
             "title": "Create Invoice"
         },
         "columns": {
-            "name": "Name",
-            "invoice_date" : "Invoice Date",
-            "invoice_date_due": "Invoice due date",
-            "ref": "Ref",
-            "invoice_origin": "Invoice origin",
-            "amount_untaxed": "Amount untaxed",
-            "amount_tax": "Amount tax",
+            "name": "Customer Invoice No.",
+            "invoice_date" : "Invoice date",
+            "invoice_date_due": "Due date",
+            "ref": "Customer referensi",
+            "invoice_origin": "Source document",
+            "amount_untaxed": "Tax Excluded",
+            "amount_tax": "Tax",
+            "amount_total": "Total",
+            "state": "Status",
+            "payment_state": "Payment status",
+            "document_attachment": "Document"
+        },
+        "search": {
+            "placeholder": "search..."
+        }
+    },
+    "vendorbills": {
+        "create": {
+            "title": "Create Vendor bill"
+        },
+        "columns": {
+            "name": "Vendor Bill No.",
+            "invoice_date" : "Bill date",
+            "invoice_date_due": "Due date",
+            "ref": "Bill referensi",
+            "invoice_origin": "Source document",
+            "amount_untaxed": "Tax Excluded",
+            "amount_tax": "Tax",
             "amount_total": "Total",
             "state": "Status",
             "payment_state": "Payment status",

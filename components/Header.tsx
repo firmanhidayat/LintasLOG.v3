@@ -141,7 +141,7 @@ export default function Header({
                     <span>{t("avatarnav.mgtchg")}</span>
                   </Link>
                 </li>
-                <li role="none">
+                {/* <li role="none">
                   <Link
                     href="/maccount/activitylog/"
                     role="menuitem"
@@ -150,7 +150,7 @@ export default function Header({
                     <Activity className="h-4 w-4" />
                     <span>{t("avatarnav.mgtacl")}</span>
                   </Link>
-                </li>
+                </li> */}
 
                 <li role="none">
                   <div className="my-1 border-t border-gray-200/70" />

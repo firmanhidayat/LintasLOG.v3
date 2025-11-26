@@ -196,6 +196,7 @@ const SidebarContent = memo(function SidebarContent() {
         </div>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
+        {/* {currentUserType==="shipper" && ( */}
         <NavGroup
           href="#"
           label={t("nav.dashboard.title")}
@@ -217,6 +218,8 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
+        {/* )} */}
+
         <NavGroup
           href="#"
           label={t("nav.orders.title")}

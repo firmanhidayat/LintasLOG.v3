@@ -7,10 +7,10 @@ import { useRouter } from "next/navigation";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import { Button } from "@/components/ui/Button";
 import {
-  ClaimApiResponse,
-  ClaimsFormController,
-  ClaimValues,
-} from "@/features/claims/ClaimsFormController";
+  BillsApiResponse,
+  VendorBillFormController,
+  BillsValues,
+} from "@/features/vendorbills/VendorBillFormController";
 import { useFormController } from "@/core/useFormController";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import MultiFileUpload, {
@@ -21,8 +21,8 @@ import { ModalDialog } from "@/components/ui/ModalDialog";
 const ATTACHMENTS_URL =
   process.env.NEXT_PUBLIC_TMS_DOCUMENT_ATTACHMENTS_URL ?? "";
 
-type ClaimDocType = "claim_document";
-type ClaimAttachmentGroup = {
+type BillsDocType = "invoice_document";
+type BillsAttachmentGroup = {
   id: number;
   name: string;
   doc_type: string;
@@ -37,38 +37,31 @@ type ClaimAttachmentGroup = {
   }[];
 };
 
-type ClaimInitialData = Partial<ClaimValues> & {
-  document_attachment?: ClaimAttachmentGroup;
+type BillsInitialData = Partial<BillsValues> & {
+  document_attachment?: BillsAttachmentGroup;
 };
-
-export default function ClaimFormPage({
-  mode = "create",
-  claimId,
+export default function VendorBillsFormPage({
+  mode = "edit",
+  billsId,
   initialData,
   onSuccess,
 }: {
-  mode?: "create" | "edit";
-  claimId?: number | string;
-  initialData?: ClaimInitialData;
-  onSuccess?: (data: ClaimApiResponse | null) => void;
+  mode?: "edit";
+  billsId?: number | string;
+  initialData?: BillsInitialData;
+  onSuccess?: (data: BillsApiResponse | null) => void;
 }) {
   const { ready: i18nReady } = useI18nReady();
   const router = useRouter();
 
-  const init: ClaimValues = {
-    amount: initialData?.amount ?? 0,
-    description: initialData?.description ?? "",
+  const init: BillsValues = {
+    ref: initialData?.ref ?? "",
     document_attachment_id: initialData?.document_attachment_id ?? 0,
   };
 
   const [ctrl, snap] = useFormController(
-    () => new ClaimsFormController(mode, init)
+    () => new VendorBillFormController(mode, init)
   );
-
-  const toNum = (s: string) => {
-    const n = Number(s.trim().replace(/,/g, ""));
-    return Number.isFinite(n) ? n : 0;
-  };
 
   const [submitting, setSubmitting] = useState(false);
   const [dlgOpen, setDlgOpen] = useState(false);
@@ -76,7 +69,7 @@ export default function ClaimFormPage({
   const [dlgTitle, setDlgTitle] = useState("");
   const [dlgMsg, setDlgMsg] = useState<React.ReactNode>("");
 
-  const [docClaimFiles, setDocClaimFiles] = useState<File[]>([]);
+  const [docBillsFiles, setDocBillsFiles] = useState<File[]>([]);
   const [docExistingFiles, setDocExistingFiles] = useState<ExistingFileItem[]>(
     []
   );
@@ -114,7 +107,7 @@ export default function ClaimFormPage({
   }
 
   async function uploadDocumentAttachment(
-    docType: ClaimDocType,
+    docType: BillsDocType,
     files: File[]
   ): Promise<number | undefined> {
     if (!files.length) return undefined;
@@ -215,37 +208,39 @@ export default function ClaimFormPage({
     try {
       setSubmitting(true);
 
-      if (mode === "create") {
-        if (docClaimFiles.length > 0) {
-          const docId = await uploadDocumentAttachment(
-            "claim_document",
-            docClaimFiles
-          );
-          if (typeof docId === "number")
-            ctrl.set("document_attachment_id", docId);
-        } else {
-          ctrl.setError(
-            "document_attachment_id",
-            "Document claim is required!"
-          );
-        }
-      } else if (mode === "edit") {
+      // if (mode === "create") {
+      //   if (docClaimFiles.length > 0) {
+      //     const docId = await uploadDocumentAttachment(
+      //       "claim_document",
+      //       docClaimFiles
+      //     );
+      //     if (typeof docId === "number")
+      //       ctrl.set("document_attachment_id", docId);
+      //   } else {
+      //     ctrl.setError(
+      //       "document_attachment_id",
+      //       "Document claim is required!"
+      //     );
+      //   }
+      // } else
+
+      if (mode === "edit") {
         const snapNow = ctrl.snapshot();
         const currentDocumentAttachmentId =
           (snapNow.values.document_attachment_id as number | undefined) ??
           initialData?.document_attachment_id ??
           0;
 
-        if (docClaimFiles.length > 0) {
+        if (docBillsFiles.length > 0) {
           if (currentDocumentAttachmentId && currentDocumentAttachmentId > 0) {
             await appendFilesToExistingAttachment(
               currentDocumentAttachmentId,
-              docClaimFiles
+              docBillsFiles
             );
           } else {
             const docId = await uploadDocumentAttachment(
-              "claim_document",
-              docClaimFiles
+              "invoice_document",
+              docBillsFiles
             );
             if (typeof docId === "number")
               ctrl.set("document_attachment_id", docId);
@@ -253,10 +248,10 @@ export default function ClaimFormPage({
         }
       }
 
-      const data = await ctrl.submit(mode, claimId);
+      const data = await ctrl.submit(mode, billsId);
       onSuccess?.(data);
       openSuccessDialog();
-      setDocClaimFiles([]);
+      setDocBillsFiles([]);
     } catch (e) {
       console.error(e);
       openErrorDialog(e);
@@ -268,15 +263,13 @@ export default function ClaimFormPage({
   useEffect(() => {
     if (!initialData) return;
     ctrl.setMany({
-      amount: initialData?.amount ?? 0,
-      description: initialData?.description ?? "",
+      ref: initialData?.ref ?? "",
       document_attachment_id: initialData?.document_attachment_id ?? 0,
     });
 
     if (mode === "edit") {
       const docGroup = initialData.document_attachment;
       setDocHeaderName(initialData.document_attachment?.name);
-
       if (docGroup?.attachments?.length) {
         setDocExistingFiles(
           docGroup.attachments.map((att) => ({
@@ -294,11 +287,11 @@ export default function ClaimFormPage({
   }, [initialData, ctrl, mode]);
 
   function handleDiscard() {
-    router.push("/claims/list");
+    router.push("/vendorbill/list");
   }
 
-  function onHandleChangeClaimFiles(files: File[]) {
-    setDocClaimFiles(files);
+  function onHandleChangeBillsFiles(files: File[]) {
+    setDocBillsFiles(files);
 
     if (files.length > 0) {
       ctrl.set(
@@ -308,7 +301,7 @@ export default function ClaimFormPage({
       ctrl.setError("document_attachment_id", "");
     } else {
       ctrl.set("document_attachment_id", 0);
-      ctrl.setError("document_attachment_id", "Document claim is required!");
+      ctrl.setError("document_attachment_id", "Document bills is required!");
     }
   }
 
@@ -333,40 +326,29 @@ export default function ClaimFormPage({
 
       <Card>
         <CardHeader>
-          <h4 className="text-3xl font-semibold text-gray-800">Claim</h4>
+          <h4 className="text-3xl font-semibold text-gray-800">Bills</h4>
         </CardHeader>
         <CardBody>
           <div className="flex flex-col md:flex-row gap-6">
             <div className="space-y-4">
               <Card>
-                <CardHeader>Claim Detail</CardHeader>
+                <CardHeader>Bills Detail</CardHeader>
                 <CardBody>
                   <Field.Root
-                    value={snap.values.amount as string}
-                    onChange={(v) => ctrl.set("amount", toNum(v))}
+                    value={snap.values.ref as string}
+                    onChange={(v) => ctrl.set("ref", v)}
                   >
-                    <Field.Label>{t("claims.form.fields.amount")}</Field.Label>
+                    <Field.Label>Invoice Number</Field.Label>
                     <Field.Control>
-                      <Field.Input inputMode="decimal" className="w-full" />
-                      <Field.Error>{snap.errors.amount}</Field.Error>
-                    </Field.Control>
-                  </Field.Root>
-
-                  <Field.Root
-                    value={snap.values.description as string}
-                    onChange={(v) => ctrl.set("description", v)}
-                  >
-                    <Field.Label>{t("claims.form.fields.reason")}</Field.Label>
-                    <Field.Control>
-                      <Field.Textarea rows={4} className="w-full" />
-                      <Field.Error>{snap.errors.description}</Field.Error>
+                      <Field.Input className="w-full" />
+                      <Field.Error>{snap.errors.ref}</Field.Error>
                     </Field.Control>
                   </Field.Root>
 
                   <MultiFileUpload
                     label={t("claims.form.fields.document")}
-                    value={docClaimFiles}
-                    onChange={onHandleChangeClaimFiles}
+                    value={docBillsFiles}
+                    onChange={onHandleChangeBillsFiles}
                     accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
                     maxFileSizeMB={10}
                     maxFiles={10}
@@ -375,7 +357,7 @@ export default function ClaimFormPage({
                       "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
                     }
                     onReject={(msgs) =>
-                      console.warn("[DOC_CLAIM] rejected:", msgs)
+                      console.warn("[DOC_BILLS] rejected:", msgs)
                     }
                     className="gap-3 justify-end"
                     showImagePreview
@@ -390,7 +372,6 @@ export default function ClaimFormPage({
                 </CardBody>
               </Card>
             </div>
-
           </div>
         </CardBody>
       </Card>
