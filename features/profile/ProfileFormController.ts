@@ -8,7 +8,13 @@ export type ProfileErrors = Partial<Record<keyof ProfileValues, string>>;
 export type ProfileApiResponse = { id?: string } & {
   [k: string]: JsonValue;
 };
-export type ProfilePayload = TmsProfile;
+// export type ProfilePayload = TmsProfile;
+export type ProfilePayload = {
+  name?: string,
+  phone?: string,
+  tz: string,
+  shipper_transporter_document_attachment_id: number | null
+}
 const USER_ME_URL = process.env.NEXT_PUBLIC_TMS_USER_PROFILE_URL ?? "";
 
 function toNumberSafe(v: unknown): number | undefined {
@@ -44,18 +50,17 @@ export class ProfileFormController extends AbstractFormController<
   }
   protected toPayload(values: ProfileValues): ProfilePayload {
     return {
-      id: toNumberSafe(values.id)?.toString() ?? "",
       name: values.name,
-      email: values.email,
+      // email: values.email,
       phone: values.phone,
-      mobile: values.mobile,
-      vat: values.vat,
+      // mobile: values.mobile,
+      // vat: values.vat,
       tz: values.tz,
-      shipper_transporter_document_attachment:
-        values.shipper_transporter_document_attachment,
+      // shipper_transporter_document_attachment:
+      //   values.shipper_transporter_document_attachment,
       shipper_transporter_document_attachment_id:
         values.shipper_transporter_document_attachment_id,
-      tms_user_type: values.tms_user_type,
+      // tms_user_type: values.tms_user_type,
     };
   }
   protected endpoint(mode: "create" | "edit", id?: string | number): string {

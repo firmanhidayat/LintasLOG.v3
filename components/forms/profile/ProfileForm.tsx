@@ -15,13 +15,13 @@ import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import MultiFileUpload, {
   ExistingFileItem,
 } from "@/components/form/MultiFileUpload";
-import { ModalDialog } from "@/components/ui/ModalDialog";
+// import { ModalDialog } from "@/components/ui/ModalDialog";
 import {
   ProfileDocType,
   ProfileDocumentAttachmentGroup,
 } from "@/types/tms-profile";
 import { getTimeZones, tzLabel } from "@/utils/timezone";
-import { FieldSelect } from "@/components/form/FieldSelect";
+// import { FieldSelect } from "@/components/form/FieldSelect";
 
 const ATTACHMENTS_URL =
   process.env.NEXT_PUBLIC_TMS_DOCUMENT_ATTACHMENTS_URL ?? "";
@@ -221,6 +221,9 @@ export default function ProfileFormPage({
           0;
 
         if (profileDocumentFiles.length > 0) {
+
+          console.log("profileDocumentFiles : ", profileDocumentFiles);
+          
           if (currenDocumentAttachmentId && currenDocumentAttachmentId > 0) {
             await appendFilesToExistingAttachment(
               currenDocumentAttachmentId,
@@ -231,8 +234,9 @@ export default function ProfileFormPage({
               "shipper_transporter_document",
               profileDocumentFiles
             );
+            console.log(docId);
             if (typeof docId === "number") {
-              ctrl.set("unit_attachment_id", docId);
+              ctrl.set("shipper_transporter_document_attachment_id", docId);
             }
           }
         }
@@ -322,7 +326,8 @@ export default function ProfileFormPage({
         </CardHeader>
         <CardBody>
           <div className="flex flex-col md:flex-row gap-6">
-            <div className="md:basis-1/2 space-y-4">
+            {/* <div className="md:basis-1/2 space-y-4"> */}
+            <div className="space-y-4">
               <Card>
                 <CardHeader>Detail</CardHeader>
                 <CardBody>
@@ -398,8 +403,8 @@ export default function ProfileFormPage({
                   /> */}
                 </CardBody>
               </Card>
-            </div>
-            <div className="md:basis-1/2 space-y-4">
+            {/* </div> */}
+            {/* <div className="md:basis-1/2 space-y-4"> */}
               <MultiFileUpload
                 label="Document"
                 value={profileDocumentFiles}
