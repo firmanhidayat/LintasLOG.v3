@@ -37,6 +37,9 @@ import LookupAutocomplete, {
 import { IconCar, IconUser } from "@/components/icons/Icon";
 import { ModalDialog } from "@/components/ui/ModalDialog";
 import { TmsUserType } from "@/types/tms-profile";
+import { ClaimItem } from "@/types/claims";
+import { fetchOrderClaims_T } from "@/services/claimService";
+import { ClaimListModal } from "@/components/claims/ClaimListModal";
 type ExtraStopWithId = ExtraStop & { uid: string };
 type ChatImpulseDetail = { active?: boolean; unread?: number };
 function useChatImpulseChannel(channel: string = "orders:chat-impulse") {
@@ -454,8 +457,27 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const canShowClaims = mode === "edit";
   const canShowListClaims = claimIdsCount > 0;
 
+  const [claimsModalOpen, setClaimsModalOpen] = useState(false);
+  const [claims, setClaims] = useState<ClaimItem[]>([]);
+  const [claimsLoading, setClaimsLoading] = useState(false);
+  const fetchClaims = async () => {
+    if (!effectiveOrderId) return;
+    
+    setClaimsLoading(true);
+    try {
+      const claimsData = await fetchOrderClaims_T(effectiveOrderId);
+      setClaims(claimsData.items);
+    } catch (error) {
+      console.error('Failed to fetch claims:', error);
+      openErrorDialog(error, 'Failed to load claims');
+    } finally {
+      setClaimsLoading(false);
+    }
+  };
+
   function onHandleShowClaimListButton() {
-    // TODO : show list if claim_ids_count > 0
+      setClaimsModalOpen(true);
+      fetchClaims();
   }
 
   function onHandleClaimButton() {
@@ -1852,7 +1874,13 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         </div>
       </Modal>
 
-      {/* ===== NEW: Global Success/Error Dialog ===== */}
+      <ClaimListModal
+        open={claimsModalOpen}
+        onClose={() => setClaimsModalOpen(false)}
+        claims={claims}
+        loading={claimsLoading}
+      />
+
       <ModalDialog
         open={dlgOpen}
         kind={dlgKind}

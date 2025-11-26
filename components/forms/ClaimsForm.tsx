@@ -17,9 +17,11 @@ import MultiFileUpload, {
   ExistingFileItem,
 } from "@/components/form/MultiFileUpload";
 import { ModalDialog } from "@/components/ui/ModalDialog";
+import { TmsUserType } from "@/types/tms-profile";
 
 const ATTACHMENTS_URL =
   process.env.NEXT_PUBLIC_TMS_DOCUMENT_ATTACHMENTS_URL ?? "";
+const CLAIMS_APPROVAL_URL = process.env.NEXT_PUBLIC_TMS_CLAIMS_URL ?? "";
 
 type ClaimDocType = "claim_document";
 type ClaimAttachmentGroup = {
@@ -45,20 +47,24 @@ export default function ClaimFormPage({
   mode = "create",
   claimId,
   initialData,
+  userType,
   onSuccess,
 }: {
   mode?: "create" | "edit";
   claimId?: number | string;
   initialData?: ClaimInitialData;
+  userType: TmsUserType;
   onSuccess?: (data: ClaimApiResponse | null) => void;
 }) {
   const { ready: i18nReady } = useI18nReady();
   const router = useRouter();
-
+console.log("Goes here ln.60 : ",initialData)
   const init: ClaimValues = {
     amount: initialData?.amount ?? 0,
     description: initialData?.description ?? "",
     document_attachment_id: initialData?.document_attachment_id ?? 0,
+    state: initialData?.state ?? "",
+    purchase_order: initialData?.purchase_order ?? null,
   };
 
   const [ctrl, snap] = useFormController(
@@ -176,7 +182,7 @@ export default function ClaimFormPage({
   async function deleteRemoteAttachment(
     docAttachmentId: number,
     attachmentId: number
-  ) {
+  ){
     const url = `${ATTACHMENTS_URL}/${encodeURIComponent(
       String(docAttachmentId)
     )}/attachments/${encodeURIComponent(String(attachmentId))}`;
@@ -209,6 +215,57 @@ export default function ClaimFormPage({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function doApprovalState(id: string, state: string): Promise<void> {
+    try {
+      setSubmitting(true);
+      const url = state === "approve" 
+        ? `${CLAIMS_APPROVAL_URL}/${id}/approve`
+        : `${CLAIMS_APPROVAL_URL}/${id}/reject`;
+      
+      const res = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(
+          `Failed to ${state} claim (${res.status} ${res.statusText}) ${text}`
+        );
+      }
+      const updatedData = await fetchUpdatedClaimData(id);
+      if (updatedData) {
+        ctrl.setMany({
+          state: updatedData.state,
+          amount: updatedData.amount ?? 0,
+          description: updatedData.description ?? "",
+          document_attachment_id: updatedData.document_attachment_id ?? 0,
+          purchase_order: updatedData.purchase_order ?? null,
+        });
+      }
+      openSuccessDialog();
+    } catch (e) {
+      console.error(e);
+      openErrorDialog(e);
+    } finally {
+      setSubmitting(false);
+      router.refresh();
+    }
+  }
+  async function fetchUpdatedClaimData(claimId: string) {
+    try {
+      const res = await fetch(`${CLAIMS_APPROVAL_URL}/${claimId}`, {
+        credentials: "include",
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (error) {
+      console.error("Failed to fetch updated claim data:", error);
+    }
+    return null;
   }
 
   async function onSave() {
@@ -267,10 +324,15 @@ export default function ClaimFormPage({
 
   useEffect(() => {
     if (!initialData) return;
+
+    console.log("InitialData useffect : ", initialData);
+
     ctrl.setMany({
       amount: initialData?.amount ?? 0,
       description: initialData?.description ?? "",
       document_attachment_id: initialData?.document_attachment_id ?? 0,
+      state: initialData?.state ?? "",
+      purchase_order: initialData?.purchase_order ?? null,
     });
 
     if (mode === "edit") {
@@ -297,6 +359,32 @@ export default function ClaimFormPage({
     router.push("/claims/list");
   }
 
+  async function onHandleApprove(){
+    try {
+      setSubmitting(true);
+      await doApprovalState(claimId as string,"approve");
+    } catch (e) {
+      console.error(e);
+      openErrorDialog(e);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function onHandleReject(){
+    try {
+      setSubmitting(true);
+      await doApprovalState(claimId as string, "reject");
+    } catch (e) {
+      console.error(e);
+      openErrorDialog(e);
+    } finally {
+      setSubmitting(false);
+    }
+
+  }
+
+  
   function onHandleChangeClaimFiles(files: File[]) {
     setDocClaimFiles(files);
 
@@ -311,23 +399,64 @@ export default function ClaimFormPage({
       ctrl.setError("document_attachment_id", "Document claim is required!");
     }
   }
-
   return (
     <div className="pb-24">
       {/* Sticky action bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/80 backdrop-blur">
         <div className="mx-auto max-w-screen-xl px-4 py-3 flex items-center justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={handleDiscard}>
-            {t("common.discard")}
-          </Button>
-          <Button
-            type="button"
-            variant="solid"
-            disabled={!snap.canSubmit || submitting}
-            onClick={onSave}
-          >
-            {mode === "edit" ? "Update" : "Save"}
-          </Button>
+          {userType === "shipper" && (
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="ghost" disabled={submitting} onClick={handleDiscard}>
+                {t("common.discard")}
+              </Button>
+              {snap.values.state==="reviewed" && (
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="ghost" disabled={submitting} onClick={onHandleReject}>
+                      {t("common.reject")}
+                    </Button>
+                    <Button
+                      onClick={onHandleApprove}
+                      disabled={!snap.canSubmit || submitting}
+                      variant="solid"
+                    >
+                      Accept
+                    </Button>
+                  </div>
+                
+              )}
+            </div>
+          )}
+          
+          
+          
+          {userType === "transporter" && (
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="ghost" disabled={submitting} onClick={handleDiscard}>
+                {t("common.discard")}
+              </Button>
+              {snap.values.state==="draft" && (
+                <Button
+                  type="button"
+                  variant="solid"
+                  disabled={!snap.canSubmit || submitting}
+                  onClick={onSave}
+                >
+                  {mode === "edit" ? "Update" : "Save"}
+                </Button>
+              )}
+              {mode==="create" && (
+                <Button
+                  type="button"
+                  variant="solid"
+                  disabled={!snap.canSubmit || submitting}
+                  onClick={onSave}
+                >
+                  Save
+                </Button>
+              )}
+            </div>
+          )}
+          
         </div>
       </div>
 
@@ -370,6 +499,7 @@ export default function ClaimFormPage({
                     accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
                     maxFileSizeMB={10}
                     maxFiles={10}
+                    disabled={userType === "shipper" && (snap.values.state==="reviewed" || snap.values.state==="approve" )}
                     hint={
                       t("claims.form.hints.document") ??
                       "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
@@ -390,7 +520,6 @@ export default function ClaimFormPage({
                 </CardBody>
               </Card>
             </div>
-
           </div>
         </CardBody>
       </Card>

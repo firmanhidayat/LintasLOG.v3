@@ -3,8 +3,9 @@ import type { RecordItem } from "@/types/recorditem";
 import { StatusStep } from "@/types/status-delivery";
 // import { useEphemeralLocalStorage } from "@/hooks/useEphemeralLocalStorage";
 
-const CLAIMS_URL_BY_PO = process.env.NEXT_PUBLIC_TMS_P_ORDER_FORM_URL!!;
-const CLAIMS_URL = process.env.NEXT_PUBLIC_TMS_CLAIMS_URL!!;
+const CLAIMS_URL_BY_PO = process.env.NEXT_PUBLIC_TMS_P_ORDER_FORM_URL ?? "";
+const CLAIMS_URL = process.env.NEXT_PUBLIC_TMS_CLAIMS_URL ?? "";
+
 export type ClaimAttachmentItem = {
   id: number;
   name?: string;
@@ -36,6 +37,8 @@ export type ClaimValues = {
   amount: number;
   description: string;
   document_attachment_id?: number | null;
+  state: string;
+  purchase_order?: RecordItem | null;
 };
 export type ClaimErrors = Partial<Record<keyof ClaimValues, string>>;
 export type ClaimPayload = {
@@ -79,6 +82,8 @@ export class ClaimsFormController extends AbstractFormController<
       amount: 0,
       description: "",
       document_attachment_id: 0,
+      state:"",
+      purchase_order: null
     };
   }
   private static mergeInitial(partial: Partial<ClaimValues>): ClaimValues {

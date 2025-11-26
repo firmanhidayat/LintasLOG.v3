@@ -1,7 +1,7 @@
 import { AbstractFormController } from "@/core/AbstractFormController";
 import { StatusStep } from "@/types/status-delivery";
 
-const VENDOR_BILL_URL = process.env.NEXT_PUBLIC_TMS_INV_BILL_URL!!;
+const VENDOR_BILL_URL = process.env.NEXT_PUBLIC_TMS_INV_BILL_URL ?? "";
 export type BillsAttachmentItem = {
   id: number;
   name?: string;

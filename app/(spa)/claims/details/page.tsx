@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ClaimFormPage from "@/components/forms/ClaimsForm";
-import { RecordItem } from "@/types/recorditem";
 import { ClaimValues } from "@/features/claims/ClaimsFormController";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { TmsUserType } from "@/types/tms-profile";
 
 const CLAIM_DETAIL_URL = process.env.NEXT_PUBLIC_TMS_CLAIMS_URL ?? "";
 
@@ -34,6 +35,13 @@ export default function ClaimsDetailPage() {
     const [initialData, setInitialData] = useState<ClaimInitialData | null>(null);
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState<string | null>(null);
+
+    const { profile } = useAuth();
+        const userType = useMemo(() => {
+          if (profile) return profile.tms_user_type;
+          return undefined;
+        }, [profile]);
+        
   
     useEffect(() => {
       let alive = true;
@@ -53,6 +61,8 @@ export default function ClaimsDetailPage() {
             amount: j.amount,
             description: j.description,
             document_attachment: j?.document_attachment,
+            state: j?.state,
+            purchase_order: j?.purchase_order
           };
           if (alive) setInitialData(mapped);
         } catch (e: unknown) {
@@ -73,6 +83,7 @@ export default function ClaimsDetailPage() {
   return (
       <ClaimFormPage
         mode="edit"
+        userType={userType as TmsUserType}
         claimId={claimId}
       initialData={initialData}
       onSuccess={() =>

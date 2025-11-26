@@ -422,12 +422,11 @@ export default function ProfileFormPage({
                 label="Document"
                 value={profileDocumentFiles}
                 onChange={setProfileDocumentFiles}
-                accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
+                accept=".pdf"
                 maxFileSizeMB={10}
-                maxFiles={10}
+                maxFiles={20}
                 hint={
-                  t("orders.upload_hint_10mb") ??
-                  "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
+                  "Maks. 10 MB per file. Tipe: PDF "
                 }
                 onReject={(msgs) =>
                   console.warn("[PROFILE DOCUMENT] rejected:", msgs)

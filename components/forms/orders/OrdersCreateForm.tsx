@@ -22,7 +22,10 @@ import CostDetailsCard from "@/components/forms/orders/sections/CostDetailsCard"
 import ShippingDocumentsCard from "@/components/forms/orders/sections/ShippingDocumentsCard";
 import { tzDateToUtcISO } from "@/lib/tz";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { Megaphone } from "lucide-react";
+// import { Megaphone } from "lucide-react";
+import { ClaimItem } from "@/types/claims";
+import { fetchOrderClaims } from "@/services/claimService";
+import { ClaimListModal } from "@/components/claims/ClaimListModal";
 
 import type {
   AddressItem,
@@ -413,7 +416,8 @@ function prefillFromInitial(
 
   let claimCount = 0;
   if ("reviewed_claim_ids_count" in data) {
-    const v = (data as { claim_ids_count?: unknown }).claim_ids_count;
+    const v = (data as { reviewed_claim_ids_count?: unknown })
+      .reviewed_claim_ids_count;
     if (typeof v === "number") {
       claimCount = v;
     } else if (typeof v === "string") {
@@ -421,6 +425,8 @@ function prefillFromInitial(
       if (Number.isFinite(n)) claimCount = n;
     }
   }
+
+  console.log("claimCount : ", claimCount);
 
   const form = {
     states: data.states ? extractApiSteps(data) : ([] as StatusStep[]),
@@ -885,8 +891,51 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const canShowReviewClaims = mode === "edit";
   const canShowListReviewClaims = reviewClaimIdsCount > 0;
 
+  const [claimsModalOpen, setClaimsModalOpen] = useState(false);
+  const [claims, setClaims] = useState<ClaimItem[]>([]);
+  const [claimsLoading, setClaimsLoading] = useState(false);
+  const fetchClaims = async () => {
+    if (!effectiveOrderId) return;
+    setClaimsLoading(true);
+    try {
+      const claimsData = await fetchOrderClaims(effectiveOrderId);
+      setClaims(claimsData.items);
+    } catch (error) {
+      console.error("Failed to fetch claims:", error);
+      openErrorDialog(error, "Failed to load claims");
+    } finally {
+      setClaimsLoading(false);
+    }
+  };
+
+  const [dlgOpen, setDlgOpen] = useState(false);
+  const [dlgKind, setDlgKind] = useState<"success" | "error">("success");
+  const [dlgTitle, setDlgTitle] = useState("");
+  const [dlgMsg, setDlgMsg] = useState<React.ReactNode>("");
+  function openSuccessDialog(message?: string) {
+    setDlgKind("success");
+    setDlgTitle(t("common.saved") ?? "Berhasil disimpan");
+    setDlgMsg(message ?? t("common.saved_desc") ?? "Data berhasil disimpan.");
+    setDlgOpen(true);
+  }
+
+  function openErrorDialog(err: unknown, title?: string) {
+    const msg =
+      (typeof err === "object" &&
+        err !== null &&
+        // @ts-expect-error best-effort
+        (err.detail?.[0]?.msg || err.message || err.error)) ||
+      String(err);
+    setDlgKind("error");
+    setDlgTitle(title || (t("common.failed_save") ?? "Gagal menyimpan"));
+    setDlgMsg(
+      <pre className="whitespace-pre-wrap text-xs text-red-700">{msg}</pre>
+    );
+    setDlgOpen(true);
+  }
   function onHandleShowReviewClaimListButton() {
-    // TODO : show list if claim_ids_count > 0
+    setClaimsModalOpen(true);
+    fetchClaims();
   }
 
   function onHandleReviewClaimButton() {
@@ -1010,9 +1059,9 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setPackingListAttachmentName(f.packingListAttachmentName);
     setDeliveryNoteAttachmentName(f.deliveryNoteAttachmentName);
 
-    if (userType === "shipper") {
-      setReviewClaimIdsCount(Number(f.reviewed_claim_ids_count ?? 0));
-    }
+    // if (userType === "shipper") {
+    setReviewClaimIdsCount(Number(f.reviewed_claim_ids_count ?? 0));
+    // }
 
     console.log("f data: ", f);
     console.log("initialData.states:", initialData.states);
@@ -1196,6 +1245,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           setDeliveryNoteAttachmentId(f.deliveryNoteAttachmentId);
           setPackingListAttachmentName(f.packingListAttachmentName);
           setDeliveryNoteAttachmentName(f.deliveryNoteAttachmentName);
+
+          setReviewClaimIdsCount(Number(f?.reviewed_claim_ids_count ?? 0));
 
           setSteps(f.states);
           setStatusCurrent(f.states.find((s) => s.is_current)?.key);
@@ -1839,7 +1890,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     },
     {
       key: "review",
-      label: "On Review",
+      label: "Reviewed",
       is_current: false,
     },
     {
@@ -2046,16 +2097,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                     </Button>
                   )}
 
-                  {/* {canShowReviewClaims && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={onHandleReviewClaimButton}
-                    >
-                      Create Claim
-                    </Button>
-                  )} */}
-
                   {canShowListReviewClaims && (
                     <Button
                       type="button"
@@ -2157,7 +2198,14 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           }
         }}
       />
-      {/* === Chat Success/Error Dialog (ModalDialog) === */}
+      
+      <ClaimListModal
+        open={claimsModalOpen}
+        onClose={() => setClaimsModalOpen(false)}
+        claims={claims}
+        loading={claimsLoading}
+      />
+
       <ModalDialog
         open={chatDlgOpen}
         kind={chatDlgKind}
