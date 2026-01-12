@@ -29,6 +29,7 @@ export default function DriverDetailPage() {
   const sp = useSearchParams();
   const router = useRouter();
   const driverId = sp.get("id") ?? "";
+  const updated = sp.get("updated") === "1";
 
   const [initialData, setInitialData] = useState<DriverInitialData | null>(
     null
@@ -63,6 +64,7 @@ export default function DriverDetailPage() {
           drivers_license: j?.drivers_license ?? "",
           drivers_license_expiry: j?.drivers_license_expiry ?? "",
           login: j?.login ?? "",
+          image_128: j?.image_128 ?? "",
           driver_document_attachment_id:
             j?.driver_document_attachment_id ?? null,
           driver_document_attachment: j?.driver_document_attachment ?? null,
@@ -84,6 +86,12 @@ export default function DriverDetailPage() {
   if (!initialData) return <div className="p-4 text-sm">No data</div>;
 
   return (
+    <div className="space-y-3">
+      {updated && (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Data driver berhasil di-update.
+        </div>
+      )}
     <DriverFormPage
       mode="edit"
       driverId={driverId}
@@ -96,5 +104,6 @@ export default function DriverDetailPage() {
         )
       }
     />
+    </div>
   );
 }

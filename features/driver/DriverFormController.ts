@@ -42,6 +42,12 @@ export type DriverValues = {
   login: string;
   password: string;
 
+  // Avatar
+  // - image_128 is RAW base64 (small) from BE, used for display only
+  // - image_1920 is RAW base64 (full) to be sent on submit ONLY when changed
+  image_128?: string;
+  image_1920?: string | null;
+
   driver_document_attachment_id: number | null;
   // driver_document_attachment: DriverAttachmentGroup | null;
 };
@@ -60,6 +66,7 @@ export type DriverPayload = {
   login?: string;
   password?: string;
   driver_document_attachment_id?: number | null;
+  image_1920?: string | null;
 };
 
 export type DriverApiResponse = {
@@ -67,6 +74,7 @@ export type DriverApiResponse = {
   name?: string;
   mobile?: string;
   login?: string;
+  image_128?: string;
   driver_document_attachment_id?: number | null;
   driver_document_attachment?: DriverAttachmentGroup | null;
 } | null;
@@ -100,6 +108,9 @@ export class DriverFormController extends AbstractFormController<
       login: "",
       password: "",
       driver_document_attachment_id: null,
+      image_128: "",
+      // keep undefined so it will be omitted from payload unless changed
+      image_1920: undefined,
     };
   }
 
@@ -163,6 +174,9 @@ export class DriverFormController extends AbstractFormController<
     if (values.driver_document_attachment_id) {
       payload.driver_document_attachment_id =
         values.driver_document_attachment_id;
+    }
+    if (values.image_1920 !== undefined) {
+      payload.image_1920 = values.image_1920;
     }
 
     return payload;

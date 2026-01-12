@@ -21,7 +21,11 @@
             "emailRequired": "Email (sebagai login) wajib diisi.",
             "userTypeRequired": "Pilih jenis user: shipper atau transporter.",
             "passwordMismatch": "Password dan konfirmasi tidak sama.",
-            "passwordMin": "Password minimal 8 karakter."
+            "passwordMin": "Password minimal 8 karakter.",
+            "passwordNeedLetter": "Password harus mengandung setidaknya satu huruf.",
+            "passwordNeedNumber": "Password harus mengandung setidaknya satu angka.",
+            "passwordNeedDigit": "Password harus mengandung setidaknya satu numeral.",
+            "termsRequired": "Anda harus menyetujui Syarat & Privasi."
         },
         "form": {
             "accountName": {

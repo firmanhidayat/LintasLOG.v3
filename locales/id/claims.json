@@ -30,7 +30,8 @@
                 "description": "Deskripsi",
                 "reason": "Alasan",
                 "amount": "Jumlah",
-                "document": "Dokumen (Unggah)"
+                "document": "Dokumen (Unggah)",
+                "state" : "Status"
             },
             "placeholders": {
                 "claimNo": "contoh: CLM-0001",

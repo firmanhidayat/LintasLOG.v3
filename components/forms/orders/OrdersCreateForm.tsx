@@ -14,6 +14,7 @@ import { useI18nReady } from "@/hooks/useI18nReady";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FieldTextarea } from "@/components/form/FieldTextarea";
+import ChatterPanel from "@/components/chat/ChatterPanel";
 import OrderInfoCard from "@/components/forms/orders/sections/OrderInfoCard";
 import LocationInfoCard from "@/components/forms/orders/sections/LocationInfoCard";
 import SpecialServicesCard from "@/components/forms/orders/sections/SpecialServicesCard";
@@ -173,8 +174,10 @@ const withUid = (stops: ExtraStop[]): ExtraStopWithId[] =>
   stops.map((s) => ({ ...s, uid: genUid() }));
 
 /** ENV */
+
 const POST_ORDER_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL!;
 const POST_CHAT_URL = process.env.NEXT_PUBLIC_TMS_ORDER_CHAT_URL ?? "";
+const CHATTERS_URL = process.env.NEXT_PUBLIC_TMS_ORDER_CHAT_URL ?? "";
 const DETAIL_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const UPDATE_URL_TPL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL ?? "";
 const APP_BASE_PATH = process.env.NEXT_PUBLIC_URL_BASE ?? "";
@@ -332,7 +335,7 @@ function ModalDialog({
             <button
               type="button"
               onClick={onClose}
-              className={`inline-flex items-center rounded-lg px-4 py-2 text-white \${btn} focus:outline-none focus:ring`}
+              className={`inline-flex items-center rounded-lg px-4 py-2 text-white ${btn} focus:outline-none focus:ring`}
             >
               OK
             </button>
@@ -412,8 +415,6 @@ function toExistingFileItems(
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>
 ) {
-  console.log("data:", data);
-
   let claimCount = 0;
   if ("reviewed_claim_ids_count" in data) {
     const v = (data as { reviewed_claim_ids_count?: unknown })
@@ -425,11 +426,10 @@ function prefillFromInitial(
       if (Number.isFinite(n)) claimCount = n;
     }
   }
-
-  console.log("claimCount : ", claimCount);
-
+  const isReviewed = (data.state ?? "").toLowerCase().includes("review");
   const form = {
     states: data.states ? extractApiSteps(data) : ([] as StatusStep[]),
+    state: data.state ?? "",
     noJo: data.name ?? "",
     customer: (data.partner as PartnerItem)?.name ?? "",
     namaPenerima: data.receipt_by ?? "",
@@ -509,6 +509,11 @@ function prefillFromInitial(
     isReadOnly: false,
     mainRouteId: null as number | null,
     reviewed_claim_ids_count: claimCount,
+
+    res_id: data.res_id,
+    res_model: data.res_model,
+    original_res_id: data.original_res_id,
+    original_res_model: data.original_res_model,
   };
 
   console.log("form before:", form);
@@ -630,9 +635,8 @@ function prefillFromInitial(
     form.deliveryNoteAttachmentId = typeof dn.id === "number" ? dn.id : null;
     form.deliveryNoteAttachmentName = dn.name ?? "";
   }
-
+  form.state = data.state ?? "";
   console.log("form results:", form);
-
   return form;
 }
 
@@ -912,6 +916,9 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const [dlgKind, setDlgKind] = useState<"success" | "error">("success");
   const [dlgTitle, setDlgTitle] = useState("");
   const [dlgMsg, setDlgMsg] = useState<React.ReactNode>("");
+
+  const [reloadSelfAfterDlg, setReloadSelfAfterDlg] = useState(false);
+
   function openSuccessDialog(message?: string) {
     setDlgKind("success");
     setDlgTitle(t("common.saved") ?? "Berhasil disimpan");
@@ -954,7 +961,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setLokBongkar(null);
   }
 
-  // i18n list
   const layananPreset = [
     "Helm",
     "APAR",
@@ -978,17 +984,24 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const [muatanNama, setMuatanNama] = useState<string>("");
   const [muatanDeskripsi, setMuatanDeskripsi] = useState<string>("");
 
-  // ====== UI state untuk jenisMuatan (RecordItem) ======
   const [jenisMuatan, setJenisMuatan] = useState<RecordItem | null>(null);
   const [cargoCBM, setCargoCBM] = useState<number>();
   const [cargoQTY, setCargoQTY] = useState<number>();
 
-  // Jika ada initialData, langsung prefill sebagian field
   useEffect(() => {
     console.log("initialData changed:", initialData);
 
     if (!initialData) return;
     const f = prefillFromInitial(initialData);
+    // Sync chatter identifiers for api-tms/chatters
+    setChatterResModel(
+      typeof f.res_model === "string" ? f.res_model : String(f.res_model ?? "")
+    );
+    setChatterResId(
+      typeof f.res_id === "string" || typeof f.res_id === "number"
+        ? f.res_id
+        : undefined
+    );
     setMainRouteId(f.mainRouteId);
     setNamaPenerima(f.namaPenerima);
     setJenisOrder(f.jenisOrder);
@@ -1076,6 +1089,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       f.states.find((s) => s.is_current)
     );
 
+    console.log("Current Status after setStatusCurrent :", statusCurrent);
     setLoadingDetail(false);
   }, [initialData]);
 
@@ -1174,6 +1188,17 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         const json = (await res.json()) as OrdersCreateFormProps["initialData"];
         if (json) {
           const f = prefillFromInitial(json);
+          // Sync chatter identifiers for api-tms/chatters
+          setChatterResModel(
+            typeof f.res_model === "string"
+              ? f.res_model
+              : String(f.res_model ?? "")
+          );
+          setChatterResId(
+            typeof f.res_id === "string" || typeof f.res_id === "number"
+              ? f.res_id
+              : undefined
+          );
           setMainRouteId(f.mainRouteId);
           setNamaPenerima(f.namaPenerima);
           setJenisOrder(f.jenisOrder);
@@ -1254,10 +1279,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           setIsReadOnly(f.isReadOnly);
         }
       } catch (err) {
-        // if ((err as any)?.name === "AbortError") {
-        //   return;
-        // }
-        console.error("[OrderDetail] fetch error:", err);
       } finally {
         setLoadingDetail(false);
       }
@@ -1767,6 +1788,85 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     router.push("/orders/create");
   }
 
+  async function handleDone() {
+    if (!effectiveOrderId) return;
+    const DONE_POST_URL = `${POST_ORDER_URL}/${effectiveOrderId}/done`;
+    try {
+      console.log("Marking order as done:", DONE_POST_URL);
+      const res = await fetch(DONE_POST_URL, {
+        method: "POST",
+        headers: {
+          "Accept-Language": getLang(),
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      if (res.status === 401) {
+        goSignIn({ routerReplace: router.replace });
+        return;
+      }
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        openErrorDialog(
+          text || `Failed to done (${res.status} ${res.statusText})`,
+          "Failed to done"
+        );
+        return;
+      }
+
+      setReloadSelfAfterDlg(true);
+      setLastCreatedId(undefined); // biar gak ke-trigger navigasi lastCreatedId. karena dialog nya samaan bareng bareng
+
+      setDlgKind("success");
+      setDlgTitle("Done successfully!");
+      setDlgMsg("Order marked as done successfully.");
+      setDlgOpen(true);
+    } catch (err) {
+      openErrorDialog(err, "Failed to done");
+    }
+  }
+
+  async function handleDuplicate() {
+    if (!effectiveOrderId) return;
+    const DUPLIKASI_ORDER_URL = `${POST_ORDER_URL}/${effectiveOrderId}/duplicate`;
+    try {
+      const res = await fetch(DUPLIKASI_ORDER_URL, {
+        method: "POST",
+        headers: {
+          "Accept-Language": getLang(),
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      if (res.status === 401) {
+        goSignIn({ routerReplace: router.replace });
+        return;
+      }
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        openErrorDialog(
+          text || `Failed to duplicate (${res.status} ${res.statusText})`,
+          "Failed to duplicate"
+        );
+        return;
+      }
+      let newId: string | number | undefined;
+      try {
+        const json = await res.json();
+        newId = json?.id ?? json?.data?.id ?? json?.result?.id;
+      } catch {
+        newId = undefined;
+      }
+      setLastCreatedId(newId);
+      setDlgKind("success");
+      setDlgTitle("Duplicate successfully!");
+      setDlgMsg("Order duplicated successfully. Click OK to open it.");
+      setDlgOpen(true);
+    } catch (err) {
+      openErrorDialog(err, "Failed to duplicate");
+    }
+  }
+
   function handleDiscard() {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
@@ -1774,6 +1874,13 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       router.push("/orders");
     }
   }
+
+  /* =================== Chatter: res_model/res_id (sync) ================== */
+  const [chatterResModel, setChatterResModel] = useState<string>("");
+  const [chatterResId, setChatterResId] = useState<string | number | undefined>(
+    undefined
+  );
+  /* ======================================================================= */
 
   /* =================== Chat state & handler (non-intrusive) ================== */
   const [chatMsg, setChatMsg] = useState("");
@@ -1809,21 +1916,46 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   async function handleSendChat() {
     if (!chatMsg.trim()) return;
-    if (!POST_CHAT_URL) {
-      console.warn("POST_CHAT_URL not configured");
+
+    const canPostToChatters =
+      Boolean(chatterResModel) &&
+      chatterResId != null &&
+      String(chatterResId).trim() !== "";
+
+    const normalizeBase = (base: string): string => {
+      const b = (base ?? "").trim();
+      if (!b) return "/api-tms/chatters";
+      if (b.startsWith("http://") || b.startsWith("https://")) return b;
+      return b.startsWith("/") ? b : `/${b}`;
+    };
+
+    const chattersUrl = canPostToChatters
+      ? `${normalizeBase(CHATTERS_URL)}?${new URLSearchParams({
+          res_model: String(chatterResModel),
+          res_id: String(chatterResId),
+        }).toString()}`
+      : "";
+
+    const endpoint = chattersUrl || POST_CHAT_URL;
+
+    if (!endpoint) {
+      console.warn("Chat endpoint not configured");
       openChatErrorDialog("Chat endpoint belum dikonfigurasi.");
       return;
     }
+
+    const payload = chattersUrl ? { body: chatMsg.trim() } : { message: chatMsg.trim() };
+
     try {
       setChatSending(true);
-      const res = await fetch(POST_CHAT_URL, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Accept-Language": getLang(),
         },
         credentials: "include",
-        body: JSON.stringify({ message: chatMsg.trim() }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const msg = await res.text();
@@ -1847,7 +1979,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setChatSending(false);
     }
   }
-  /* ========================================================================== */
+
+/* ========================================================================== */
 
   if (!i18nReady || loadingDetail) {
     return (
@@ -2068,8 +2201,15 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                       {t("orders.create.title")}
                     </Button>
                   )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleDuplicate}
+                  >
+                    {t("orders.duplicate.title")}
+                  </Button>
 
-                  {canShowChat && (
+                  {/* {canShowChat && (
                     <Button
                       type="button"
                       variant="outline"
@@ -2095,7 +2235,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                         </span>
                       )}
                     </Button>
-                  )}
+                  )} */}
 
                   {canShowListReviewClaims && (
                     <Button
@@ -2110,6 +2250,12 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
                 {/* RIGHT: Discard & Submit */}
                 <div className="flex items-center gap-2">
+                  {statusCurrent === "review" && (
+                    <Button type="button" variant="solid" onClick={handleDone}>
+                      Done
+                    </Button>
+                  )}
+
                   <Button type="button" variant="ghost" onClick={handleDiscard}>
                     {t("common.discard")}
                   </Button>
@@ -2131,10 +2277,26 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
             {/* <div className="flex items-center justify-start gap-3 pt-3"></div> */}
           </div>
+          
         </CardBody>
       </Card>
+      
+      <Card>
+        <CardBody>
+          {canShowChat && (
+            <ChatterPanel
+              resModel={chatterResModel}
+              resId={chatterResId ?? null}
+              endpointBase={CHATTERS_URL}
+              onRead={() => setHasChatImpulse(false)}
+              className="w-full"
+            />
+          )}
+        </CardBody>
+      </Card>
+
       {/* === Chat Dialog (Popup) === */}
-      <Modal open={chatOpen && canShowChat} onClose={() => setChatOpen(false)}>
+      {/* <Modal open={chatOpen && canShowChat} onClose={() => setChatOpen(false)}>
         <div className="space-y-3">
           <h4 className="text-lg font-semibold text-gray-800">
             {t("orders.chat_broadcast") ?? "Chat / Broadcast Message"}
@@ -2165,7 +2327,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
             </Button>
           </div>
         </div>
-      </Modal>
+      </Modal> */}
       {/* === Dialogs === */}
       <ConfirmSubmitDialog
         open={confirmOpen}
@@ -2198,7 +2360,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           }
         }}
       />
-      
+
       <ClaimListModal
         open={claimsModalOpen}
         onClose={() => setClaimsModalOpen(false)}
@@ -2212,6 +2374,42 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         title={chatDlgTitle}
         message={chatDlgMsg}
         onClose={() => setChatDlgOpen(false)}
+      />
+
+      <ModalDialog
+        open={dlgOpen}
+        kind={dlgKind}
+        title={dlgTitle}
+        message={dlgMsg}
+        onClose={() => {
+          setDlgOpen(false);
+
+          console.log(
+            "Dialog closed, kind=",
+            dlgKind,
+            " lastCreatedId=",
+            lastCreatedId
+          );
+          console.log("reloadSelfAfterDlg=", reloadSelfAfterDlg);
+          console.log("effectiveOrderId=", effectiveOrderId);
+
+          if (reloadSelfAfterDlg) {
+            setReloadSelfAfterDlg(false);
+            router.push(
+              `/orders/details/?id=${encodeURIComponent(
+                String(effectiveOrderId)
+              )}`
+            );
+            // window.location.reload(); // reload page dirinya sendiri OKEH!! kadang gak jalan
+            return;
+          }
+
+          if (dlgKind === "success" && lastCreatedId) {
+            router.push(
+              `/orders/details/?id=${encodeURIComponent(String(lastCreatedId))}`
+            );
+          }
+        }}
       />
     </form>
   );

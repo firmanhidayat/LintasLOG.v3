@@ -602,6 +602,7 @@ export default function AddressForm({
   }
 
   async function handleSave() {
+    let saved = false;
     const v = validate();
     if (v.name || v.street || v.district) return;
 
@@ -623,6 +624,7 @@ export default function AddressForm({
       const data = await doSubmit(payload);
       onSuccess?.(data); // JANGAN diubah
       openSuccessDialog();
+      saved = true;
     } catch (err) {
       // tetap simpan error ke field agar kompatibel dgn existing UI
       const msg = err instanceof Error ? err.message : "Gagal menyimpan data";
@@ -630,6 +632,7 @@ export default function AddressForm({
       openErrorDialog(err);
     } finally {
       setSubmitting(false);
+      if (saved) router.refresh();
     }
   }
 

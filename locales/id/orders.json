@@ -7,6 +7,7 @@
         "edit": {
             "info_order": "Edit - Info Order"
         },
+        "duplicate" : {"title" : "Duplikat Order"},
         "no_jo": "No. JO",
         "customer": "Pelanggan",
         "nama_penerima": "Nama Penerima",
@@ -47,6 +48,8 @@
         "search": {
             "placeholder": "cari..."
         },
+        "chat": "Chat",
+        "no_messages": "Belum ada pesan.",
         "search_cargo_type": "Jenis muatan...",
         "jenis_cargo": "Jenis Muatan",
         "search_moda": "Jenis armada...",
@@ -94,22 +97,24 @@
     },
     "fleet": {
         "model": "Model",
-        "license_plate": "License Plate",
-        "model_year": "Model Year",
-        "color": "Color",
-        "category": "Category",
-        "vin_sn": "Chassis Number",
-        "engine_sn": "Engine Number",
-        "tonnage_max": "Max. Tonnage",
+        "license_plate": "Plat Nomor",
+        "model_year": "Tahun Produksi",
+        "color": "Warna",
+        "category": "Kategori",
+        "trailer_hook": "Truck Head",
+        "vin_sn": "Nomor Casis",
+        "engine_sn": "Nomor Mesin",
+        "tonnage_max": "Tonase Maks.",
         "cbm_volume": "Volume",
-        "horsepower": "Horse Power",
+        "horsepower": "Tenaga Kuda",
         "axle": "Axle",
-        "acquisition_date": "Registration Date",
-        "write_off_date": "Cancellation Date",
-        "kir": "KIR Number",
-        "kir_expiry": "KIR Expired Date",
+        "acquisition_date": "Tanggal Registrasi",
+        "write_off_date": "Masa Berlaku STNK",
+        "kir": "Nomor KIR",
+        "kir_expiry": "Tanggal Kadaluarsa KIR",
         "vehicle_foto": "Upload Foto Unit (3 foto) : Tampak Depan, Tampak Belakang, Tampak samping dengan terlihat jelas plat nomornya)",
-        "stnk_foto": "Upload Document (STNK, KIR, Sertifikat DG)"
+        "stnk_foto": "Upload Document (STNK, KIR, Sertifikat)",
+        "hint_upload":"Maks. 10 MB per file. Tipe:  PDF, JPEG, JPG, PNG, Bitmap"
     },
     "drivers": {
         "name": "Nama Lengkap",
@@ -120,7 +125,8 @@
         "drivers_license_expiry": "SIM Kadaluwarsa",
         "create": {
             "title": "Tambah Driver"
-        }
+        },
+        "driver_document": "SIM, KTP, Foto Diri"
     },
     "driver": {
         "district": "Kota",
@@ -131,7 +137,8 @@
         "street2": "Jalan 2",
         "zip": "Kode Pos",
         "drivers_license": "SIM",
-        "drivers_license_expiry": "SIM Kadaluwarsa"
+        "drivers_license_expiry": "SIM Kadaluwarsa",
+        "hint_upload":"Maks. 10 MB per file. Tipe:  PDF, JPEG, JPG, PNG, Bitmap"
     },
     "pl": {
         "no": "No.",

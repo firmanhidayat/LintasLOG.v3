@@ -33,7 +33,7 @@ export default function ShippingDocumentsCard({
 }: Props) {
   return (
     <div className="space-y-4">
-      <div>
+      {/* <div>
         <Card>
           <CardHeader>
             <h4 className="text-3xl font-semibold text-gray-800">
@@ -65,7 +65,7 @@ export default function ShippingDocumentsCard({
             </div>
           </CardBody>
         </Card>
-      </div>
+      </div> */}
       <div>
         <Card>
           <CardHeader>

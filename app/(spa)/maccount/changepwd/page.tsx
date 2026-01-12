@@ -12,8 +12,8 @@ import {
   type Lang,
 } from "@/lib/i18n";
 
-// Optional: jika Anda punya guard konteks
 import { useAuth } from "@/components/providers/AuthProvider";
+import { FieldPassword } from "@/components/form/FieldPassword";
 const CHANGE_PW_URL = process.env.NEXT_PUBLIC_TMS_CHG_PWD_URL!;
 type SubmitStatus = "idle" | "loading" | "success" | "error";
 type ChangePwOk = {
@@ -37,7 +37,6 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function normalizeErrorMessage(payload: HttpErrorPayload): string {
   if (isRecord(payload)) {
-    // FastAPI common shapes
     const d = (payload as { detail?: unknown }).detail;
     if (typeof d === "string") return d;
     if (Array.isArray(d)) {
@@ -64,7 +63,6 @@ function validateNewPassword(pw: string): string | null {
 export default function ChangePasswordPage() {
   const router = useRouter();
   const { loggedIn } = useAuth() ?? { loggedIn: false };
-
   const [i18nReady, setI18nReady] = useState(false);
   const [activeLang, setActiveLang] = useState<Lang>(getLang());
   useEffect(() => {
@@ -91,10 +89,6 @@ export default function ChangePasswordPage() {
   const [currentPw, setCurrentPw] = useState<string>("");
   const [newPw, setNewPw] = useState<string>("");
   const [confirmPw, setConfirmPw] = useState<string>("");
-
-  const [showCur, setShowCur] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showCfm, setShowCfm] = useState(false);
 
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [msg, setMsg] = useState<string>("");
@@ -148,8 +142,9 @@ export default function ChangePasswordPage() {
         },
         credentials: "include", // penting: bawa cookie fastapi_auth_partner
         body: JSON.stringify({
-          current_password: currentPw,
+          old_password: currentPw,
           new_password: newPw,
+          confirm_new_password: confirmPw,
         }),
       });
 
@@ -170,13 +165,9 @@ export default function ChangePasswordPage() {
         "Password changed successfully.";
       setStatus("success");
       setMsg(successMessage);
-
       setCurrentPw("");
       setNewPw("");
       setConfirmPw("");
-
-      // Opsional: redirect setelah beberapa detik
-      // setTimeout(() => router.replace("/maccount/edit"), 1200);
     } catch (err) {
       console.error("[change-password] error:", err);
       setStatus("error");
@@ -224,11 +215,11 @@ export default function ChangePasswordPage() {
         <form className="p-4 space-y-4" onSubmit={onSubmit}>
           {/* Current password */}
           <div>
-            <label htmlFor="current" className="block text-sm font-medium">
+            {/* <label htmlFor="current" className="block text-sm font-medium">
               {t("maccount.password.current") ?? "Current password"}
-            </label>
-            <div className="mt-1 flex rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-primary/40">
-              <input
+            </label> */}
+            <div className="mt-1 flex">
+              {/* <input
                 id="current"
                 type={showCur ? "text" : "password"}
                 className="w-full rounded-l-lg px-3 py-2 outline-none"
@@ -236,27 +227,28 @@ export default function ChangePasswordPage() {
                 value={currentPw}
                 onChange={(e) => setCurrentPw(e.target.value)}
                 required
+              /> */}
+              <FieldPassword
+                // id="current"
+                label={t("maccount.password.current") ?? "Current password"}
+                value={currentPw}
+                onChange={(e) => setCurrentPw(e)}
+                autoComplete="current-password"
+                required
+                a11yShow={t("signup.a11y.showPassword")}
+                a11yHide={t("signup.a11y.hidePassword")}
               />
-              <button
-                type="button"
-                onClick={() => setShowCur((v) => !v)}
-                className="rounded-r-lg px-3 text-sm text-gray-600 hover:bg-gray-100"
-                aria-label={showCur ? "Hide" : "Show"}
-              >
-                {showCur
-                  ? t("common.hide") ?? "Hide"
-                  : t("common.show") ?? "Show"}
-              </button>
+            
             </div>
           </div>
 
           {/* New password */}
           <div>
-            <label htmlFor="new" className="block text-sm font-medium">
+            {/* <label htmlFor="new" className="block text-sm font-medium">
               {t("maccount.password.new") ?? "New password"}
-            </label>
-            <div className="mt-1 flex rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-primary/40">
-              <input
+            </label> */}
+            <div className="mt-1 flex ">
+              {/* <input
                 id="new"
                 type={showNew ? "text" : "password"}
                 className="w-full rounded-l-lg px-3 py-2 outline-none"
@@ -265,20 +257,20 @@ export default function ChangePasswordPage() {
                 onChange={(e) => setNewPw(e.target.value)}
                 required
                 aria-invalid={Boolean(pwValidationMsg)}
+              /> */}
+              <FieldPassword
+                // id="new"
+                label={t("maccount.password.new") ?? "New password"}
+                value={newPw}
+                onChange={(e) => setNewPw(e)}
+                autoComplete="new-password"
+                required
+                a11yShow={t("signup.a11y.showConfirm")}
+                a11yHide={t("signup.a11y.hideConfirm")}
               />
-              <button
-                type="button"
-                onClick={() => setShowNew((v) => !v)}
-                className="rounded-r-lg px-3 text-sm text-gray-600 hover:bg-gray-100"
-                aria-label={showNew ? "Hide" : "Show"}
-              >
-                {showNew
-                  ? t("common.hide") ?? "Hide"
-                  : t("common.show") ?? "Show"}
-              </button>
             </div>
             {/* strength bar */}
-            <div className="mt-2">
+            {/* <div className="mt-2">
               <div className="h-1.5 w-full rounded bg-gray-200">
                 <div
                   className={`h-1.5 rounded ${
@@ -301,7 +293,7 @@ export default function ChangePasswordPage() {
                   ? t("maccount.password.strength_fair") ?? "Fair"
                   : t("maccount.password.strength_strong") ?? "Strong"}
               </p>
-            </div>
+            </div> */}
           </div>
 
           {/* Confirm */}
@@ -309,8 +301,19 @@ export default function ChangePasswordPage() {
             <label htmlFor="confirm" className="block text-sm font-medium">
               {t("maccount.password.confirm") ?? "Confirm new password"}
             </label>
-            <div className="mt-1 flex rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-primary/40">
-              <input
+            <div className="mt-1 flex ">
+
+              <FieldPassword
+                // id="confirm"
+                value={confirmPw}
+                onChange={(e) => setConfirmPw(e)}
+                autoComplete="new-password"
+                required
+                a11yShow={t("signup.a11y.showConfirm")}
+                a11yHide={t("signup.a11y.hideConfirm")}
+              />
+
+              {/* <input
                 id="confirm"
                 type={showCfm ? "text" : "password"}
                 className="w-full rounded-l-lg px-3 py-2 outline-none"
@@ -319,8 +322,8 @@ export default function ChangePasswordPage() {
                 onChange={(e) => setConfirmPw(e.target.value)}
                 required
                 aria-invalid={mismatch}
-              />
-              <button
+              /> */}
+              {/* <button
                 type="button"
                 onClick={() => setShowCfm((v) => !v)}
                 className="rounded-r-lg px-3 text-sm text-gray-600 hover:bg-gray-100"
@@ -329,7 +332,7 @@ export default function ChangePasswordPage() {
                 {showCfm
                   ? t("common.hide") ?? "Hide"
                   : t("common.show") ?? "Show"}
-              </button>
+              </button> */}
             </div>
             {mismatch && (
               <p className="mt-1 text-xs text-red-600">

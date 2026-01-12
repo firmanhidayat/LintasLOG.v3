@@ -74,6 +74,7 @@ export default function FleetDetailPage() {
           kir_expiry: j?.kir_expiry ?? "",
           unit_attachment_id: j?.unit_attachment_id ?? 0,
           document_attachment_id: j?.document_attachment_id ?? 0,
+          image_128: j?.image_128 ?? "",
           unit_attachment: j?.unit_attachment,
           document_attachment: j?.document_attachment,
         };

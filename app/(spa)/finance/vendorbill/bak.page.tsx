@@ -1,13 +1,11 @@
 "use client";
-
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function DashboardPage() {
+export default function VendorBillPage() {
   const router = useRouter();
   useEffect(() => {
-    // router.replace("/dashboard/ringkasanorder");
-    router.replace("/dashboard/statustracking");
+    router.replace("/vendorbill/list");
   }, [router]);
   return null; // tidak render apa-apa
 }

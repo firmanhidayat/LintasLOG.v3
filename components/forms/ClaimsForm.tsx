@@ -58,7 +58,7 @@ export default function ClaimFormPage({
 }) {
   const { ready: i18nReady } = useI18nReady();
   const router = useRouter();
-console.log("Goes here ln.60 : ",initialData)
+  console.log("Goes here ln.60 : ", initialData);
   const init: ClaimValues = {
     amount: initialData?.amount ?? 0,
     description: initialData?.description ?? "",
@@ -71,10 +71,61 @@ console.log("Goes here ln.60 : ",initialData)
     () => new ClaimsFormController(mode, init)
   );
 
-  const toNum = (s: string) => {
-    const n = Number(s.trim().replace(/,/g, ""));
+  const parseMoney = (raw: string) => {
+    const s = raw
+      .trim()
+      .replace(/\s/g, "")
+      .replace(/[^\d.,-]/g, "");
+
+    if (!s) return 0;
+
+    const hasComma = s.includes(",");
+    const hasDot = s.includes(".");
+    let normalized = s;
+
+    if (hasComma && hasDot) {
+      // pemisah desimal ditentukan dari yang paling kanan
+      const lastComma = s.lastIndexOf(",");
+      const lastDot = s.lastIndexOf(".");
+      if (lastComma > lastDot) {
+        // 1.234,56 -> 1234.56
+        normalized = s.replace(/\./g, "").replace(",", ".");
+      } else {
+        // 1,234.56 -> 1234.56
+        normalized = s.replace(/,/g, "");
+      }
+    } else if (hasComma) {
+      const parts = s.split(",");
+      if (parts.length > 2) {
+        normalized = s.replace(/,/g, "");
+      } else if ((parts[1] ?? "").length === 3) {
+        // 1,234 -> 1234
+        normalized = s.replace(/,/g, "");
+      } else {
+        // 1234,56 -> 1234.56
+        normalized = s.replace(",", ".");
+      }
+    } else if (hasDot) {
+      const parts = s.split(".");
+      if (parts.length > 2) {
+        normalized = s.replace(/\./g, "");
+      } else if ((parts[1] ?? "").length === 3) {
+        // 1.234 -> 1234
+        normalized = s.replace(/\./g, "");
+      } else {
+        // 1234.56 -> 1234.56
+        normalized = s;
+      }
+    }
+
+    const n = Number(normalized);
     return Number.isFinite(n) ? n : 0;
   };
+
+  const moneyFmt = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 });
+  const formatMoney = (value: number) => moneyFmt.format(value || 0);
+
+  const [amountText, setAmountText] = useState(() => formatMoney(init.amount));
 
   const [submitting, setSubmitting] = useState(false);
   const [dlgOpen, setDlgOpen] = useState(false);
@@ -90,6 +141,7 @@ console.log("Goes here ln.60 : ",initialData)
 
   function handleClearDocAttachments() {
     setDocExistingFiles([]);
+    setDocHeaderName(undefined);
     ctrl.set("document_attachment_id", 0);
   }
 
@@ -182,7 +234,7 @@ console.log("Goes here ln.60 : ",initialData)
   async function deleteRemoteAttachment(
     docAttachmentId: number,
     attachmentId: number
-  ){
+  ) {
     const url = `${ATTACHMENTS_URL}/${encodeURIComponent(
       String(docAttachmentId)
     )}/attachments/${encodeURIComponent(String(attachmentId))}`;
@@ -197,6 +249,57 @@ console.log("Goes here ln.60 : ",initialData)
       throw new Error(
         `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`
       );
+    }
+  }
+
+  async function fetchAttachmentGroup(
+    groupId: number
+  ): Promise<ClaimAttachmentGroup | null> {
+    if (!groupId) return null;
+    const url = `${ATTACHMENTS_URL}/${encodeURIComponent(
+      String(groupId)
+    )}?t=${Date.now()}`;
+    const res = await fetch(url, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    try {
+      return (await res.json()) as ClaimAttachmentGroup;
+    } catch {
+      return null;
+    }
+  }
+
+  function applyDocGroupToState(docGroup: ClaimAttachmentGroup | null) {
+    setDocHeaderName(docGroup?.name);
+    if (docGroup?.attachments?.length) {
+      setDocExistingFiles(
+        docGroup.attachments.map((att) => ({
+          id: att.id,
+          name: att.name,
+          url: att.url,
+          mimetype: att.mimetype,
+          groupId: docGroup.id,
+        }))
+      );
+    } else {
+      setDocExistingFiles([]);
+    }
+  }
+
+  async function syncDocAttachmentGroup(groupId: number) {
+    if (!groupId) {
+      applyDocGroupToState(null);
+      return;
+    }
+    try {
+      const docGroup = await fetchAttachmentGroup(groupId);
+      applyDocGroupToState(docGroup);
+    } catch (e) {
+      // best-effort: jangan blokir UX kalau fetch group gagal
+      console.warn("[CLAIM_DOC] Failed to sync attachment group", e);
     }
   }
 
@@ -220,10 +323,11 @@ console.log("Goes here ln.60 : ",initialData)
   async function doApprovalState(id: string, state: string): Promise<void> {
     try {
       setSubmitting(true);
-      const url = state === "approve" 
-        ? `${CLAIMS_APPROVAL_URL}/${id}/approve`
-        : `${CLAIMS_APPROVAL_URL}/${id}/reject`;
-      
+      const url =
+        state === "approve"
+          ? `${CLAIMS_APPROVAL_URL}/${id}/approve`
+          : `${CLAIMS_APPROVAL_URL}/${id}/reject`;
+
       const res = await fetch(url, {
         method: "POST",
         credentials: "include",
@@ -244,6 +348,11 @@ console.log("Goes here ln.60 : ",initialData)
           document_attachment_id: updatedData.document_attachment_id ?? 0,
           purchase_order: updatedData.purchase_order ?? null,
         });
+
+        // pastikan list attachment di UI ikut update (router.refresh sering tidak cukup di SPA)
+        await syncDocAttachmentGroup(
+          Number(updatedData.document_attachment_id ?? 0)
+        );
       }
       openSuccessDialog();
     } catch (e) {
@@ -269,6 +378,7 @@ console.log("Goes here ln.60 : ",initialData)
   }
 
   async function onSave() {
+    let saved = false;
     try {
       setSubmitting(true);
 
@@ -278,13 +388,16 @@ console.log("Goes here ln.60 : ",initialData)
             "claim_document",
             docClaimFiles
           );
-          if (typeof docId === "number")
+          if (typeof docId === "number") {
             ctrl.set("document_attachment_id", docId);
+            await syncDocAttachmentGroup(docId);
+          }
         } else {
           ctrl.setError(
             "document_attachment_id",
             "Document claim is required!"
           );
+          return;
         }
       } else if (mode === "edit") {
         const snapNow = ctrl.snapshot();
@@ -299,26 +412,38 @@ console.log("Goes here ln.60 : ",initialData)
               currentDocumentAttachmentId,
               docClaimFiles
             );
+            await syncDocAttachmentGroup(currentDocumentAttachmentId);
           } else {
             const docId = await uploadDocumentAttachment(
               "claim_document",
               docClaimFiles
             );
-            if (typeof docId === "number")
+            if (typeof docId === "number") {
               ctrl.set("document_attachment_id", docId);
+              await syncDocAttachmentGroup(docId);
+            }
           }
         }
       }
 
       const data = await ctrl.submit(mode, claimId);
       onSuccess?.(data);
+
+      // jaga-jaga backend mengganti group id / isi attachment, sync lagi (best-effort)
+      const gid = Number(
+        (ctrl.snapshot().values.document_attachment_id as number | undefined) ?? 0
+      );
+      if (gid) await syncDocAttachmentGroup(gid);
+
       openSuccessDialog();
       setDocClaimFiles([]);
+      saved = true;
     } catch (e) {
       console.error(e);
       openErrorDialog(e);
     } finally {
       setSubmitting(false);
+      if (saved) router.refresh();
     }
   }
 
@@ -334,6 +459,8 @@ console.log("Goes here ln.60 : ",initialData)
       state: initialData?.state ?? "",
       purchase_order: initialData?.purchase_order ?? null,
     });
+
+    setAmountText(formatMoney(initialData?.amount ?? 0));
 
     if (mode === "edit") {
       const docGroup = initialData.document_attachment;
@@ -359,10 +486,10 @@ console.log("Goes here ln.60 : ",initialData)
     router.push("/claims/list");
   }
 
-  async function onHandleApprove(){
+  async function onHandleApprove() {
     try {
       setSubmitting(true);
-      await doApprovalState(claimId as string,"approve");
+      await doApprovalState(claimId as string, "approve");
     } catch (e) {
       console.error(e);
       openErrorDialog(e);
@@ -371,7 +498,7 @@ console.log("Goes here ln.60 : ",initialData)
     }
   }
 
-  async function onHandleReject(){
+  async function onHandleReject() {
     try {
       setSubmitting(true);
       await doApprovalState(claimId as string, "reject");
@@ -381,10 +508,8 @@ console.log("Goes here ln.60 : ",initialData)
     } finally {
       setSubmitting(false);
     }
-
   }
 
-  
   function onHandleChangeClaimFiles(files: File[]) {
     setDocClaimFiles(files);
 
@@ -406,35 +531,47 @@ console.log("Goes here ln.60 : ",initialData)
         <div className="mx-auto max-w-screen-xl px-4 py-3 flex items-center justify-end gap-2">
           {userType === "shipper" && (
             <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" disabled={submitting} onClick={handleDiscard}>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={submitting}
+                onClick={handleDiscard}
+              >
                 {t("common.discard")}
               </Button>
-              {snap.values.state==="reviewed" && (
-                  <div className="flex items-center gap-2">
-                    <Button type="button" variant="ghost" disabled={submitting} onClick={onHandleReject}>
-                      {t("common.reject")}
-                    </Button>
-                    <Button
-                      onClick={onHandleApprove}
-                      disabled={!snap.canSubmit || submitting}
-                      variant="solid"
-                    >
-                      Accept
-                    </Button>
-                  </div>
-                
+              {snap.values.state === "reviewed" && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={submitting}
+                    onClick={onHandleReject}
+                  >
+                    {t("common.reject")}
+                  </Button>
+                  <Button
+                    onClick={onHandleApprove}
+                    disabled={!snap.canSubmit || submitting}
+                    variant="solid"
+                  >
+                    Aprove
+                  </Button>
+                </div>
               )}
             </div>
           )}
-          
-          
-          
+
           {userType === "transporter" && (
             <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" disabled={submitting} onClick={handleDiscard}>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={submitting}
+                onClick={handleDiscard}
+              >
                 {t("common.discard")}
               </Button>
-              {snap.values.state==="draft" && (
+              {snap.values.state === "draft" && (
                 <Button
                   type="button"
                   variant="solid"
@@ -444,7 +581,7 @@ console.log("Goes here ln.60 : ",initialData)
                   {mode === "edit" ? "Update" : "Save"}
                 </Button>
               )}
-              {mode==="create" && (
+              {mode === "create" && (
                 <Button
                   type="button"
                   variant="solid"
@@ -456,7 +593,6 @@ console.log("Goes here ln.60 : ",initialData)
               )}
             </div>
           )}
-          
         </div>
       </div>
 
@@ -468,15 +604,43 @@ console.log("Goes here ln.60 : ",initialData)
           <div className="flex flex-col md:flex-row gap-6">
             <div className="space-y-4">
               <Card>
-                <CardHeader>Claim Detail</CardHeader>
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-base font-semibold">
+                      Claim Detail
+                    </span>
+
+                    <div className="inline-flex items-center gap-2">
+                      <span className="text-xs text-gray-500">
+                        {t("claims.form.fields.state")}
+                      </span>
+                      <span className="inline-flex items-center rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs font-extrabold uppercase text-gray-800">
+                        {String(snap.values.state || "-")}
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
                 <CardBody>
                   <Field.Root
-                    value={snap.values.amount as string}
-                    onChange={(v) => ctrl.set("amount", toNum(v))}
+                    value={amountText}
+                    onChange={(v) => {
+                      setAmountText(v);
+                      ctrl.set("amount", parseMoney(v));
+                    }}
                   >
                     <Field.Label>{t("claims.form.fields.amount")}</Field.Label>
                     <Field.Control>
-                      <Field.Input inputMode="decimal" className="w-full" />
+                      <Field.Input
+                        inputMode="decimal"
+                        className="w-full"
+                        onBlur={() =>
+                          setAmountText(
+                            formatMoney(
+                              Number(ctrl.snapshot().values.amount ?? 0)
+                            )
+                          )
+                        }
+                      />
                       <Field.Error>{snap.errors.amount}</Field.Error>
                     </Field.Control>
                   </Field.Root>
@@ -499,7 +663,11 @@ console.log("Goes here ln.60 : ",initialData)
                     accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
                     maxFileSizeMB={10}
                     maxFiles={10}
-                    disabled={userType === "shipper" && (snap.values.state==="reviewed" || snap.values.state==="approve" )}
+                    disabled={
+                      userType === "shipper" &&
+                      (snap.values.state === "reviewed" ||
+                        snap.values.state === "approve")
+                    }
                     hint={
                       t("claims.form.hints.document") ??
                       "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"

@@ -1,5 +1,4 @@
 "use client";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Field } from "@/components/form/FieldInput";
@@ -9,8 +8,6 @@ import { goSignIn } from "@/lib/goSignIn";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { useDebounced } from "@/hooks/useDebounced";
 import type { RecordItem } from "@/types/recorditem";
-
-/** ===== Helpers default normalizer (tetap kompatibel dengan yang lama) ===== */
 function isObj(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object";
 }
@@ -55,62 +52,41 @@ export function normalizeResults(json: unknown): RecordItem[] {
   }
   return [];
 }
-
-/** ===== Types untuk sumber data generic ===== */
 type FetcherCtx = { signal: AbortSignal; lang?: string };
-
 export type LookupFetcher = (
   q: string,
   ctx: FetcherCtx
 ) => Promise<RecordItem[]>;
-
 export type EndpointMethod = "GET" | "POST";
-
 export type LookupEndpointConfig = {
-  /** URL endpoint (boleh absolute/relative) */
   url: string;
-  /** GET/POST (default GET) */
   method?: EndpointMethod;
-  /** Nama query param untuk search (default "query") */
   queryParam?: string;
-  /** Extra params di URL (GET) atau body (POST) */
   extraParams?: Record<string, string | number | boolean | null | undefined>;
-  /** Nama-nama umum untuk pagination (optional) */
-  pageParam?: string; // default "page"
-  pageSizeParam?: string; // default "page_size"
-  page?: string | number; // default "1"
-  pageSize?: string | number; // default "80"
-  /** Tambahan headers (mis. Authorization) */
+  pageParam?: string; 
+  pageSizeParam?: string; 
+  page?: string | number; 
+  pageSize?: string | number; 
   headers?: Record<string, string>;
-  /** Custom mapper bila respons unik (default normalizeResults) */
   mapResults?: (json: unknown) => RecordItem[];
-  /** Kalau mau override 401 handling; return true jika kamu sudah handle */
   onUnauthorized?: () => void | boolean;
 };
-
 export type LookupAutocompleteProps = {
+  className?: string;
   label: string;
   value: RecordItem | null;
   onChange: (v: RecordItem | null) => void;
   disabled?: boolean;
   placeholder?: string;
-
   error?: string;
-
-  /** Pilih salah satu: fetcher custom ATAU endpoint config */
   fetcher?: LookupFetcher;
   endpoint?: LookupEndpointConfig;
-
-  /** Namespace cache biar antar sumber data terisolasi (default: endpoint.url atau "default") */
   cacheNamespace?: string;
-  /** Query untuk prefetch saat siap (default: "") */
   prefetchQuery?: string;
-
-  /** Kostumisasi render opsi */
   renderOption?: (opt: RecordItem) => React.ReactNode;
 };
-
 export default function LookupAutocomplete({
+  className="",
   label,
   value,
   error,
@@ -125,21 +101,16 @@ export default function LookupAutocomplete({
 }: LookupAutocompleteProps) {
   const { i18nReady, activeLang } = useI18nReady();
   const router = useRouter();
-
   const [query, setQuery] = useState<string>(value?.name ?? "");
   const [options, setOptions] = useState<RecordItem[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
-
   const debounced = useDebounced(query, 250);
-
   const rootRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const popRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-
-  // Cache per namespace + query
   const ns =
     cacheNamespace ??
     (endpoint?.url
@@ -149,10 +120,7 @@ export default function LookupAutocomplete({
       : "ns:default");
   const cacheRef = useRef(new Map<string, Map<string, RecordItem[]>>());
   const lastFetchKey = useRef<string>("");
-
   useClickOutside([rootRef, inputRef, popRef], () => setOpen(false), open);
-
-  /** Utility: set/get cache */
   const setCache = useCallback(
     (k: string, list: RecordItem[]) => {
       const byNs = cacheRef.current.get(ns) ?? new Map<string, RecordItem[]>();
@@ -165,13 +133,9 @@ export default function LookupAutocomplete({
     (k: string) => cacheRef.current.get(ns)?.get(k),
     [ns]
   );
-
-  /** ——— Core fetch (ambil dari fetcher atau endpoint) ——— */
   const fetchOptions = useCallback(
     async (q: string) => {
       const k = q.trim();
-
-      // Dedup + cache hit
       const cached = getCache(k);
       if (lastFetchKey.current === k && cached) {
         setOptions(cached);
@@ -179,25 +143,18 @@ export default function LookupAutocomplete({
         return;
       }
       lastFetchKey.current = k;
-
-      // Batalkan req sebelumnya
       abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;
-
       try {
         setLoading(true);
-
         let list: RecordItem[] = [];
-
         if (typeof fetcher === "function") {
-          // ===== Custom fetcher =====
           list = await fetcher(k, {
             signal: ac.signal,
             lang: activeLang ?? "en",
           });
         } else if (endpoint?.url) {
-          // ===== Endpoint config =====
           const {
             url,
             method = "GET",
@@ -211,14 +168,11 @@ export default function LookupAutocomplete({
             mapResults: mapFn = normalizeResults,
             onUnauthorized,
           } = endpoint;
-
-          // support relative URL
           const base =
             typeof window !== "undefined"
               ? window.location.origin
               : "http://localhost";
           const u = new URL(url, base);
-
           const qp = new URLSearchParams();
           qp.set(queryParam, k);
           qp.set(pageParam, String(page));
@@ -228,10 +182,8 @@ export default function LookupAutocomplete({
               if (vv != null) qp.set(kk, String(vv));
             }
           }
-
           let res: Response;
           if (method === "GET") {
-            // GET: params di URL
             for (const [kk, vv] of qp.entries()) u.searchParams.set(kk, vv);
             res = await fetch(u.toString(), {
               method: "GET",
@@ -245,7 +197,6 @@ export default function LookupAutocomplete({
               signal: ac.signal,
             });
           } else {
-            // POST: params di body
             res = await fetch(u.toString(), {
               method: "POST",
               headers: {
@@ -259,9 +210,7 @@ export default function LookupAutocomplete({
               signal: ac.signal,
             });
           }
-
           if (res.status === 401) {
-            // izinkan override handling
             const handled = onUnauthorized?.();
             if (!handled) goSignIn({ routerReplace: router.replace });
             return;
@@ -271,16 +220,13 @@ export default function LookupAutocomplete({
             setHasFetched(true);
             return;
           }
-
           const json: unknown = await res.json();
           list = mapFn(json);
         } else {
-          // Tidak ada sumber data -> kosong (tetap tandai fetched agar UI tidak flash)
           setOptions([]);
           setHasFetched(true);
           return;
         }
-
         setCache(k, list);
         setOptions(list);
         setHasFetched(true);
@@ -296,8 +242,6 @@ export default function LookupAutocomplete({
     },
     [fetcher, endpoint, activeLang, router.replace, getCache, setCache]
   );
-
-  /** Ketik: fetch saat open + berubah (dengan cache) */
   const debouncedQuery = debounced;
   useEffect(() => {
     if (!open) return;
@@ -309,22 +253,14 @@ export default function LookupAutocomplete({
     }
     void fetchOptions(k);
   }, [debouncedQuery, open, fetchOptions, getCache]);
-
-  /** Prefetch default sekali saat siap */
   useEffect(() => {
     if (!i18nReady || disabled) return;
     void fetchOptions(prefetchQuery);
   }, [i18nReady, disabled, prefetchQuery, fetchOptions]);
-
-  /** Cleanup abort saat unmount */
   useEffect(() => () => abortRef.current?.abort(), []);
-
-  /** Sinkronkan tampilan saat value luar berubah */
   useEffect(() => {
     setQuery(value?.name ?? "");
   }, [value?.id, value?.name]);
-
-  /** Buka popover, pakai cache bila ada; kalau belum ada, fetch dulu lalu buka */
   const openPopover = useCallback(async () => {
     if (disabled) return;
     const k = (debouncedQuery || "").trim();
@@ -337,8 +273,6 @@ export default function LookupAutocomplete({
     await fetchOptions(k);
     setOpen(true);
   }, [disabled, debouncedQuery, fetchOptions, getCache]);
-
-  // ---- Skeleton i18n ----
   if (!i18nReady) {
     return (
       <div className="space-y-4" data-lang={activeLang}>
@@ -350,10 +284,10 @@ export default function LookupAutocomplete({
       </div>
     );
   }
-
   return (
     <div ref={rootRef} className="relative">
       <Field.Root
+        className={className}
         value={query}
         onChange={(v) => {
           setQuery(v);
@@ -398,7 +332,7 @@ export default function LookupAutocomplete({
                       key={String(opt.id)}
                       className="cursor-pointer px-3 py-2 text-sm hover:bg-gray-50"
                       onPointerDown={(e) => {
-                        e.preventDefault(); // cegah blur
+                        e.preventDefault(); 
                         onChange(opt);
                         setQuery(opt.name ?? "");
                         setOpen(false);
@@ -408,13 +342,8 @@ export default function LookupAutocomplete({
                       {renderOption ? (
                         renderOption(opt)
                       ) : (
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center justify-between gap-3 ">
                           <span>{opt.name}</span>
-                          {/* {opt.name && (
-                            <span className="text-xs text-gray-500">
-                              {opt.name}
-                            </span>
-                          )} */}
                         </div>
                       )}
                     </li>

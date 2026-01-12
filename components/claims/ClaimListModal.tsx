@@ -26,23 +26,23 @@ export function ClaimListModal({ open, onClose, claims, loading }: ClaimListModa
   };
 
   const handleViewClaim = (claimId: number) => {
-    window.open(`${process.env.NEXT_PUBLIC_URL_BASE ?? ""}/claims/details?id=${claimId}`, '_blank');
+    window.open(`${process.env.NEXT_PUBLIC_URL_BASE ?? ""}/claims/details?id=${claimId}`,"_self");
   };
 
   const handleDownloadAttachment = (attachment: Attachment) => {
     if (attachment?.url) {
       const urlWithToken = attachment.url
-      window.open(urlWithToken, '_blank');
+      window.open(urlWithToken,"_self");
     }
   };
 
-  const hasAttachments = (claim: ClaimItem): boolean => {
-    return claim.document_attachment.attachments.length > 0;
+  const getAttachments = (claim: ClaimItem): Attachment[] => {
+    const v = claim.document_attachment?.attachments;
+    return Array.isArray(v) ? v : [];
   };
 
-  const getFirstAttachment = (claim: ClaimItem): Attachment | null => {
-    return claim.document_attachment.attachments[0] || null;
-  };
+  const hasAttachments = (claim: ClaimItem) => getAttachments(claim).length > 0;
+  const getFirstAttachment = (claim: ClaimItem) => getAttachments(claim)[0] ?? null;
 
   if (loading) {
     return (

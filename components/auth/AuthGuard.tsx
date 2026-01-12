@@ -50,8 +50,6 @@ export default function AuthGuard({ children, nextPath }: Props) {
     const authed = loggedIn === true || readPersist();
     if (!authed && !isAuthPublic) {
       setAuthState("guest");
-      // 1) next TIDAK di-withBase untuk menghindari double /tms saat consume
-      // 2) loginUrl DI-withBase agar selalu benar di subpath export
       const target = nextPath || pathname || "/";
       const encodedNext = encodeURIComponent(target);
       const loginUrl = withBase(`/maccount/signin?next=${encodedNext}`);

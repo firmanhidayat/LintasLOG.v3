@@ -194,8 +194,6 @@ export type OrdersCreateFormProps = {
     cargo_type: RecordItem;
     cargo_type_id: number;
     
-   
-
     cargo_name: string;
     cargo_description: string;
     cargo_cbm: number;
@@ -217,6 +215,7 @@ export type OrdersCreateFormProps = {
     amount_tax: string | number;
     amount_total: string | number;
     states: StatusStep[];
+    state: string;
 
     tms_states?: StatusStep[];
     tms_state?: string;
@@ -249,6 +248,11 @@ export type OrdersCreateFormProps = {
 
     packing_list_attachment?: OrderAttachmentGroup;
     delivery_note_attachment?: OrderAttachmentGroup;
+    
+    res_id?: number;
+    res_model?: string;
+    original_res_id?: number;
+    original_res_model?: string;
 
     route_ids?: Array<{
       id?: number;
@@ -284,6 +288,8 @@ export type OrdersCreateFormProps = {
       eta_date?: string;
     }>;
     idReadOnly?: boolean;
+
+
   }>;
   /** Callback opsional setelah sukses submit */
   onSuccess?: (result?: unknown) => void;

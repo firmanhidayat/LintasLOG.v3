@@ -163,7 +163,7 @@ export default function LocationInfoCard({
         </h4>
       </CardHeader>
       <CardBody>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Kolom 1 - Editable */}
           <div className={cn("space-y-4", isReadOnly && "hidden")}>
             <div ref={refIf("tglMuat")}>

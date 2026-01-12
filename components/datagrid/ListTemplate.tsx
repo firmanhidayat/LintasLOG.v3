@@ -248,6 +248,9 @@ export function ListTemplate<
   const [sortBy, setSortBy] = useState(defaultSortBy);
   const [sortDir, setSortDir] = useState<SortDir>(defaultSortDir);
 
+  // Manual refresh trigger for server-mode grid (increments to refetch)
+  const [refreshSeq, setRefreshSeq] = useState(0);
+
   const debouncedSearch = useDebounced(search, 400);
 
   const [confirm, setConfirm] = useState<ConfirmState>({
@@ -436,6 +439,7 @@ export function ListTemplate<
   }, [
     staticData,
     fetchBase,
+    refreshSeq,
     page,
     pageSize,
     debouncedSearch,
@@ -448,6 +452,16 @@ export function ListTemplate<
   useEffect(() => {
     if (page > totalPages) setPage(1);
   }, [totalPages, page]);
+
+  function handleRefresh() {
+    if (loading) return;
+    // server-mode: trigger refetch; static-mode: restore from props
+    if (staticData) {
+      setLocalStatic(staticData);
+      return;
+    }
+    setRefreshSeq((s) => s + 1);
+  }
 
   function onSort(colId: string) {
     if (sortBy === colId) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -838,6 +852,17 @@ export function ListTemplate<
               ⋮ {t("common.kolom.button.setting")}
             </Button>
           )}
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={loading}
+            className="rounded-md border border-gray-300 px-3 py-1 text-md hover:bg-gray-150 disabled:opacity-50"
+            title={t("common.refresh") || "Refresh"}
+          >
+            <span className={loading ? "animate-spin" : ""}>⟳</span> {t("common.refresh") || "Refresh"}
+          </Button>
         </div>
       </div>
 

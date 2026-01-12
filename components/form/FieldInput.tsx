@@ -19,18 +19,15 @@ function isMarkedChild(
 }
 
 type CommonProps = {
-  /** state */
   value: string;
   onChange: (v: string) => void;
   touched?: boolean;
   error?: string;
   description?: string;
 
-  /** identity */
   name?: string;
   id?: string;
 
-  /** behavior */
   disabled?: boolean;
   readOnly?: boolean;
   required?: boolean;

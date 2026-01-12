@@ -5,11 +5,16 @@ import { User } from "lucide-react";
 import { useMemo } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { getInitials, nameFromLogin } from "@/lib/identity";
+import { resolveOdooImageSrc } from "@/lib/image";
 
 export default function AvatarMenu() {
   const { profile, loggedIn } = useAuth();
   const profileName = profile?.name;
-  const profileImage = profile?.avatar_url;
+  const profileImageRaw = profile?.image_128;
+  const profileImageSrc = useMemo(
+    () => resolveOdooImageSrc(profileImageRaw),
+    [profileImageRaw]
+  );
   const loginId = profile?.email;
 
   const displayName = useMemo(() => {
@@ -30,10 +35,10 @@ export default function AvatarMenu() {
       </div>
     );
   }
-  if (profileImage) {
+  if (profileImageSrc) {
     return (
       <Image
-        src={profileImage}
+        src={profileImageSrc}
         alt={displayName || "User avatar"}
         width={32}
         height={32}

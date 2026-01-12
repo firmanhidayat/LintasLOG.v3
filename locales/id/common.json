@@ -17,6 +17,7 @@
         "discard": "Batalkan",
         "upload": "Unggah",
         "download": "Unduh",
+        "refresh": "Muat ulang",
         "select": "Pilih",
         "search_city": "Cari kota…",
         "search_address": "Cari alamat…",
@@ -46,6 +47,7 @@
         "failed_to_save": "Telah terjadi kesalahan",
         "search_fleet": "Pilih kendaraan",
         "search_driver": "Pilih pengemudi",
+        "clear": "Bersihkan pesan",
         "kolom": {
             "button": {
                 "setting": "Atur Kolom"
@@ -87,5 +89,23 @@
     },
     "placeholders": {
         "phone": "Masukkan nomor telepon"
+    },
+      "status_tracking": {
+    "name": "Nama",
+    "transport_order": "Order Transport",
+    "sale": "Penjualan",
+    "origin_city": "Kota Asal",
+    "dest_city": "Kota Tujuan",
+    "fleet_vehicle": "Kendaraan Armada",
+    "driver_partner": "Pengemudi Mitra",
+    "cargo_type": "Jenis Kargo",
+    "tms_state": "Status TMS",
+    "search": {
+      "placeholder": "Cari status tracking..."
+    },
+    "rowsPerPage": "Baris per halaman",
+    "create": {
+      "title": "Buat Status Tracking"
     }
+  }
 }

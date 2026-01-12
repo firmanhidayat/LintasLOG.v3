@@ -25,11 +25,11 @@ import SpecialServicesCard from "@/components/forms/orders/sections/SpecialServi
 import CostDetailsCard from "@/components/forms/orders/sections/CostDetailsCard";
 import ShippingDocumentsCard from "@/components/forms/orders/sections/ShippingDocumentsCard";
 import Button from "@/components/ui/Button";
+import ChatterPanel from "@/components/chat/ChatterPanel";
 import React from "react";
 import { Field } from "@/components/form/FieldInput";
 import LocationInfoCard from "@/components/forms/orders/sections/LocationInfoCard";
 import { Modal } from "@/components/forms/orders/OrdersCreateForm";
-import { FieldTextarea } from "@/components/form/FieldTextarea";
 import { format2comma } from "@/components/forms/orders/sections/CargoInfoCard";
 import LookupAutocomplete, {
   normalizeResults,
@@ -40,6 +40,8 @@ import { TmsUserType } from "@/types/tms-profile";
 import { ClaimItem } from "@/types/claims";
 import { fetchOrderClaims_T } from "@/services/claimService";
 import { ClaimListModal } from "@/components/claims/ClaimListModal";
+import { useAuth } from "@/components/providers/AuthProvider";
+
 type ExtraStopWithId = ExtraStop & { uid: string };
 type ChatImpulseDetail = { active?: boolean; unread?: number };
 function useChatImpulseChannel(channel: string = "orders:chat-impulse") {
@@ -205,6 +207,10 @@ function prefillFromInitial(
     extraStops: [] as ExtraStop[],
     isReadOnly: false,
     claim_ids_count: claimCount,
+    res_id: data.res_id,
+    res_model: data.res_model,
+    original_res_id: data.original_res_id,
+    original_res_model: data.original_res_model,
   };
 
   const routes: RouteItem[] = Array.isArray(data.route_ids)
@@ -309,9 +315,23 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   userType,
 }: RoleOrderProps<T> & { userType: T }) {
   const DETAIL_URL_TPL = process.env.NEXT_PUBLIC_TMS_P_ORDER_FORM_URL!;
-  const POST_CHAT_URL = process.env.NEXT_PUBLIC_TMS_ORDER_CHAT_URL ?? "";
+  const CHATTERS_ENDPOINT_BASE = process.env.NEXT_PUBLIC_TMS_ORDER_CHAT_URL!;
   const AUTOSET_STATUSES = new Set(["pickup", "delivery", "received"]);
-  const AUTOSET_TMS_STATE_FOR_BTNCLAIM = new Set(["accept","preparation","pickup","delivery","received"]);
+  const AUTOSET_TMS_STATE_FOR_BTNCLAIM = new Set([
+    "accept",
+    "preparation",
+    "pickup",
+    "delivery",
+    "received",
+  ]);
+  const { profile } = useAuth();
+  const currentProfileName = useMemo(() => {
+      if (profile) return profile.name;
+      return undefined;
+    }, [profile]);
+
+  console.log("Current Profile Name:", currentProfileName);
+  
   const router = useRouter();
   const searchParams = useSearchParams();
   const qsId = searchParams?.get("id") ?? null;
@@ -462,22 +482,22 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const [claimsLoading, setClaimsLoading] = useState(false);
   const fetchClaims = async () => {
     if (!effectiveOrderId) return;
-    
+
     setClaimsLoading(true);
     try {
       const claimsData = await fetchOrderClaims_T(effectiveOrderId);
       setClaims(claimsData.items);
     } catch (error) {
-      console.error('Failed to fetch claims:', error);
-      openErrorDialog(error, 'Failed to load claims');
+      console.error("Failed to fetch claims:", error);
+      openErrorDialog(error, "Failed to load claims");
     } finally {
       setClaimsLoading(false);
     }
   };
 
   function onHandleShowClaimListButton() {
-      setClaimsModalOpen(true);
-      fetchClaims();
+    setClaimsModalOpen(true);
+    fetchClaims();
   }
 
   function onHandleClaimButton() {
@@ -751,45 +771,46 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setRejectLoading(false);
     }
   }
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatMsg, setChatMsg] = useState("");
-  const [chatSending, setChatSending] = useState(false);
-  async function handleSendChat() {
-    if (!chatMsg.trim()) return;
-    if (!POST_CHAT_URL) {
-      openErrorDialog(
-        "Chat endpoint belum dikonfigurasi.",
-        "Konfigurasi belum lengkap"
-      );
-      return;
-    }
-    try {
-      setChatSending(true);
-      const res = await fetch(POST_CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept-Language": getLang(),
-        },
-        credentials: "include",
-        body: JSON.stringify({ message: chatMsg.trim() }),
-      });
-      if (!res.ok) {
-        const msg = await res.text();
-        openErrorDialog(msg);
-        return;
-      }
-      setChatMsg("");
-      openSuccessDialog(t("orders.message_sent") ?? "Pesan terkirim.");
-    } catch (e) {
-      console.error("Chat error", e);
-      openErrorDialog(
-        t("common.network_error") ?? "Terjadi kesalahan jaringan."
-      );
-    } finally {
-      setChatSending(false);
-    }
-  }
+
+  const [chatterResModel, setChatterResModel] = useState<string>("");
+  const [chatterResId, setChatterResId] = useState<string | number | undefined>(
+    undefined
+  );
+  // const chatCtx = useMemo(() => {
+  //   const fallbackId = effectiveOrderId ?? null;
+  //   const d = initialData as unknown;
+
+  //   if (!d || typeof d !== "object" || Array.isArray(d)) {
+  //     return {
+  //       resModel: null as string | null,
+  //       resId: fallbackId as string | number | null,
+  //     };
+  //   }
+
+  //   const o = d as Record<string, unknown>;
+  //   const resModelRaw = o["res_model"] ?? o["resModel"];
+  //   const resModel =
+  //     typeof resModelRaw === "string" ? String(resModelRaw).trim() : null;
+
+  //   const ridRaw = o["res_id"] ?? o["resId"] ?? o["id"];
+  //   const rid =
+  //     typeof ridRaw === "string" || typeof ridRaw === "number"
+  //       ? (ridRaw as string | number)
+  //       : (fallbackId as string | number | null);
+
+  //   return {
+  //     resModel: resModel && resModel.length ? resModel : null,
+  //     resId: rid ?? null,
+  //   };
+  // }, [initialData, effectiveOrderId]);
+
+  // const canShowChat =
+  //   Boolean(chatCtx.resModel) &&
+  //   chatCtx.resId != null &&
+  //   String(chatCtx.resId).trim() !== "";
+
+  const chatAnchorRef = useRef<HTMLDivElement | null>(null);
+
   const layananPreset = [
     "Helm",
     "APAR",
@@ -869,6 +890,16 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   useEffect(() => {
     if (!initialData) return;
     const f = prefillFromInitial(initialData);
+
+    setChatterResModel(
+      typeof f.res_model === "string" ? f.res_model : String(f.res_model ?? "")
+    );
+    setChatterResId(
+      typeof f.res_id === "string" || typeof f.res_id === "number"
+        ? f.res_id
+        : undefined
+    );
+
     setNamaPenerima(f.namaPenerima);
     setJenisOrder(f.jenisOrder);
     setArmada(f.armada);
@@ -1000,6 +1031,17 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           setAmountTotal(f.amount_total);
           setLayananLainnya(f.requirement_other);
 
+          setChatterResModel(
+            typeof f.res_model === "string"
+              ? f.res_model
+              : String(f.res_model ?? "")
+          );
+          setChatterResId(
+            typeof f.res_id === "string" || typeof f.res_id === "number"
+              ? f.res_id
+              : undefined
+          );
+
           if (userType === "transporter") {
             setClaimIdsCount(Number(f?.claim_ids_count ?? 0));
           }
@@ -1030,8 +1072,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       }
     })();
     return () => abort.abort();
-  }, 
-  [mode, effectiveOrderId, initialData, router.replace, userType]);
+  }, [mode, effectiveOrderId, initialData, router.replace, userType]);
 
   // for candidate Fleet and Driver
   useEffect(() => {
@@ -1211,9 +1252,11 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   }, [fdOpen, vehicles?.id, drivers?.id]);
 
   console.log(statusCurrent);
+  console.log("chatterResModel:", chatterResModel);
+  console.log("chatterResId:", chatterResId);
 
   return (
-    <div>
+    <div className="space-y-4 ">
       {steps.length > 0 && (
         <Card className="sticky top-14 z-30">
           <CardBody>
@@ -1538,11 +1581,15 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                     </span>
                   )}
 
-                  <Button
+                  {/* {canShowChat && (
+                    <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setChatOpen(true);
+                      chatAnchorRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
                       setHasChatImpulse(false);
                     }}
                     className={`relative pr-8 ${
@@ -1562,19 +1609,21 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                         <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
                       </span>
                     )}
-                  </Button>
-
-                  {canShowClaims && AUTOSET_TMS_STATE_FOR_BTNCLAIM.has(
-                  (statusCurrent ?? "").trim().toLowerCase()
-                ) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={onHandleClaimButton}
-                    >
-                      Create Claim
                     </Button>
-                  )}
+                  )} */}
+
+                  {canShowClaims &&
+                    AUTOSET_TMS_STATE_FOR_BTNCLAIM.has(
+                      (statusCurrent ?? "").trim().toLowerCase()
+                    ) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onHandleClaimButton}
+                      >
+                        Create Claim
+                      </Button>
+                    )}
 
                   {canShowListClaims && (
                     <Button
@@ -1643,6 +1692,23 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           </div>
         </CardBody>
       </Card>
+
+      <Card>
+        <CardBody>
+          {/* <div ref={chatAnchorRef} className="scroll-mt-24" /> */}
+          {/* {canShowChat && ( */}
+          <ChatterPanel
+            resModel={chatterResModel}
+            resId={chatterResId ?? null}
+            endpointBase={CHATTERS_ENDPOINT_BASE}
+            onRead={() => setHasChatImpulse(false)}
+            className="w-full"
+            currentAuthorName={currentProfileName}
+          />
+          {/* )} */}
+        </CardBody>
+      </Card>
+
       {/* === Reject Confirmation Dialog === */}
       <Modal open={reasonOpen} onClose={() => setReasonOpen(false)}>
         <div className="space-y-3 p-5">
@@ -1673,40 +1739,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           </div>
         </div>
       </Modal>
-      {/* === Chat Dialog === */}
-      <Modal open={chatOpen} onClose={() => setChatOpen(false)}>
-        <div className="space-y-3">
-          <h4 className="text-lg font-semibold text-gray-800">
-            {t("orders.chat_broadcast") ?? "Chat / Broadcast Message"}
-          </h4>
-          <FieldTextarea
-            label={t("orders.message") ?? "Message"}
-            value={chatMsg}
-            onChange={setChatMsg}
-            rows={3}
-            placeholder={
-              t("orders.type_message") ??
-              "Tulis pesan untuk broadcast ke server…"
-            }
-          />
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setChatOpen(false)}>
-              {t("common.cancel") ?? "Batal"}
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSendChat}
-              disabled={chatSending || !chatMsg.trim()}
-              variant="primary"
-            >
-              {chatSending
-                ? t("common.sending") ?? "Sending…"
-                : t("common.send") ?? "Send"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
       {/* === Fleet & Driver Detail Dialog (wide + responsive tabs) === */}
       <Modal open={fdOpen} onClose={() => setFdOpen(false)}>
         <div className="box-border w-full max-w-full sm:max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-[1000px] max-h-[80vh] overflow-y-auto overflow-x-hidden p-5 space-y-4">

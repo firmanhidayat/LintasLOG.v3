@@ -84,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const data = (await res.json()) as TmsProfile;
+      console.log("[Auth] Profile data:", data);
       if (!mountedRef.current) return;
       setProfile(data);
       setProfileStatus("success");

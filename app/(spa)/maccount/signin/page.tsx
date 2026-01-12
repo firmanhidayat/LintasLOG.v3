@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import lintaslogo from "@/images/lintaslog-logo.png";
-import bglintas from "@/images/bg-1.png";
+import bglintas from "@/images/bg-1.webp";
 
 import { Role, useAuth } from "@/components/providers/AuthProvider";
 
@@ -392,14 +392,38 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div className="relative hidden min-h-screen lg:block">
+      <div className="relative hidden min-h-screen overflow-hidden bg-gray-100 lg:block">
+        {/* layer belakang: ngisi layar (boleh blur supaya tidak kelihatan crop) */}
+        <Image
+          src={bglintas}
+          alt=""
+          aria-hidden="true"
+          fill
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          className="object-cover scale-110 blur-xl"
+          priority
+        />
+
+        {/* layer depan: tampilkan gambar utuh (tidak terpotong) */}
+        <Image
+          src={bglintas}
+          alt=""
+          aria-hidden="true"
+          fill
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          className="object-contain"
+          priority
+        />
+      </div>
+
+      {/* <div className="relative hidden min-h-screen lg:block">
         <Image
           src={bglintas}
           alt={t("app.bgAlt")}
           fill
           className="object-cover"
         />
-      </div>
+      </div> */}
     </div>
   );
 }

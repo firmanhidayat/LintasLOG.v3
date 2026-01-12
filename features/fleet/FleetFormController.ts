@@ -22,6 +22,10 @@ export type FleetValues = {
   kir_expiry: string;
   unit_attachment_id: number;
   document_attachment_id: number;
+  // display-only from backend (RAW base64 thumbnail)
+  image_128?: string;
+
+  image_1920?: string | null;
 };
 export type FleetErrors = Partial<Record<keyof FleetValues, string>>;
 export type FleetApiResponse = { id?: string } & {
@@ -46,6 +50,7 @@ export type FleetPayload = {
   kir_expiry: string;
   unit_attachment_id: number;
   document_attachment_id: number;
+  image_1920?: string | null;
 };
 const FLEET_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_URL ?? "";
 // const MODELS_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_MODELS_URL ?? "";
@@ -82,7 +87,7 @@ export class FleetFormController extends AbstractFormController<
     return e;
   }
   protected toPayload(values: FleetValues): FleetPayload {
-    return {
+    const payload: FleetPayload = {
       model_id: toNumberSafe(values.model?.id) ?? 0,
       category_id: toNumberSafe(values.category?.id) ?? 0,
       license_plate: values.license_plate,
@@ -93,15 +98,25 @@ export class FleetFormController extends AbstractFormController<
       tonnage_max: toNumberSafe(values.tonnage_max) ?? 0,
       cbm_volume: toNumberSafe(values.cbm_volume) ?? 0,
       color: values.color,
-      horsepower: values.horsepower,
+      horsepower: toNumberSafe(values.horsepower) ?? 0,
       axle: values.axle,
       acquisition_date: values.acquisition_date,
       write_off_date: values.write_off_date,
       kir: values.kir,
       kir_expiry: values.kir_expiry,
-      unit_attachment_id: values.unit_attachment_id,
-      document_attachment_id: values.document_attachment_id,
+      unit_attachment_id: toNumberSafe(values.unit_attachment_id) ?? 0,
+      document_attachment_id: toNumberSafe(values.document_attachment_id) ?? 0,
     };
+
+    // Only send when explicitly changed:
+    // - undefined => omit from payload
+    // - "" or null => clear on backend
+    // - base64 string => set new image
+    if (values.image_1920 !== undefined) {
+      payload.image_1920 = values.image_1920;
+    }
+
+    return payload;
   }
   protected endpoint(mode: "create" | "edit", id?: string | number): string {
     if (mode === "edit" && id !== undefined && id !== null) {

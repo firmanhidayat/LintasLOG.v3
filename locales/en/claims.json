@@ -30,7 +30,8 @@
                 "description": "Description",
                 "reason": "Reason",
                 "amount": "Amount",
-                "document": "Document (Upload)"
+                "document": "Document (Upload)",
+                "state" : "State"
             },
             "placeholders": {
                 "claimNo": "e.g. CLM-0001",

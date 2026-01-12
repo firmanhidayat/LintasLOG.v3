@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Field } from "@/components/form/FieldInput";
 import LookupAutocomplete, {
   normalizeResults,
@@ -47,6 +47,71 @@ type FleetInitialData = Partial<FleetValues> & {
   document_attachment?: FleetAttachmentGroup;
 };
 
+function getInitials(name?: string) {
+  const s = (name ?? "").trim();
+  if (!s) return "?";
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+
+
+
+function resolveImageSrc(raw?: string | null): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  // Already a data URL
+  if (trimmed.startsWith("data:")) return trimmed;
+
+  // Absolute URLs
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+
+  // Odoo relative image routes (keep this narrow; base64 JPEG may start with "/9j/")
+  if (trimmed.startsWith("/web/") || trimmed.startsWith("/api/") || trimmed.startsWith("/tms/")) {
+    return trimmed;
+  }
+
+  // Treat as RAW base64 (strip whitespace/newlines)
+  const b64 = trimmed.replace(/\s+/g, "");
+
+  const mime =
+    b64.startsWith("/9j/") ? "image/jpeg" :
+    b64.startsWith("iVBOR") ? "image/png" :
+    b64.startsWith("R0lGOD") ? "image/gif" :
+    b64.startsWith("UklGR") ? "image/webp" :
+    "image/jpeg";
+
+  return `data:${mime};base64,${b64}`;
+}
+
+function FleetAvatar({ name, src }: { name?: string; src?: string | null }) {
+  const initials = useMemo(() => getInitials(name), [name]);
+
+  return (
+    <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-50 shadow-sm flex items-center justify-center">
+      {src ? (
+        <img
+          src={src}
+          alt={name ? `${name} avatar` : "avatar"}
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+        />
+      ) : (
+        <span className="text-lg font-extrabold text-gray-700 select-none">
+          {initials}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function FleetFormPage({
   mode = "create",
   fleetId,
@@ -79,6 +144,7 @@ export default function FleetFormPage({
     kir_expiry: initialData?.kir_expiry ?? "",
     unit_attachment_id: initialData?.unit_attachment_id ?? 0,
     document_attachment_id: initialData?.document_attachment_id ?? 0,
+    image_128: initialData?.image_128 ?? "",
   };
   const [ctrl, snap] = useFormController(() => new FleetFormController(init));
 
@@ -103,6 +169,51 @@ export default function FleetFormPage({
   );
   const [unitHeaderName, setUnitHeaderName] = useState<string | undefined>();
   const [docHeaderName, setDocHeaderName] = useState<string | undefined>();
+  const [avatarInlineDataUrl, setAvatarInlineDataUrl] = useState<string | null>(null);
+
+  const fleetNameForAvatar = useMemo(() => {
+    const lp = (snap.values.license_plate as string | undefined)?.trim();
+    if (lp) return lp;
+
+    const getRecName = (v: unknown) => {
+      if (!v || typeof v !== "object") return "";
+      const rec = v as Record<string, unknown>;
+      const a = rec["name"];
+      if (typeof a === "string" && a.trim()) return a;
+      const b = rec["display_name"];
+      if (typeof b === "string" && b.trim()) return b;
+      const c = rec["label"];
+      if (typeof c === "string" && c.trim()) return c;
+      return "";
+    };
+
+    const modelName = getRecName(snap.values.model);
+    if (modelName) return modelName;
+    const catName = getRecName(snap.values.category);
+    if (catName) return catName;
+    return "Fleet";
+  }, [snap.values.license_plate, snap.values.model, snap.values.category]);
+
+  // Avatar behavior:
+  // - Default (no changes): display from image_128 (RAW base64 from BE)
+  // - If user changes photo: send RAW base64 in image_1920
+  // - If user removes photo: send image_1920 = "" (or null)
+  // - If user edits without changing photo: omit image_1920 (undefined)
+  const avatarRemoteSrc = useMemo(() => {
+    const v =
+      (snap.values.image_128 as string | undefined) ??
+      (initialData?.image_128 as string | undefined) ??
+      "";
+    return resolveImageSrc(v);
+  }, [snap.values.image_128, initialData?.image_128]);
+
+  const avatarIsRemoved = useMemo(() => {
+    const v = snap.values.image_1920 as string | null | undefined;
+    return v === "" || v === null;
+  }, [snap.values.image_1920]);
+
+  const avatarSrc = avatarIsRemoved ? null : avatarInlineDataUrl ?? avatarRemoteSrc;
+
 
   function handleClearUnitAttachments() {
     setUnitExistingFiles([]);
@@ -139,6 +250,42 @@ export default function FleetFormPage({
     );
     setDlgOpen(true);
   }
+
+
+  async function fileToDataUrl(file: File): Promise<string> {
+    return await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onerror = () => reject(new Error("Failed to read file"));
+      r.onload = () => resolve(String(r.result ?? ""));
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function handlePickAvatar(file: File) {
+    // Preview using data URL and store RAW base64 to image_1920 for submit
+    const dataUrl = await fileToDataUrl(file);
+    setAvatarInlineDataUrl(dataUrl);
+
+    const rawBase64 = String(dataUrl.split(",")[1] ?? "").trim();
+
+    // set to form values; controller will include it in payload
+    ctrl.set("image_1920", rawBase64);
+  }
+
+  function handleRemoveAvatar() {
+    // Send empty string to clear on BE (compatible with Odoo image fields)
+    setAvatarInlineDataUrl(null);
+    ctrl.set("image_1920", "");
+  }
+
+  function handleResetAvatarToRemote() {
+    // For edit mode: revert to remote image_128 (and omit changes)
+    setAvatarInlineDataUrl(null);
+    // Omit image_1920 to keep the remote image unchanged
+    ctrl.setMany({ image_1920: undefined });
+  }
+
+
 
   async function uploadDocumentAttachment(
     docType: FleetDocType,
@@ -225,6 +372,60 @@ export default function FleetFormPage({
     }
   }
 
+  function mapFleetGroupToExistingItems(
+    group: FleetAttachmentGroup | null | undefined
+  ): ExistingFileItem[] {
+    const gid = typeof group?.id === "number" ? group.id : undefined;
+    const atts = Array.isArray(group?.attachments) ? group.attachments : [];
+    return atts
+      .filter((a) => a && typeof a.id === "number")
+      .map((att) => ({
+        id: att.id,
+        name: String(att.name ?? ""),
+        url: String(att.url ?? ""),
+        mimetype: String(att.mimetype ?? ""),
+        groupId: gid,
+      }));
+  }
+
+  async function fetchFleetAttachmentGroup(
+    groupId: number
+  ): Promise<FleetAttachmentGroup | null> {
+    if (!ATTACHMENTS_URL || !groupId) return null;
+
+    const url = `${ATTACHMENTS_URL}/${encodeURIComponent(
+      String(groupId)
+    )}?ts=${Date.now()}`;
+    const res = await fetch(url, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    if (!res.ok) return null;
+    const json = (await res.json().catch(() => null)) as unknown;
+    if (!json || typeof json !== "object") return null;
+    return json as FleetAttachmentGroup;
+  }
+
+  async function syncUnitAttachments(groupId?: number) {
+    if (!groupId || groupId <= 0) return;
+    const group = await fetchFleetAttachmentGroup(groupId);
+    if (!group) return;
+    setUnitHeaderName(group.name);
+    setUnitExistingFiles(mapFleetGroupToExistingItems(group));
+    ctrl.set("unit_attachment_id", groupId);
+  }
+
+  async function syncDocAttachments(groupId?: number) {
+    if (!groupId || groupId <= 0) return;
+    const group = await fetchFleetAttachmentGroup(groupId);
+    if (!group) return;
+    setDocHeaderName(group.name);
+    setDocExistingFiles(mapFleetGroupToExistingItems(group));
+    ctrl.set("document_attachment_id", groupId);
+  }
+
   async function handleRemoveUnitExisting(item: ExistingFileItem) {
     if (!item.groupId) {
       setUnitExistingFiles((prev) => prev.filter((it) => it.id !== item.id));
@@ -260,6 +461,9 @@ export default function FleetFormPage({
   }
 
   async function onSave() {
+    let saved = false;
+    let unitIdToSync = 0;
+    let docIdToSync = 0;
     try {
       setSubmitting(true);
       if (mode === "create") {
@@ -268,6 +472,7 @@ export default function FleetFormPage({
             "fleet_unit",
             fleetFotoFiles
           );
+          unitIdToSync = unitId ?? 0;
           if (typeof unitId === "number") {
             ctrl.set("unit_attachment_id", unitId);
           }
@@ -278,6 +483,7 @@ export default function FleetFormPage({
             "fleet_document",
             fleetSTNKDocFiles
           );
+          docIdToSync = docId ?? 0;
           if (typeof docId === "number") {
             ctrl.set("document_attachment_id", docId);
           }
@@ -289,10 +495,13 @@ export default function FleetFormPage({
           (snapNow.values.unit_attachment_id as number | undefined) ??
           initialData?.unit_attachment_id ??
           0;
+        unitIdToSync = currentUnitAttachmentId;
+
         const currentDocumentAttachmentId =
           (snapNow.values.document_attachment_id as number | undefined) ??
           initialData?.document_attachment_id ??
           0;
+        docIdToSync = currentDocumentAttachmentId;
 
         if (fleetFotoFiles.length > 0) {
           if (currentUnitAttachmentId && currentUnitAttachmentId > 0) {
@@ -339,11 +548,23 @@ export default function FleetFormPage({
 
       setFleetFotoFiles([]);
       setFleetSTNKDocFiles([]);
+
+      await Promise.all([
+        syncUnitAttachments(
+          unitIdToSync || Number(ctrl.snapshot().values.unit_attachment_id ?? 0)
+        ),
+        syncDocAttachments(
+          docIdToSync ||
+            Number(ctrl.snapshot().values.document_attachment_id ?? 0)
+        ),
+      ]);
+      saved = true;
     } catch (e) {
       console.error(e);
       openErrorDialog(e);
     } finally {
       setSubmitting(false);
+      if (saved) router.refresh();
     }
   }
 
@@ -368,14 +589,17 @@ export default function FleetFormPage({
       kir_expiry: initialData?.kir_expiry ?? "",
       unit_attachment_id: initialData?.unit_attachment_id ?? 0,
       document_attachment_id: initialData?.document_attachment_id ?? 0,
+      image_128: initialData?.image_128 ?? "",
     });
 
     if (mode === "edit") {
       const unitGroup = initialData.unit_attachment;
       const docGroup = initialData.document_attachment;
 
-      setUnitHeaderName(initialData.document_attachment?.name);
-      setDocHeaderName(initialData.unit_attachment?.name);
+      // setUnitHeaderName(initialData.document_attachment?.name);
+      // setDocHeaderName(initialData.unit_attachment?.name);
+      setUnitHeaderName(unitGroup?.name);
+      setDocHeaderName(docGroup?.name);
 
       if (unitGroup?.attachments?.length) {
         setUnitExistingFiles(
@@ -436,141 +660,234 @@ export default function FleetFormPage({
       </div>
 
       <Card>
-        <CardHeader>
-          <h4 className="text-3xl font-semibold text-gray-800">Fleet Info</h4>
+        <CardHeader className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <FleetAvatar name={fleetNameForAvatar} src={avatarSrc} />
+            <div className="flex flex-col">
+              <h4 className="text-3xl font-semibold text-gray-800">Fleet Info</h4>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const f = e.currentTarget.files?.[0];
+                      e.currentTarget.value = "";
+                      if (!f) return;
+                      try {
+                        await handlePickAvatar(f);
+                      } catch (err) {
+                        console.error(err);
+                        openErrorDialog(err);
+                      }
+                    }}
+                  />
+                  Change Photo
+                </label>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-7 px-2 text-xs"
+                  onClick={handleRemoveAvatar}
+                >
+                  Remove
+                </Button>
+
+                {mode === "edit" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={handleResetAvatarToRemote}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           <div className="flex flex-col md:flex-row gap-6">
             <div className="md:basis-1/2 space-y-4">
               <Card>
-                <CardHeader>Vehicle Detail</CardHeader>
+                <CardHeader className="text-1xl font-extrabold">
+                  Vehicle Detail
+                </CardHeader>
                 <CardBody>
-                  <LookupAutocomplete
-                    label={t("fleet.model")}
-                    placeholder={t("common.search_model")}
-                    value={snap.values.model as RecordItem}
-                    onChange={(v) => ctrl.set("model", v as RecordItem)}
-                    error={snap.errors.model}
-                    endpoint={{
-                      url: MODELS_URL,
-                      method: "GET",
-                      queryParam: "query",
-                      pageParam: "page",
-                      pageSizeParam: "page_size",
-                      page: 1,
-                      pageSize: 50,
-                      mapResults: normalizeResults,
-                    }}
-                    cacheNamespace="fleet-models"
-                    prefetchQuery=""
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-2 gap-3">
+                    <LookupAutocomplete
+                      className="w-full"
+                      label={t("fleet.model")}
+                      placeholder={t("common.search_model")}
+                      value={snap.values.model as RecordItem}
+                      onChange={(v) => ctrl.set("model", v as RecordItem)}
+                      error={snap.errors.model}
+                      endpoint={{
+                        url: MODELS_URL,
+                        method: "GET",
+                        queryParam: "query",
+                        pageParam: "page",
+                        pageSizeParam: "page_size",
+                        page: 1,
+                        pageSize: 50,
+                        mapResults: normalizeResults,
+                      }}
+                      cacheNamespace="fleet-models"
+                      prefetchQuery=""
+                    />
+                    <LookupAutocomplete
+                      className="w-full"
+                      label={t("fleet.category")}
+                      placeholder={t("common.search_category")}
+                      value={snap.values.category as RecordItem}
+                      onChange={(v) => ctrl.set("category", v as RecordItem)}
+                      error={snap.errors.category}
+                      endpoint={{
+                        url: CATEGORIES_URL,
+                        method: "GET",
+                        queryParam: "query",
+                        pageParam: "page",
+                        pageSizeParam: "page_size",
+                        page: 1,
+                        pageSize: 50,
+                        mapResults: normalizeResults,
+                      }}
+                      cacheNamespace="fleet-categories"
+                      prefetchQuery=""
+                    />
+                  </div>
 
-                  <Field.Root
-                    value={snap.values.license_plate as string}
-                    onChange={(v) => ctrl.set("license_plate", v)}
-                  >
-                    <Field.Label>{t("fleet.license_plate")}</Field.Label>
-                    <Field.Control>
-                      <Field.Input className="w-full uppercase" />
-                      <Field.Error>{snap.errors.license_plate}</Field.Error>
-                    </Field.Control>
-                  </Field.Root>
+                  <div className="w-full">
+                    <label className="mb-1 block text-xs font-semibold text-gray-700">
+                      {t("fleet.trailer_hook") ?? "Truck Head"}
+                    </label>
 
-                  <Field.Root
-                    value={snap.values.model_year as string}
-                    onChange={(v) => ctrl.set("model_year", v)}
-                  >
-                    <Field.Label>{t("fleet.model_year")}</Field.Label>
-                    <Field.Control>
-                      <Field.Input
-                        inputMode="numeric"
-                        className="w-full"
-                        maxLength={4}
+                    <label className="inline-flex w-full items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(snap.values.trailer_hook)}
+                        onChange={(e) =>
+                          ctrl.set("trailer_hook", e.target.checked)
+                        }
+                        className="h-4 w-4"
                       />
-                      <Field.Error>{snap.errors.model_year}</Field.Error>
-                    </Field.Control>
-                  </Field.Root>
+                      <span className="text-sm text-gray-800">
+                        {Boolean(snap.values.trailer_hook)
+                          ? t("common.yes") ?? "Yes"
+                          : t("common.no") ?? "No"}
+                      </span>
+                    </label>
 
-                  <Field.Root
-                    value={snap.values.color as string}
-                    onChange={(v) => ctrl.set("color", v)}
-                  >
-                    <Field.Label>{t("fleet.color")}</Field.Label>
-                    <Field.Control>
-                      <Field.Input className="w-full" />
-                      <Field.Error>{snap.errors.color}</Field.Error>
-                    </Field.Control>
-                  </Field.Root>
-                  <LookupAutocomplete
-                    label={t("fleet.category")}
-                    placeholder={t("common.search_category")}
-                    value={snap.values.category as RecordItem}
-                    onChange={(v) => ctrl.set("category", v as RecordItem)}
-                    error={snap.errors.category}
-                    endpoint={{
-                      url: CATEGORIES_URL,
-                      method: "GET",
-                      queryParam: "query",
-                      pageParam: "page",
-                      pageSizeParam: "page_size",
-                      page: 1,
-                      pageSize: 50,
-                      mapResults: normalizeResults,
-                    }}
-                    cacheNamespace="fleet-categories"
-                    prefetchQuery=""
-                  />
+                    {snap.errors.trailer_hook && (
+                      <div className="mt-1 text-xs text-red-600">
+                        {snap.errors.trailer_hook}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-3 3xl:grid-cols-6 gap-2">
+                    <Field.Root
+                      value={snap.values.license_plate as string}
+                      onChange={(v) => ctrl.set("license_plate", v)}
+                    >
+                      <Field.Label>{t("fleet.license_plate")}</Field.Label>
+                      <Field.Control>
+                        <Field.Input className="w-full sm:w-40 uppercase" />
+                        <Field.Error>{snap.errors.license_plate}</Field.Error>
+                      </Field.Control>
+                    </Field.Root>
+
+                    <Field.Root
+                      value={snap.values.model_year as string}
+                      onChange={(v) => ctrl.set("model_year", v)}
+                    >
+                      <Field.Label>{t("fleet.model_year")}</Field.Label>
+                      <Field.Control>
+                        <Field.Input
+                          inputMode="numeric"
+                          className="w-full sm:w-40"
+                          maxLength={4}
+                        />
+                        <Field.Error>{snap.errors.model_year}</Field.Error>
+                      </Field.Control>
+                    </Field.Root>
+
+                    <Field.Root
+                      value={snap.values.color as string}
+                      onChange={(v) => ctrl.set("color", v)}
+                    >
+                      <Field.Label>{t("fleet.color")}</Field.Label>
+                      <Field.Control>
+                        <Field.Input className="w-full sm:w-40" />
+                        <Field.Error>{snap.errors.color}</Field.Error>
+                      </Field.Control>
+                    </Field.Root>
+                  </div>
                 </CardBody>
               </Card>
+            </div>
 
+            <div className="md:basis-1/2 space-y-3">
               <Card>
-                <CardHeader>Engine Detail</CardHeader>
+                <CardHeader className="text-1xl font-extrabold">
+                  Engine Detail
+                </CardHeader>
                 <CardBody>
-                  <Field.Root
-                    value={snap.values.vin_sn as string}
-                    onChange={(v) => ctrl.set("vin_sn", v)}
-                  >
-                    <Field.Label>{t("fleet.vin_sn")}</Field.Label>
-                    <Field.Control>
-                      <Field.Input className="w-full uppercase" />
-                      <Field.Error>{snap.errors.vin_sn}</Field.Error>
-                    </Field.Control>
-                  </Field.Root>
+                  <div className="grid grid-cols-1 sm:grid-cols-1 xl:grid-cols-3 3xl:grid-cols-6 gap-2">
+                    <Field.Root
+                      value={snap.values.vin_sn as string}
+                      onChange={(v) => ctrl.set("vin_sn", v)}
+                    >
+                      <Field.Label>{t("fleet.vin_sn")}</Field.Label>
+                      <Field.Control>
+                        <Field.Input className="w-full  sm:w-40 uppercase" />
+                        <Field.Error>{snap.errors.vin_sn}</Field.Error>
+                      </Field.Control>
+                    </Field.Root>
 
-                  <Field.Root
-                    value={snap.values.engine_sn as string}
-                    onChange={(v) => ctrl.set("engine_sn", v)}
-                  >
-                    <Field.Label>{t("fleet.engine_sn")}</Field.Label>
-                    <Field.Control>
-                      <Field.Input className="w-full uppercase" />
-                      <Field.Error>{snap.errors.engine_sn}</Field.Error>
-                    </Field.Control>
-                  </Field.Root>
+                    <Field.Root
+                      value={snap.values.engine_sn as string}
+                      onChange={(v) => ctrl.set("engine_sn", v)}
+                    >
+                      <Field.Label>{t("fleet.engine_sn")}</Field.Label>
+                      <Field.Control>
+                        <Field.Input className="w-full  sm:w-40 uppercase" />
+                        <Field.Error>{snap.errors.engine_sn}</Field.Error>
+                      </Field.Control>
+                    </Field.Root>
 
-                  <Field.Root
-                    value={String(snap.values.tonnage_max ?? 0)}
-                    onChange={(v) => ctrl.set("tonnage_max", toNum(v))}
-                  >
-                    <Field.Label>{t("fleet.tonnage_max")} (ton)</Field.Label>
-                    <Field.Control>
-                      <Field.Input inputMode="decimal" className="w-full" />
-                      <Field.Error>{snap.errors.tonnage_max}</Field.Error>
-                    </Field.Control>
-                  </Field.Root>
+                    <Field.Root
+                      value={String(snap.values.tonnage_max ?? 0)}
+                      onChange={(v) => ctrl.set("tonnage_max", toNum(v))}
+                    >
+                      <Field.Label>{t("fleet.tonnage_max")} (ton)</Field.Label>
+                      <Field.Control>
+                        <Field.Input
+                          inputMode="decimal"
+                          className="w-full sm:w-40 "
+                        />
+                        <Field.Error>{snap.errors.tonnage_max}</Field.Error>
+                      </Field.Control>
+                    </Field.Root>
 
-                  <Field.Root
-                    value={String(snap.values.cbm_volume ?? 0)}
-                    onChange={(v) => ctrl.set("cbm_volume", toNum(v))}
-                  >
-                    <Field.Label>{t("fleet.cbm_volume")} (CBM)</Field.Label>
-                    <Field.Control>
-                      <Field.Input inputMode="decimal" className="w-full" />
-                      <Field.Error>{snap.errors.cbm_volume}</Field.Error>
-                    </Field.Control>
-                  </Field.Root>
+                    <Field.Root
+                      value={String(snap.values.cbm_volume ?? 0)}
+                      onChange={(v) => ctrl.set("cbm_volume", toNum(v))}
+                    >
+                      <Field.Label>{t("fleet.cbm_volume")} (CBM)</Field.Label>
+                      <Field.Control>
+                        <Field.Input
+                          inputMode="decimal"
+                          className="w-full sm:w-40 "
+                        />
+                        <Field.Error>{snap.errors.cbm_volume}</Field.Error>
+                      </Field.Control>
+                    </Field.Root>
 
-                  <Field.Root
+                    {/* <Field.Root
                     value={String(snap.values.horsepower ?? 0)}
                     onChange={(v) => ctrl.set("horsepower", toNum(v))}
                   >
@@ -579,115 +896,126 @@ export default function FleetFormPage({
                       <Field.Input inputMode="numeric" className="w-full" />
                       <Field.Error>{snap.errors.horsepower}</Field.Error>
                     </Field.Control>
-                  </Field.Root>
+                  </Field.Root> */}
 
-                  <Field.Root
-                    value={snap.values.axle as string}
-                    onChange={(v) => ctrl.set("axle", v)}
-                  >
-                    <Field.Label>{t("fleet.axle")}</Field.Label>
-                    <Field.Control>
-                      <Field.Input className="w-full" />
-                      <Field.Error>{snap.errors.axle}</Field.Error>
-                    </Field.Control>
-                  </Field.Root>
+                    <Field.Root
+                      value={snap.values.axle as string}
+                      onChange={(v) => ctrl.set("axle", v)}
+                    >
+                      <Field.Label>{t("fleet.axle")}</Field.Label>
+                      <Field.Control>
+                        <Field.Input className="w-full sm:w-40 " />
+                        <Field.Error>{snap.errors.axle}</Field.Error>
+                      </Field.Control>
+                    </Field.Root>
+                  </div>
                 </CardBody>
               </Card>
             </div>
+          </div>
+          <div className="mt-6">
+            <Card>
+              <CardHeader className="text-1xl font-extrabold">
+                Vehicle Document
+              </CardHeader>
+              <CardBody>
+                <div className="grid grid-cols-1 sm:grid-cols-1 xl:grid-cols-6 2xl:grid-cols-8 gap-2">
+                  <Field.Root
+                    value={snap.values.acquisition_date as string}
+                    onChange={(v) => ctrl.set("acquisition_date", v)}
+                  >
+                    <Field.Label>{t("fleet.acquisition_date")}</Field.Label>
+                    <Field.Control>
+                      <Field.Input type="date" className="w-full sm:w-40" />
+                      <Field.Error>{snap.errors.acquisition_date}</Field.Error>
+                    </Field.Control>
+                  </Field.Root>
 
-            <div className="md:basis-1/2 space-y-3">
-              <Field.Root
-                value={snap.values.acquisition_date as string}
-                onChange={(v) => ctrl.set("acquisition_date", v)}
-              >
-                <Field.Label>{t("fleet.acquisition_date")}</Field.Label>
-                <Field.Control>
-                  <Field.Input type="date" className="w-full" />
-                  <Field.Error>{snap.errors.acquisition_date}</Field.Error>
-                </Field.Control>
-              </Field.Root>
+                  <Field.Root
+                    value={snap.values.write_off_date as string}
+                    onChange={(v) => ctrl.set("write_off_date", v)}
+                  >
+                    <Field.Label>{t("fleet.write_off_date")}</Field.Label>
+                    <Field.Control>
+                      <Field.Input type="date" className="w-full sm:w-40" />
+                      <Field.Error>{snap.errors.write_off_date}</Field.Error>
+                    </Field.Control>
+                  </Field.Root>
 
-              <Field.Root
-                value={snap.values.write_off_date as string}
-                onChange={(v) => ctrl.set("write_off_date", v)}
-              >
-                <Field.Label>{t("fleet.write_off_date")}</Field.Label>
-                <Field.Control>
-                  <Field.Input type="date" className="w-full" />
-                  <Field.Error>{snap.errors.write_off_date}</Field.Error>
-                </Field.Control>
-              </Field.Root>
+                  <Field.Root
+                    value={snap.values.kir as string}
+                    onChange={(v) => ctrl.set("kir", v)}
+                  >
+                    <Field.Label>{t("fleet.kir")}</Field.Label>
+                    <Field.Control>
+                      <Field.Input className="w-full sm:w-40 uppercase" />
+                      <Field.Error>{snap.errors.kir}</Field.Error>
+                    </Field.Control>
+                  </Field.Root>
 
-              <Field.Root
-                value={snap.values.kir as string}
-                onChange={(v) => ctrl.set("kir", v)}
-              >
-                <Field.Label>{t("fleet.kir")}</Field.Label>
-                <Field.Control>
-                  <Field.Input className="w-full uppercase" />
-                  <Field.Error>{snap.errors.kir}</Field.Error>
-                </Field.Control>
-              </Field.Root>
+                  <Field.Root
+                    value={snap.values.kir_expiry as string}
+                    onChange={(v) => ctrl.set("kir_expiry", v)}
+                  >
+                    <Field.Label>{t("fleet.kir_expiry")}</Field.Label>
+                    <Field.Control>
+                      <Field.Input type="date" className="w-full sm:w-40" />
+                      <Field.Error>{snap.errors.kir_expiry}</Field.Error>
+                    </Field.Control>
+                  </Field.Root>
+                </div>
 
-              <Field.Root
-                value={snap.values.kir_expiry as string}
-                onChange={(v) => ctrl.set("kir_expiry", v)}
-              >
-                <Field.Label>{t("fleet.kir_expiry")}</Field.Label>
-                <Field.Control>
-                  <Field.Input type="date" className="w-full" />
-                  <Field.Error>{snap.errors.kir_expiry}</Field.Error>
-                </Field.Control>
-              </Field.Root>
+                <div className="mt-6 space-y-6">
+                  {/* FLEET UNIT PHOTO → doc_type=fleet_unit */}
+                  <MultiFileUpload
+                    label={t("fleet.vehicle_foto")}
+                    value={fleetFotoFiles}
+                    onChange={setFleetFotoFiles}
+                    accept=".pdf,.jpeg,.jpg,.png,.bmp"
+                    maxFileSizeMB={10}
+                    maxFiles={10}
+                    hint={t("fleet.hint_upload")}
+                    onReject={(msgs) =>
+                      console.warn("[FLEET_UNIT] rejected:", msgs)
+                    }
+                    className="gap-3 justify-end"
+                    showImagePreview
+                    existingItems={
+                      mode === "edit" ? unitExistingFiles : undefined
+                    }
+                    existingHeader={
+                      mode === "edit" ? unitHeaderName : undefined
+                    }
+                    onRemoveExisting={
+                      mode === "edit" ? handleRemoveUnitExisting : undefined
+                    }
+                  />
 
-              {/* FLEET UNIT PHOTO → doc_type=fleet_unit */}
-              <MultiFileUpload
-                label={t("fleet.vehicle_foto")}
-                value={fleetFotoFiles}
-                onChange={setFleetFotoFiles}
-                accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
-                maxFileSizeMB={10}
-                maxFiles={10}
-                hint={
-                  t("orders.upload_hint_10mb") ??
-                  "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
-                }
-                onReject={(msgs) =>
-                  console.warn("[FLEET_UNIT] rejected:", msgs)
-                }
-                className="gap-3 justify-end"
-                showImagePreview
-                existingItems={mode === "edit" ? unitExistingFiles : undefined}
-                existingHeader={mode === "edit" ? unitHeaderName : undefined}
-                onRemoveExisting={
-                  mode === "edit" ? handleRemoveUnitExisting : undefined
-                }
-              />
-
-              {/* FLEET DOCUMENT (STNK) → doc_type=fleet_document */}
-              <MultiFileUpload
-                label={t("fleet.stnk_foto")}
-                value={fleetSTNKDocFiles}
-                onChange={setFleetSTNKDocFiles}
-                accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.txt,.jpeg,.jpg,.png,.bmp"
-                maxFileSizeMB={10}
-                maxFiles={10}
-                hint={
-                  t("orders.upload_hint_10mb") ??
-                  "Maks. 10 MB per file. Tipe: DOC/DOCX, XLS/XLSX, PDF, PPT/PPTX, TXT, JPEG, JPG, PNG, Bitmap"
-                }
-                onReject={(msgs) =>
-                  console.warn("[FLEET_DOCUMENT] rejected:", msgs)
-                }
-                className="gap-3 justify-end"
-                showImagePreview
-                existingItems={mode === "edit" ? docExistingFiles : undefined}
-                existingHeader={mode === "edit" ? docHeaderName : undefined}
-                onRemoveExisting={
-                  mode === "edit" ? handleRemoveDocExisting : undefined
-                }
-              />
-            </div>
+                  {/* FLEET DOCUMENT (STNK) → doc_type=fleet_document */}
+                  <MultiFileUpload
+                    label={t("fleet.stnk_foto")}
+                    value={fleetSTNKDocFiles}
+                    onChange={setFleetSTNKDocFiles}
+                    accept=".pdf,.jpeg,.jpg,.png,.bmp"
+                    maxFileSizeMB={10}
+                    maxFiles={10}
+                    hint={t("fleet.hint_upload")}
+                    onReject={(msgs) =>
+                      console.warn("[FLEET_DOCUMENT] rejected:", msgs)
+                    }
+                    className="gap-3 justify-end"
+                    showImagePreview
+                    existingItems={
+                      mode === "edit" ? docExistingFiles : undefined
+                    }
+                    existingHeader={mode === "edit" ? docHeaderName : undefined}
+                    onRemoveExisting={
+                      mode === "edit" ? handleRemoveDocExisting : undefined
+                    }
+                  />
+                </div>
+              </CardBody>
+            </Card>
           </div>
         </CardBody>
       </Card>

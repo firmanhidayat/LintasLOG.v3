@@ -1,4 +1,3 @@
-// DateTimePickerTW.tsx
 "use client";
 import React from "react";
 import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
@@ -13,18 +12,23 @@ type Props = {
   error?: string;
   touched?: boolean;
   className?: string;
-  /** << NEW: kontrol format tampilan tanggal (bukan nilai state) */
   displayFormat?: string; // default "DD-MM-YYYY"
   showTime?: boolean;
+
+  /**
+   * NEW:
+   * - autoDefaultNow: kalau value kosong, auto isi dengan tanggal+jam sekarang (sekali saat mount)
+   * - timeZone: timezone profile (IANA, mis: "Asia/Jakarta") atau offset "+07:00"
+   */
+  autoDefaultNow?: boolean; // default true
+  timeZone?: string; // "Asia/Jakarta" / "UTC" / "+07:00"
 };
 
 const is24h = (() => {
   try {
-    // hour12 === false → 24-jam
     return (
-      new Intl.DateTimeFormat(navigator.language, {
-        hour: "numeric",
-      }).resolvedOptions().hour12 === false
+      new Intl.DateTimeFormat(navigator.language, { hour: "numeric" }).resolvedOptions()
+        .hour12 === false
     );
   } catch {
     return false;
@@ -43,6 +47,48 @@ function toDateOrNull(yyyyMmDd: string): Date | null {
   return d.isValid() ? d.toDate() : null;
 }
 
+function fmtNowParts(date: Date, timeZone?: string): { date: string; time: string } {
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(date);
+
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+    return {
+      date: `${get("year")}-${get("month")}-${get("day")}`,
+      time: `${get("hour")}:${get("minute")}`,
+    };
+  } catch {
+    // fallback: timezone invalid -> pakai timezone browser
+    return { date: dayjs().format("YYYY-MM-DD"), time: dayjs().format("HH:mm") };
+  }
+}
+
+function nowInZone(timeZone?: string): { date: string; time: string } {
+  const z = (timeZone ?? "").trim();
+  // support offset "+07:00" / "-05:30"
+  const m = z.match(/^([+-])(\d{2}):(\d{2})$/);
+  if (m) {
+    const sign = m[1] === "-" ? -1 : 1;
+    const hh = Number(m[2]);
+    const mm = Number(m[3]);
+    const offsetMin = sign * (hh * 60 + mm);
+
+    // shift epoch, lalu format di UTC => hasilnya “local time” untuk offset tsb
+    const shifted = new Date(Date.now() + offsetMin * 60_000);
+    return fmtNowParts(shifted, "UTC");
+  }
+
+  // IANA timezone (mis: "Asia/Jakarta")
+  return fmtNowParts(new Date(), z || undefined);
+}
+
 export default function DateTimePickerTW({
   label,
   required,
@@ -51,10 +97,27 @@ export default function DateTimePickerTW({
   error,
   touched,
   className,
-  displayFormat = "DD-MM-YYYY", // << default tampilan ke user
+  displayFormat = "DD-MM-YYYY",
   showTime = true,
+  autoDefaultNow = true,
+  timeZone,
 }: Props) {
   const { date, time } = splitIsoLocal(value);
+
+  // auto set default sekarang (sekali)
+  const didInit = React.useRef(false);
+  React.useEffect(() => {
+    if (!autoDefaultNow) return;
+    if (didInit.current) return;
+    if (value) {
+      didInit.current = true;
+      return;
+    }
+    didInit.current = true;
+
+    const now = nowInZone(timeZone);
+    onChange(`${now.date}T${now.time}`);
+  }, [autoDefaultNow, value, onChange, timeZone]);
 
   const dateVal: DateValueType = {
     startDate: toDateOrNull(date),
@@ -62,14 +125,9 @@ export default function DateTimePickerTW({
   };
 
   function defaultTime() {
-    return dayjs().format("HH:mm");
+    return nowInZone(timeZone).time;
   }
 
-  /**
-   * Update gabungan:
-   * - Simpan SELALU sebagai "YYYY-MM-DDTHH:mm"
-   * - Auto isi jam saat tanggal terpilih (kalau belum ada jam)
-   */
   function update(nextDate?: string, nextTime?: string) {
     const d = (nextDate ?? date) || "";
     const timeSource = nextTime ?? time;
@@ -86,22 +144,18 @@ export default function DateTimePickerTW({
         {label} {required && <span className="text-red-600">*</span>}
       </label>
 
-      {/* Satu border utk date & time */}
       <div className="flex items-stretch rounded-md border-1 outline-none ">
-        {/* Date */}
         <div className="min-w-0 flex-1">
           <Datepicker
             value={dateVal}
             onChange={(v) => {
               const d =
-                v?.startDate instanceof Date
-                  ? dayjs(v.startDate).format("YYYY-MM-DD") // << SIMPAN internal
-                  : "";
+                v?.startDate instanceof Date ? dayjs(v.startDate).format("YYYY-MM-DD") : "";
               update(d, undefined);
             }}
             asSingle
             useRange={false}
-            displayFormat={displayFormat} // << TAMPILAN ke user
+            displayFormat={displayFormat}
             primaryColor={"green"}
             showShortcuts={false}
             showFooter={false}
@@ -112,10 +166,8 @@ export default function DateTimePickerTW({
           />
         </div>
 
-        {/* Divider */}
         <div className="my-2 w-px bg-gray-200" />
 
-        {/* Time */}
         {showTime && (
           <input
             type="time"
@@ -123,7 +175,7 @@ export default function DateTimePickerTW({
             step={300}
             value={time}
             onFocus={() => {
-              if (date && !time) update(undefined, dayjs().format("HH:mm"));
+              if (date && !time) update(undefined, defaultTime());
             }}
             onChange={(e) => {
               if (!date) return;

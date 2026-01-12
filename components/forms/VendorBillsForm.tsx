@@ -205,6 +205,7 @@ export default function VendorBillsFormPage({
   }
 
   async function onSave() {
+    let saved = false;
     try {
       setSubmitting(true);
 
@@ -252,11 +253,13 @@ export default function VendorBillsFormPage({
       onSuccess?.(data);
       openSuccessDialog();
       setDocBillsFiles([]);
+      saved = true;
     } catch (e) {
       console.error(e);
       openErrorDialog(e);
     } finally {
       setSubmitting(false);
+      if (saved) router.refresh();
     }
   }
 

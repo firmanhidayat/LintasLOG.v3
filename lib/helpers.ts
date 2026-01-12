@@ -1,11 +1,30 @@
 /** ===== Helpers ===== */
-export function fmtDate(d?: string) {
+// export function fmtDate(d?: string) {
+//   if (!d) return "-";
+//   const dt = new Date(d);
+//   const dd = String(dt.getDate()).padStart(2, "0");
+//   const mm = String(dt.getMonth() + 1).padStart(2, "0");
+//   const yyyy = dt.getFullYear();
+//   return `${dd}/${mm}/${yyyy}`;
+// }
+
+export function fmtDate(d?: string, tz?: string) {
   if (!d) return "-";
-  const dt = new Date(d);
-  const dd = String(dt.getDate()).padStart(2, "0");
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const yyyy = dt.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
+  try {
+    const dt = new Date(d);
+    const options: Intl.DateTimeFormatOptions = {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: tz || "Asia/Jakarta", // fallback jika TZ belum ada
+    };
+    return new Intl.DateTimeFormat("id-ID", options).format(dt);
+  } catch (e) {
+    return "-";
+  }
 }
 
 // export function fmtPrice(v?: number) {

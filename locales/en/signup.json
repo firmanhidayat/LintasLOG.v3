@@ -21,7 +21,11 @@
             "emailRequired": "Email (as login) is required.",
             "userTypeRequired": "Choose user type: shipper or transporter.",
             "passwordMismatch": "Password and confirmation do not match.",
-            "passwordMin": "Password must be at least 8 characters."
+            "passwordMin": "Password must be at least 8 characters.",
+            "passwordNeedLetter": "Password must contain at least one letter.",
+            "passwordNeedNumber": "Password must contain at least one number.",
+            "passwordNeedDigit": "Password must contain at least one numeral.",
+            "termsRequired": "You must agree to the Terms & Privacy."
         },
         "form": {
             "accountName": {

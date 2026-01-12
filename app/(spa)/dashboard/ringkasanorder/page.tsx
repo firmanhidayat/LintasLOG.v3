@@ -105,10 +105,13 @@ export default function RingkasanOrderPage() {
         <p className="text-sm text-gray-500">{subtitle}</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
-        {/* KPI Business — diperlebar di desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        Data Ringkasan Order akan ditampilkan di sini.<br />
+        (Bagian ini sedang dalam pengembangan)
+      </div>
+
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
         <div className="col-span-12 lg:col-span-6">
-          {/* 2 kolom di laptop (lg), 3 kolom di layar besar (xl) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             <KPIItem
               label={t("ringkasanorder.kpi.customer")}
@@ -142,8 +145,6 @@ export default function RingkasanOrderPage() {
             />
           </div>
         </div>
-
-        {/* Small stats */}
         <div className="col-span-12 lg:col-span-3">
           <div className="grid grid-cols-2 gap-4 text-gray-900">
             <Stat
@@ -172,8 +173,6 @@ export default function RingkasanOrderPage() {
             />
           </div>
         </div>
-
-        {/* Right card */}
         <div className="col-span-12 lg:col-span-3">
           <div className="rounded-md bg-gray-50 shadow-sm border border-gray-100 p-5">
             <div className="text-black text-xs">
@@ -195,7 +194,7 @@ export default function RingkasanOrderPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </>
   );
 }

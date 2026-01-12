@@ -180,7 +180,7 @@ export function FieldPassword({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="mt-2 block text-sm font-medium text-gray-700">
           {label}
         </label>
       )}
@@ -204,8 +204,8 @@ export function FieldPassword({
           disabled={disabled}
           className={[
             "text-sm",
-            "w-full border px-3 py-1",
-            "rounded-l-md border-gray-300",
+            "w-full border px-3 py-2",
+            "rounded-l-md border-gray-600",
             "focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary",
             "disabled:opacity-50 disabled:bg-gray-100",
             hasError
@@ -220,7 +220,7 @@ export function FieldPassword({
           onClick={() => setShow((s) => !s)}
           className={[
             "inline-flex items-center justify-center",
-            "rounded-r-md border border-l-0 border-gray-300",
+            "rounded-r-md border border-l-0 border-gray-600",
             "px-3 hover:bg-gray-50",
             "disabled:opacity-50",
           ].join(" ")}

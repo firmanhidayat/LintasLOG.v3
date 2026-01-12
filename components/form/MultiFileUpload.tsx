@@ -205,7 +205,7 @@ export default function MultiFileUpload({
 
   return (
     <div className={clsx(className)}>
-      <label className="block text-sm font-extrabold text-black">{label}</label>
+      <label className="mt-2 block text-sm font-extrabold text-black">{label}</label>
       <div className="mt-2 rounded-2xl border-2 border-dashed font-extrabold bg-primary/10 transition">
         <input
           ref={inputRef}

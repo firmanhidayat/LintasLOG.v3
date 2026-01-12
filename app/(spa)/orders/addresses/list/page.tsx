@@ -192,7 +192,7 @@ export default function AddressesListPage() {
     <div className="space-y-4" data-lang={activeLang}>
       <ListTemplate<AddressItem>
         key={"addresses-" + (t("lang") || "id")}
-        fetchBase={`${USER_ADDRESS_URL}`}
+        fetchBase={`${USER_ADDRESS_URL}?type=delivery`}
         deleteBase={`${USER_ADDRESS_URL}`}
         enableEditAction={true}
         enableDetailsAction={true}

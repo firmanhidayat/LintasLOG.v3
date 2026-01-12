@@ -17,6 +17,7 @@
         "success": "Success",
         "upload": "Upload",
         "download": "Download",
+        "refresh": "Reload",
         "select": "Select",
         "search_city": "Search city…",
         "search_address": "Search address…",
@@ -46,6 +47,7 @@
         "failed_to_save": "Something went wrong",
         "search_fleet": "Pick a fleet",
         "search_driver": "Pick a driver",
+        "clear": "Clear messages",
         "kolom": {
             "button": {
                 "setting": "Column Setting"
@@ -87,5 +89,23 @@
     },
     "placeholders": {
         "phone": "Enter phone number"
+    },
+    "status_tracking": {
+    "name": "Name",
+    "transport_order": "Transport Order",
+    "sale": "Sale",
+    "origin_city": "Origin City",
+    "dest_city": "Destination City",
+    "fleet_vehicle": "Fleet Vehicle",
+    "driver_partner": "Driver Partner",
+    "cargo_type": "Cargo Type",
+    "tms_state": "TMS State",
+    "search": {
+      "placeholder": "Search status tracking..."
+    },
+    "rowsPerPage": "Rows per page",
+    "create": {
+      "title": "Create Status Tracking"
     }
+  }
 }

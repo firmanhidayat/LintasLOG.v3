@@ -24,6 +24,7 @@ import {
   IconDriver,
 } from "./icons/Icon";
 import { TmsUserType } from "@/types/tms-profile";
+import verifiedBadge from "@/images/verified.svg";
 
 export default function Sidebar({
   open = false,
@@ -98,10 +99,10 @@ const SidebarContent = memo(function SidebarContent() {
   const loaded = useMemo(() => typeof window !== "undefined", []);
   const [activeLang, setActiveLang] = useState<Lang>(() => getLang());
   const { profile } = useAuth();
-    const userType = useMemo(() => {
-      if (profile) return profile.tms_user_type;
-      return undefined;
-    }, [profile]);
+  const userType = useMemo(() => {
+    if (profile) return profile.tms_user_type;
+    return undefined;
+  }, [profile]);
 
   useEffect(() => {
     const off = onLangChange((lang) => setActiveLang(lang));
@@ -122,6 +123,8 @@ const SidebarContent = memo(function SidebarContent() {
 
   const { currentUserType } = useAuth();
 
+  // console.log("Current Profile:", profile)
+
   useEffect(() => {
     const match = (prefix: string) =>
       pathname === prefix || (prefix !== "/" && pathname.startsWith(prefix));
@@ -131,7 +134,7 @@ const SidebarContent = memo(function SidebarContent() {
     if (match("/claims")) next.claims = true;
     if (match("/finance")) next.finance = true;
     if (match("/downpayment")) next.downpayment = true;
-    if (match("/vendorbill")) next.vendorbill = true;
+    // if (match("/vendorbill")) next.vendorbill = true;
     if (match("/fleetndriver")) next.fleetndriver = true;
     if (ACCORDION) {
       const activeKey: SectionKey | null =
@@ -143,10 +146,10 @@ const SidebarContent = memo(function SidebarContent() {
           ? "claims"
           : match("/finance")
           ? "finance"
-          // : match("/downpayment")
+          //:  : match("/downpayment")
           // ? "downpayment"
-          : match("/vendorbill")
-          ? "vendorbill"
+          //match("/vendorbill")
+          //? "vendorbill"
           : match("/fleetndriver")
           ? "fleetndriver"
           : null;
@@ -187,26 +190,25 @@ const SidebarContent = memo(function SidebarContent() {
           <Image
             src={lintaslogo}
             alt="Lintas-LOG Logo"
-            width={140}
-            height={32}
-            className="h-12 w-auto"
+            // width={128}
+            // height={64}
+            // className="h-24 w-auto"
             priority
           />
-          
         </div>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
-        {/* {currentUserType==="shipper" && ( */}
+        {currentUserType==="shipper" && (
         <NavGroup
           href="#"
           label={t("nav.dashboard.title")}
           icon={IconDashboard}
           items={[
-            {
-              label: t("nav.dashboard.summary"),
-              href: "/dashboard/ringkasanorder",
-              icon: IconSummary,
-            },
+            // {
+            //   label: t("nav.dashboard.summary"),
+            //   href: "/dashboard/ringkasanorder",
+            //   icon: IconSummary,
+            // },
             {
               label: t("nav.dashboard.tracking"),
               href: "/dashboard/statustracking",
@@ -218,32 +220,50 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
-        {/* )} */}
-
-        {currentUserType==="shipper" && (
-                <NavGroup
-                  href="#"
-                  label={t("nav.orders.title")}
-                  icon={IconOrders}
-                  items={[
-                    {
-                      label: t("nav.orders.list"),
-                      href: "/orders/list",
-                      icon: IconList,
-                    },
-                    {
-                      label: t("nav.orders.addresses"),
-                      href: "/orders/addresses/list",
-                      icon: IconList,
-                    },
-                  ]}
-                  open={openMap.orders}
-                  onToggle={toggle("orders")}
-                  duration={240}
-                  easing="cubic-bezier(.2,.8,.2,1)"
-                />
         )}
         {currentUserType==="transporter" && (
+          <NavGroup
+          href="#"
+          label={t("nav.dashboard.title")}
+          icon={IconDashboard}
+          items={[
+            {
+              label: t("nav.dashboard.summary"),
+              href: "/dashboard/ringkasanorder",
+              icon: IconSummary,
+            },
+          ]}
+          open={openMap.dashboard}
+          onToggle={toggle("dashboard")}
+          duration={240}
+          easing="cubic-bezier(.2,.8,.2,1)"
+        />
+        )}
+
+        {currentUserType === "shipper" && (
+          <NavGroup
+            href="#"
+            label={t("nav.orders.title")}
+            icon={IconOrders}
+            items={[
+              {
+                label: t("nav.orders.list"),
+                href: "/orders/list",
+                icon: IconList,
+              },
+              {
+                label: t("nav.orders.addresses"),
+                href: "/orders/addresses/list",
+                icon: IconList,
+              },
+            ]}
+            open={openMap.orders}
+            onToggle={toggle("orders")}
+            duration={240}
+            easing="cubic-bezier(.2,.8,.2,1)"
+          />
+        )}
+        {currentUserType === "transporter" && (
           <NavGroup
             href="#"
             label={t("nav.orders.title")}
@@ -278,7 +298,7 @@ const SidebarContent = memo(function SidebarContent() {
           duration={240}
           easing="cubic-bezier(.2,.8,.2,1)"
         />
-        {currentUserType==="shipper" && (
+        {currentUserType === "shipper" && (
           <NavGroup
             href="#"
             label={t("nav.finance.title")}
@@ -301,7 +321,7 @@ const SidebarContent = memo(function SidebarContent() {
             easing="cubic-bezier(.2,.8,.2,1)"
           />
         )}
-        {currentUserType==="transporter" && (
+        {currentUserType === "transporter" && (
           <NavGroup
             href="#"
             label={t("nav.finance.title")}
@@ -314,9 +334,9 @@ const SidebarContent = memo(function SidebarContent() {
               },
               {
                 label: t("nav.vendorbill.list"),
-                href: "/vendorbill/list",
+                href: "/finance/vendorbill/list",
                 icon: IconList,
-              }
+              },
             ]}
             open={openMap.finance}
             onToggle={toggle("finance")}
@@ -366,9 +386,50 @@ const SidebarContent = memo(function SidebarContent() {
           />
         )}
       </nav>
-      <div className="inline-flex w-full items-center justify-center border-t border-white/10 px-4 py-3">
-        <span className="text-amber-100 text-sm mt-1 font-extrabold uppercase border-1 p-1 rounded-md border-white/50">{(userType as TmsUserType)}</span>
+      {/* User badges (1 line) */}
+      <div className="flex w-full items-center justify-center gap-2 border-t border-white/10 px-4 py-3">
+        {/* User Type */}
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-white/90 ring-1 ring-inset ring-white/15 backdrop-blur"
+          title="User type"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-300/90" />
+          {String(userType ?? "").replaceAll("_", " ")}
+        </span>
+
+        {/* Transporter Verification */}
+        {userType === "transporter" && (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ring-1 ring-inset backdrop-blur ${
+              profile?.transporter_verified
+                ? "bg-emerald-400/15 text-emerald-100 ring-emerald-300/25"
+                : "bg-rose-400/15 text-rose-100 ring-rose-300/25"
+            }`}
+            title="Verification status"
+          >
+            {profile?.transporter_verified ? (
+              <>
+                {/* VERIFIED ICON */}
+                <Image
+                  src={verifiedBadge}
+                  alt="Verified"
+                  width={14}
+                  height={14}
+                  className="shrink-0"
+                  priority
+                />
+                Verified
+              </>
+            ) : (
+              <>
+                <span className="h-1.5 w-1.5 rounded-full bg-rose-300" />
+                Unverified
+              </>
+            )}
+          </span>
+        )}
       </div>
+
       <div className="mt-auto border-t border-white/10 px-4 py-3">
         <NavLink
           href="/docs"
