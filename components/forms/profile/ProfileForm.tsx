@@ -49,6 +49,7 @@ export default function ProfileFormPage({
     vat: initialData?.vat ?? "",
     tz: initialData?.tz ?? "",
     tms_user_type: initialData.tms_user_type ?? "",
+    transporter_document_upload_instruction: initialData.transporter_document_upload_instruction ?? "",
     shipper_transporter_document_attachment:
       initialData.shipper_transporter_document_attachment as ProfileDocumentAttachmentGroup,
     shipper_transporter_document_attachment_id:
@@ -418,6 +419,9 @@ export default function ProfileFormPage({
               </Card>
             {/* </div> */}
             {/* <div className="md:basis-1/2 space-y-4"> */}
+
+            
+
               <MultiFileUpload
                 label="Document"
                 value={profileDocumentFiles}
@@ -425,9 +429,8 @@ export default function ProfileFormPage({
                 accept=".pdf"
                 maxFileSizeMB={10}
                 maxFiles={20}
-                hint={
-                  "Maks. 10 MB per file. Tipe: PDF "
-                }
+                otherTerms={`${snap.values.transporter_document_upload_instruction}`}
+                hint = {`Maks. 10 MB per file. Tipe: PDF ` }
                 onReject={(msgs) =>
                   console.warn("[PROFILE DOCUMENT] rejected:", msgs)
                 }

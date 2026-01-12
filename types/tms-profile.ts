@@ -28,6 +28,7 @@ export type TmsProfileCore = {
   shipper_transporter_document_attachment: ProfileDocumentAttachmentGroup;
   tms_user_type: string;
   avatar_url?: string;
+  transporter_document_upload_instruction?: string;
   // image?: string;
   // photo?: string;
   // roles?: readonly string[];

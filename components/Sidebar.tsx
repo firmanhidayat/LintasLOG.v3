@@ -220,27 +220,48 @@ const SidebarContent = memo(function SidebarContent() {
         />
         {/* )} */}
 
-        <NavGroup
-          href="#"
-          label={t("nav.orders.title")}
-          icon={IconOrders}
-          items={[
-            {
-              label: t("nav.orders.list"),
-              href: "/orders/list",
-              icon: IconList,
-            },
-            {
-              label: t("nav.orders.addresses"),
-              href: "/orders/addresses/list",
-              icon: IconList,
-            },
-          ]}
-          open={openMap.orders}
-          onToggle={toggle("orders")}
-          duration={240}
-          easing="cubic-bezier(.2,.8,.2,1)"
-        />
+        {currentUserType==="shipper" && (
+                <NavGroup
+                  href="#"
+                  label={t("nav.orders.title")}
+                  icon={IconOrders}
+                  items={[
+                    {
+                      label: t("nav.orders.list"),
+                      href: "/orders/list",
+                      icon: IconList,
+                    },
+                    {
+                      label: t("nav.orders.addresses"),
+                      href: "/orders/addresses/list",
+                      icon: IconList,
+                    },
+                  ]}
+                  open={openMap.orders}
+                  onToggle={toggle("orders")}
+                  duration={240}
+                  easing="cubic-bezier(.2,.8,.2,1)"
+                />
+        )}
+        {currentUserType==="transporter" && (
+          <NavGroup
+            href="#"
+            label={t("nav.orders.title")}
+            icon={IconOrders}
+            items={[
+              {
+                label: t("nav.orders.list"),
+                href: "/orders/list",
+                icon: IconList,
+              },
+            ]}
+            open={openMap.orders}
+            onToggle={toggle("orders")}
+            duration={240}
+            easing="cubic-bezier(.2,.8,.2,1)"
+          />
+        )}
+
         <NavGroup
           href="#"
           label={t("nav.claims.title")}
@@ -291,6 +312,11 @@ const SidebarContent = memo(function SidebarContent() {
                 href: "/finance/pricelist",
                 icon: IconList,
               },
+              {
+                label: t("nav.vendorbill.list"),
+                href: "/vendorbill/list",
+                icon: IconList,
+              }
             ]}
             open={openMap.finance}
             onToggle={toggle("finance")}
@@ -298,7 +324,7 @@ const SidebarContent = memo(function SidebarContent() {
             easing="cubic-bezier(.2,.8,.2,1)"
           />
         )}
-        {currentUserType==="transporter" && (
+        {/* {currentUserType==="transporter" && (
           <NavGroup
             href="#"
             label={t("nav.vendorbill.title")}
@@ -315,7 +341,7 @@ const SidebarContent = memo(function SidebarContent() {
             duration={240}
             easing="cubic-bezier(.2,.8,.2,1)"
           />
-        )}
+        )} */}
         {currentUserType === "transporter" && (
           <NavGroup
             href="#"

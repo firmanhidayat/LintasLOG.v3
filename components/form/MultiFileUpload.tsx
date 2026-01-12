@@ -25,6 +25,7 @@ type MultiFileUploadProps = {
   value: File[];
   onChange: (files: File[]) => void;
   hint?: string;
+  otherTerms?: string;
   accept?: string;
   maxFiles?: number;
   maxFileSizeMB?: number;
@@ -65,6 +66,7 @@ export default function MultiFileUpload({
   value,
   onChange,
   hint = "Maks. 10 MB per file.",
+  otherTerms = "",
   accept = "",
   maxFiles,
   maxFileSizeMB = 10,
@@ -247,11 +249,17 @@ export default function MultiFileUpload({
               </div>
               <div className="text-xs font-extralight text-gray-500 break-words">
                 {hint || "Maks. 10 MB per file."}
+                
                 {accept && (
                   <>
                     &nbsp;•&nbsp; Tipe:{" "}
                     <span className="break-all">{accept}</span>
                   </>
+                )}
+                {otherTerms && (
+                  <div className="mt-6 text-md whitespace-pre-line leading-relaxed">
+                    {otherTerms || ""}
+                  </div>
                 )}
               </div>
             </div>

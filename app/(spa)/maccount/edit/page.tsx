@@ -30,6 +30,7 @@ export default function ProfileDetailPage() {
           tz: j?.tz ?? null,
           vat: j?.vat ?? null,
           tms_user_type: j?.tms_user_type,
+          transporter_document_upload_instruction: j?.transporter_document_upload_instruction,
           shipper_transporter_document_attachment:
             j?.shipper_transporter_document_attachment ?? null,
           shipper_transporter_document_attachment_id:
