@@ -57,7 +57,6 @@ export class ProfileFormController extends AbstractFormController<
   ProfileApiResponse | null
 > {
   protected requiredKeys(): (keyof ProfileValues)[] {
-    // Keep existing behavior; add conditional validation in validateCustom.
     return [
       "name",
       "district_id",
@@ -69,8 +68,9 @@ export class ProfileFormController extends AbstractFormController<
 
   protected validateCustom(values: ProfileValues): ProfileErrors {
     const e: ProfileErrors = {};
-    if (!values.name) e.name = "Required";
-    if (!values.email) e.email = "Required";
+    if (!values.name) e.name = "Name is Required";
+    if (!values.email) e.email = "Email is Required";
+    if (!values.district_id) e.district_id = "District is Required";
 
     if (values.has_deliver_telco_medicaldevice_dangergoods) {
       const v = String(values.delivered_telco_medicaldevice_dangergoods ?? "").trim();

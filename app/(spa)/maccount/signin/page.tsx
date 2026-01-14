@@ -172,7 +172,8 @@ export default function LoginPage() {
       });
 
       if (ok.mail_verified) {
-        router.push("/dashboard");
+        if (tab === "shipper") router.push("/dashboard");
+        if (tab === "transporter") router.push("/dashboard/ringkasanorder");
       } else {
         setVerifyHint({ show: true, login: ok.login });
       }

@@ -131,7 +131,7 @@
     "driver": {
         "district": "District",
         "name": "Name",
-        "no_ktp": "ID Number",
+        "no_ktp": "Citizen Card Number",
         "mobile": "Mobile",
         "street": "Street",
         "street2": "Street 2",

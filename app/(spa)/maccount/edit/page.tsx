@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ProfileFormPage from "@/components/forms/profile/ProfileForm";
 import type { ProfileValues } from "@/features/profile/ProfileFormController";
+import { RecordItem } from "@/types/recorditem";
 
 const USERME_URL = process.env.NEXT_PUBLIC_TMS_USER_PROFILE_URL ?? "";
 
@@ -19,6 +20,7 @@ export default function ProfileDetailPage() {
     desired_delivery_category?: LookupItem[];
     desired_industry_category?: LookupItem[];
     certification_category?: LookupItem[];
+    district: RecordItem;
   };
 
   function asRecord(v: unknown): Record<string, unknown> {
@@ -136,7 +138,7 @@ export default function ProfileDetailPage() {
           zip: asString(rec.zip) ?? "",
 
           district_id: asNumber(rec.district_id) ?? 0,
-          // district: (rec.district as unknown) ?? null,
+          district: rec.district as RecordItem,
 
           tz: asString(rec.tz) ?? "",
           vat: asString(rec.vat) ?? "",
@@ -181,6 +183,7 @@ export default function ProfileDetailPage() {
           certification_category_ids: certIds.length
             ? certIds
             : certItems.map((x) => x.id),
+            
         });
       } catch (e: unknown) {
         if (alive) setErr(e instanceof Error ? e.message : "Failed to load");

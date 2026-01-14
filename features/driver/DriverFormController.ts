@@ -127,6 +127,8 @@ export class DriverFormController extends AbstractFormController<
       "district_id",
       "drivers_license",
       "drivers_license_expiry",
+      "street",
+      "login"
     ];
     if (this.formMode === "create") {
       keys.push("login");
@@ -137,12 +139,12 @@ export class DriverFormController extends AbstractFormController<
 
   protected validateCustom(values: DriverValues): DriverErrors {
     const e: DriverErrors = {};
-    if (values.no_ktp && values.no_ktp.length < 8) {
-      e.no_ktp = "Nomor KTP terlalu pendek";
-    }
-    if (this.formMode === "create" && !values.login.trim()) {
-      e.login = "Required";
-    }
+    // if (values.no_ktp && values.no_ktp.length < 8) {
+    //   e.no_ktp = "Nomor KTP terlalu pendek";
+    // }
+    // if (this.formMode === "create" && !values.login.trim()) {
+    //   e.login = "Required";
+    // }
     return e;
   }
 

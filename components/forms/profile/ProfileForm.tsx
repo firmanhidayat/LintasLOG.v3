@@ -1125,39 +1125,42 @@ export default function ProfileFormPage({
                   )}
 
                   {/* Desired delivery category */}
-                  <div className="space-y-2">
-                    <LookupChipsField<LookupItem>
-                      label="Desired Delivery Category"
-                      value={desiredDeliveryItems}
-                      onChange={(next) => {
-                        setDesiredDeliveryItems(next);
-                        ctrl.set(
-                          "desired_delivery_category_ids",
-                          next.map((x) => x.id)
-                        );
-                      }}
-                      fetcher={({ query, signal }) =>
-                        fetchUserCategories({
-                          parentType: "desired_delivery",
-                          query,
-                          signal,
-                        })
-                      }
-                      getId={(it) => it.id}
-                      getLabel={(it) => it.name}
-                      placeholder="Cari kategori delivery..."
-                    />
-                    {snap.errors.desired_delivery_category_ids && (
-                      <div className="text-xs text-red-600">
-                        {snap.errors.desired_delivery_category_ids as string}
-                      </div>
-                    )}
-                  </div>
+                  {snap.values.tms_user_type === "transporter" && (
+                    <div className="space-y-2">
+                      <LookupChipsField<LookupItem>
+                        label="Desired Delivery Category"
+                        value={desiredDeliveryItems}
+                        onChange={(next) => {
+                          setDesiredDeliveryItems(next);
+                          ctrl.set(
+                            "desired_delivery_category_ids",
+                            next.map((x) => x.id)
+                          );
+                        }}
+                        fetcher={({ query, signal }) =>
+                          fetchUserCategories({
+                            parentType: "desired_delivery",
+                            query,
+                            signal,
+                          })
+                        }
+                        getId={(it) => it.id}
+                        getLabel={(it) => it.name}
+                        placeholder="Cari kategori delivery..."
+                      />
+                      {snap.errors.desired_delivery_category_ids && (
+                        <div className="text-xs text-red-600">
+                          {snap.errors.desired_delivery_category_ids as string}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Desired industry category */}
+                  {/* {snap.values.tms_user_type === "transporter" && (} */}
                   <div className="space-y-2">
                     <LookupChipsField<LookupItem>
-                      label="Desired Industry Category"
+                      label={snap.values.tms_user_type === "transporter" ? "Desired Industry Category" : "Industries"}
                       value={desiredIndustryItems}
                       onChange={(next) => {
                         setDesiredIndustryItems(next);
