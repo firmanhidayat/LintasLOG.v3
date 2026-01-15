@@ -2,7 +2,8 @@
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { IconProp } from "@fortawesome/fontawesome-svg-core";
-import { faCircleQuestion, faUser } from "@fortawesome/free-regular-svg-icons";
+// import { faCircleQuestion, faUser } from "@fortawesome/free-regular-svg-icons";
+import { faCircleQuestion } from "@fortawesome/free-regular-svg-icons";
 import { useEffect, useMemo, useState } from "react";
 import {
   loadDictionaries,
@@ -11,13 +12,13 @@ import {
   onLangChange,
   type Lang,
 } from "@/lib/i18n";
-import {
-  faCartShopping,
-  faChartLine,
-  faChartSimple,
-  faDownload,
-  faPercentage,
-} from "@fortawesome/free-solid-svg-icons";
+// import {
+//   faCartShopping,
+//   faChartLine,
+//   faChartSimple,
+//   faDownload,
+//   faPercentage,
+// } from "@fortawesome/free-solid-svg-icons";
 
 export default function RingkasanOrderPage() {
   const [i18nReady, setI18nReady] = useState(false);
@@ -47,27 +48,27 @@ export default function RingkasanOrderPage() {
   const locale = activeLang === "id" ? "id-ID" : "en-US";
   const currency = activeLang === "id" ? "IDR" : "USD";
 
-  const nf = useMemo(
-    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }),
-    [locale]
-  );
-  const cf = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency,
-        maximumFractionDigits: 2,
-      }),
-    [locale, currency]
-  );
-  const pf = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "percent",
-        maximumFractionDigits: 2,
-      }),
-    [locale]
-  );
+  // const nf = useMemo(
+  //   () => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }),
+  //   [locale]
+  // );
+  // const cf = useMemo(
+  //   () =>
+  //     new Intl.NumberFormat(locale, {
+  //       style: "currency",
+  //       currency,
+  //       maximumFractionDigits: 2,
+  //     }),
+  //   [locale, currency]
+  // );
+  // const pf = useMemo(
+  //   () =>
+  //     new Intl.NumberFormat(locale, {
+  //       style: "percent",
+  //       maximumFractionDigits: 2,
+  //     }),
+  //   [locale]
+  // );
 
   if (!i18nReady) {
     return (
@@ -80,21 +81,21 @@ export default function RingkasanOrderPage() {
   const title = t("ringkasanorder.title");
   const subtitle = t("ringkasanorder.subtitle");
 
-  // Dummy numbers (ganti dengan data API)
-  const customers = 9999;
-  const revenue = 9999;
-  const growth = 9999;
-  const returns = 9999;
-  const downloads = 9999;
-  const orderRate = 0.9999;
+  // // Dummy numbers (ganti dengan data API)
+  // const customers = 9999;
+  // const revenue = 9999;
+  // const growth = 9999;
+  // const returns = 9999;
+  // const downloads = 9999;
+  // const orderRate = 0.9999;
 
-  const totalProfit = 1248;
-  const totalOrders = 1100;
-  const averagePrice = 16.07;
-  const quantity = 114;
+  // const totalProfit = 1248;
+  // const totalOrders = 1100;
+  // const averagePrice = 16.07;
+  // const quantity = 114;
 
-  const deptTotalSales = 21000;
-  const deptAverage = 1953;
+  // const deptTotalSales = 21000;
+  // const deptAverage = 1953;
 
   return (
     <>

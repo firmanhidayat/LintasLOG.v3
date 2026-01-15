@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import AddressForm from "@/forms/AddressesForm";
 import { useI18nReady } from "@/hooks/useI18nReady";
-import { t } from "@/lib/i18n";
+// import { t } from "@/lib/i18n";
 
 export default function CreateAddressesPage() {
   const router = useRouter();

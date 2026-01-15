@@ -244,80 +244,7 @@ export default function OrdersListPage() {
       ),
       mandatory: true,
     },
-    // {
-    //   id: "blankColumn",
-    //   label: "",
-    //   className: "min-w-[80px] max-w-[100px] text-center",
-    //   cell: (r) => <span>&nbsp;</span>,
-    // },
-    // {
-    //   id: "actions",
-    //   label: "",
-    //   isAction: true,
-    //   className: "min-w-[70px] max-w-[90px] sticky right-0",
-    //   mandatory: true,
-    //   cell: (it) => (
-    //     <div className="flex items-center gap-2 justify-end  bg-white">
-    //       {it.id != null ? (
-    //         <Link
-    //           data-stop-rowclick
-    //           href={`/orders/details?id=${encodeURIComponent(String(it.id))}`}
-    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100 shrink-0"
-    //           aria-label="Edit address"
-    //           title="Edit"
-    //         >
-    //           <Icon name="pencil" className="h-3 w-3" />
-    //         </Link>
-    //       ) : (
-    //         <button
-    //           data-stop-rowclick
-    //           type="button"
-    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50 shrink-0"
-    //           title="Edit (unavailable)"
-    //           disabled
-    //         >
-    //           <Icon name="pencil" className="h-3 w-3" />
-    //         </button>
-    //       )}
-
-    //       {it.id != null ? (
-    //         <button
-    //           data-stop-rowclick
-    //           type="button"
-    //           onClick={() => {
-    //             const evt = new CustomEvent("llog.openDeleteConfirm", {
-    //               detail: { id: it.id, name: it.name },
-    //             });
-    //             window.dispatchEvent(evt);
-    //           }}
-    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100 shrink-0"
-    //           aria-label="Delete address"
-    //           title="Delete"
-    //         >
-    //           <Icon
-    //             name="trash"
-    //             className="h-3 w-3 text-red-600"
-    //             strokeWidth={1.5}
-    //           />
-    //         </button>
-    //       ) : (
-    //         <button
-    //           data-stop-rowclick
-    //           type="button"
-    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50 shrink-0"
-    //           title="Delete (unavailable)"
-    //           disabled
-    //         >
-    //           <Icon
-    //             name="trash"
-    //             className="h-3 w-3 text-red-600"
-    //             strokeWidth={1.5}
-    //           />
-    //         </button>
-    //       )}
-    //     </div>
-    //   ),
-    // },
+    
   ];
 
   if (!i18nReady) return null;
@@ -409,6 +336,7 @@ export default function OrdersListPage() {
             const ed_url = `/orders/details?id=${encodeURIComponent(
               String(id)
             )}`;
+            console.log("{1} {2} {3}", id, row, index);
             router.push(ed_url);
           }}
           onDetailsAction={(id, row, index) => {

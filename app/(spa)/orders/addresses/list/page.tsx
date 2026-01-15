@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import { ListTemplate, ColumnDef } from "@/components/datagrid/ListTemplate";
-import { Icon } from "@/components/icons/Icon";
+// import { Icon } from "@/components/icons/Icon";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 const USER_ADDRESS_URL = process.env.NEXT_PUBLIC_TMS_USER_ADDRESS_URL!;
@@ -103,76 +103,7 @@ export default function AddressesListPage() {
       cell: (r) => r.mobile ?? r.phone ?? "-",
       defaultVisible: true,
     },
-    // {
-    //   id: "actions",
-    //   label: "",
-    //   isAction: true,
-    //   className: "w-24",
-    //   cell: (it) => (
-    //     <div className="flex items-center gap-2">
-    //       {it.id != null ? (
-    //         <Link
-    //           data-stop-rowclick
-    //           href={`/orders/addresses/details?id=${encodeURIComponent(
-    //             String(it.id)
-    //           )}`}
-    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-    //           aria-label="Edit address"
-    //           title="Edit"
-    //         >
-    //           <Icon name="pencil" className="h-3 w-3" />
-    //         </Link>
-    //       ) : (
-    //         <button
-    //           data-stop-rowclick
-    //           type="button"
-    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-    //           title="Edit (unavailable)"
-    //           disabled
-    //         >
-    //           <Icon name="pencil" className="h-3 w-3" />
-    //         </button>
-    //       )}
-
-    //       {it.id != null ? (
-    //         <button
-    //           data-stop-rowclick
-    //           type="button"
-    //           onClick={() => {
-    //             // ListTemplate kini menangani event ini & membuka modal konfirmasi
-    //             const evt = new CustomEvent("llog.openDeleteConfirm", {
-    //               detail: { id: it.id, name: it.name },
-    //             });
-    //             window.dispatchEvent(evt);
-    //           }}
-    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border hover:bg-gray-100"
-    //           aria-label="Delete address"
-    //           title="Delete"
-    //         >
-    //           <Icon
-    //             name="trash"
-    //             className="h-3 w-3 text-red-600"
-    //             strokeWidth={1.5}
-    //           />
-    //         </button>
-    //       ) : (
-    //         <button
-    //           data-stop-rowclick
-    //           type="button"
-    //           className="inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-50"
-    //           title="Delete (unavailable)"
-    //           disabled
-    //         >
-    //           <Icon
-    //             name="trash"
-    //             className="h-3 w-3 text-red-600"
-    //             strokeWidth={1.5}
-    //           />
-    //         </button>
-    //       )}
-    //     </div>
-    //   ),
-    // },
+    
   ];
   if (!i18nReady) return null;
   const leftHeader = (

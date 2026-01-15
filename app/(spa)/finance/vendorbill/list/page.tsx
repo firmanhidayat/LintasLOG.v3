@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { useI18nReady } from "@/hooks/useI18nReady";
 

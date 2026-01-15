@@ -8,7 +8,7 @@ import {
   type ColumnDef,
 } from "@/components/datagrid/ListTemplate";
 import Link from "next/link";
-import { Icon } from "@/components/icons/Icon";
+// import { Icon } from "@/components/icons/Icon";
 import { useRouter } from "next/navigation";
 import { capitalizeIfLowercase, fmtDate, fmtPrice } from "@/lib/helpers";
 import { ClaimAttachmentGroup } from "@/features/claims/ClaimsFormController";
