@@ -5,7 +5,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import lintaslogo from "@/images/lintaslog-logo.png";
-import bglintas from "@/images/bg-1.png";
+import bglintas from "@/images/bg-1.webp";
 
 import {
   loadDictionaries,

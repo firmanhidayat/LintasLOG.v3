@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import imageSuccess from "@/images/success-i.png";
 import lintaslogo from "@/images/lintaslog-logo.png";
-import bglintas from "@/images/bg-1.png";
+import bglintas from "@/images/bg-1.webp";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 

@@ -2262,7 +2262,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                   <Button
                     hidden={isReadOnly}
                     type="submit"
-                    disabled={submitLoading || !canSubmit}
+                    // disabled={submitLoading || !canSubmit}
+                    disabled={submitLoading}
                     variant="solid"
                   >
                     {submitLoading
