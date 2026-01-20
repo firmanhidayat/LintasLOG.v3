@@ -103,6 +103,7 @@ type AddressPayload = {
   latitude?: number;
   longitude?: number;
   map_description?: string;
+  type?: string;
 };
 
 // ===== Helpers =====
@@ -617,6 +618,7 @@ export default function AddressForm({
       latitude: typeof lat === "number" ? lat : undefined,
       longitude: typeof lng === "number" ? lng : undefined,
       map_description: mapDesc,
+      type: "delivery",
     };
 
     try {
