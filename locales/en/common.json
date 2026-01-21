@@ -48,6 +48,7 @@
         "search_fleet": "Pick a fleet",
         "search_driver": "Pick a driver",
         "clear": "Clear messages",
+        "validation_error": "Please double check the form, may have some mandatory fields not filled in correctly.",
         "kolom": {
             "button": {
                 "setting": "Column Setting"

@@ -72,25 +72,43 @@ export class FleetFormController extends AbstractFormController<
   FleetApiResponse | null
 > {
   protected requiredKeys(): (keyof FleetValues)[] {
-    return ["model", "license_plate", "category"];
+    // field minimal yang wajib sebelum submit (agar inline error muncul & canSubmit akurat)
+    return ["model", "category", "license_plate"];
+
   }
   protected validateCustom(values: FleetValues): FleetErrors {
     const e: FleetErrors = {};
-    if (
-      !values.category ||
-      typeof values.category.id === "undefined" ||
-      typeof values.model?.id === "undefined" ||
-      !values.license_plate
-    ) {
-      e.category = "Required";
+
+    const modelId = toNumberSafe(values.model?.id);
+    if (!values.model || modelId === undefined || modelId <= 0) {
+      e.model = "Wajib diisi";
     }
+
+    const categoryId = toNumberSafe(values.category?.id);
+    if (!values.category || categoryId === undefined || categoryId <= 0) {
+      e.category = "Wajib diisi";
+    }
+
+    const lp = (values.license_plate ?? "").trim();
+    if (!lp) {
+      e.license_plate = "Wajib diisi";
+    } else if (lp.length < 3) {
+      e.license_plate = "Terlalu pendek";
+    }
+
+    const year = (values.model_year ?? "").trim();
+    if (year && !/^\d{4}$/.test(year)) {
+      e.model_year = "Format tahun harus 4 digit";
+    }
+
     return e;
+
   }
   protected toPayload(values: FleetValues): FleetPayload {
     const payload: FleetPayload = {
       model_id: toNumberSafe(values.model?.id) ?? 0,
       category_id: toNumberSafe(values.category?.id) ?? 0,
-      license_plate: values.license_plate,
+      license_plate: (values.license_plate ?? "").trim(),
       model_year: values.model_year,
       vin_sn: values.vin_sn,
       engine_sn: values.engine_sn,
@@ -125,3 +143,132 @@ export class FleetFormController extends AbstractFormController<
     return FLEET_URL;
   }
 }
+
+// import {
+//   AbstractFormController,
+//   JsonValue,
+// } from "@/core/AbstractFormController";
+// import { RecordItem } from "@/types/recorditem";
+// export type FleetValues = {
+//   model: RecordItem | null;
+//   category: RecordItem | null;
+//   license_plate: string;
+//   model_year: string;
+//   vin_sn: string;
+//   engine_sn: string;
+//   trailer_hook: boolean;
+//   tonnage_max: number;
+//   cbm_volume: number;
+//   color: string;
+//   horsepower: number;
+//   axle: string;
+//   acquisition_date: string;
+//   write_off_date: string;
+//   kir: string;
+//   kir_expiry: string;
+//   unit_attachment_id: number;
+//   document_attachment_id: number;
+//   // display-only from backend (RAW base64 thumbnail)
+//   image_128?: string;
+
+//   image_1920?: string | null;
+// };
+// export type FleetErrors = Partial<Record<keyof FleetValues, string>>;
+// export type FleetApiResponse = { id?: string } & {
+//   [k: string]: JsonValue;
+// };
+// export type FleetPayload = {
+//   model_id: number;
+//   license_plate: string;
+//   model_year: string;
+//   vin_sn: string;
+//   engine_sn: string;
+//   trailer_hook: boolean;
+//   tonnage_max: number;
+//   cbm_volume: number;
+//   category_id: number;
+//   color: string;
+//   horsepower: number;
+//   axle: string;
+//   acquisition_date: string;
+//   write_off_date: string;
+//   kir: string;
+//   kir_expiry: string;
+//   unit_attachment_id: number;
+//   document_attachment_id: number;
+//   image_1920?: string | null;
+// };
+// const FLEET_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_URL ?? "";
+// // const MODELS_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_MODELS_URL ?? "";
+// // const CATEGORIES_URL = process.env.NEXT_PUBLIC_TMS_FLEETS_CATEGORIES_URL ?? "";
+
+// function toNumberSafe(v: unknown): number | undefined {
+//   if (typeof v === "number" && Number.isFinite(v)) return v;
+//   if (typeof v === "string") {
+//     const n = Number(v.trim());
+//     if (Number.isFinite(n)) return n;
+//   }
+//   return undefined;
+// }
+
+// export class FleetFormController extends AbstractFormController<
+//   FleetValues,
+//   FleetErrors,
+//   FleetPayload,
+//   FleetApiResponse | null
+// > {
+//   protected requiredKeys(): (keyof FleetValues)[] {
+//     // return ["model", "license_plate", "category"];
+//     return [];
+//   }
+//   protected validateCustom(values: FleetValues): FleetErrors {
+//     const e: FleetErrors = {};
+//     if (
+//       !values.category ||
+//       typeof values.category.id === "undefined" ||
+//       typeof values.model?.id === "undefined" ||
+//       !values.license_plate
+//     ) {
+//       e.category = "Required";
+//     }
+//     return e;
+//   }
+//   protected toPayload(values: FleetValues): FleetPayload {
+//     const payload: FleetPayload = {
+//       model_id: toNumberSafe(values.model?.id) ?? 0,
+//       category_id: toNumberSafe(values.category?.id) ?? 0,
+//       license_plate: values.license_plate,
+//       model_year: values.model_year,
+//       vin_sn: values.vin_sn,
+//       engine_sn: values.engine_sn,
+//       trailer_hook: values.trailer_hook,
+//       tonnage_max: toNumberSafe(values.tonnage_max) ?? 0,
+//       cbm_volume: toNumberSafe(values.cbm_volume) ?? 0,
+//       color: values.color,
+//       horsepower: toNumberSafe(values.horsepower) ?? 0,
+//       axle: values.axle,
+//       acquisition_date: values.acquisition_date,
+//       write_off_date: values.write_off_date,
+//       kir: values.kir,
+//       kir_expiry: values.kir_expiry,
+//       unit_attachment_id: toNumberSafe(values.unit_attachment_id) ?? 0,
+//       document_attachment_id: toNumberSafe(values.document_attachment_id) ?? 0,
+//     };
+
+//     // Only send when explicitly changed:
+//     // - undefined => omit from payload
+//     // - "" or null => clear on backend
+//     // - base64 string => set new image
+//     if (values.image_1920 !== undefined) {
+//       payload.image_1920 = values.image_1920;
+//     }
+
+//     return payload;
+//   }
+//   protected endpoint(mode: "create" | "edit", id?: string | number): string {
+//     if (mode === "edit" && id !== undefined && id !== null) {
+//       return `${FLEET_URL}/${id}`;
+//     }
+//     return FLEET_URL;
+//   }
+// }

@@ -48,6 +48,7 @@
         "search_fleet": "Pilih kendaraan",
         "search_driver": "Pilih pengemudi",
         "clear": "Bersihkan pesan",
+        "validation_error": "Silakan periksa kembali formulir, mungkin ada beberapa bidang wajib yang belum diisi dengan benar.",
         "kolom": {
             "button": {
                 "setting": "Atur Kolom"
