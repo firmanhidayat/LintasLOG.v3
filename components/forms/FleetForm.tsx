@@ -215,15 +215,15 @@ export default function FleetFormPage({
   const avatarSrc = avatarIsRemoved ? null : avatarInlineDataUrl ?? avatarRemoteSrc;
 
 
-  function handleClearUnitAttachments() {
-    setUnitExistingFiles([]);
-    ctrl.set("unit_attachment_id", 0);
-  }
+  // function handleClearUnitAttachments() {
+  //   setUnitExistingFiles([]);
+  //   ctrl.set("unit_attachment_id", 0);
+  // }
 
-  function handleClearDocumentAttachments() {
-    setDocExistingFiles([]);
-    ctrl.set("document_attachment_id", 0);
-  }
+  // function handleClearDocumentAttachments() {
+  //   setDocExistingFiles([]);
+  //   ctrl.set("document_attachment_id", 0);
+  // }
 
   function openSuccessDialog() {
     setDlgKind("success");
@@ -651,7 +651,8 @@ export default function FleetFormPage({
           <Button
             type="button"
             variant="solid"
-            disabled={!snap.canSubmit || submitting}
+            // disabled={!snap.canSubmit || submitting}
+            disabled={submitting}
             onClick={onSave}
           >
             {mode === "edit" ? "Update" : "Save"}
