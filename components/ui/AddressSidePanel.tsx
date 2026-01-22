@@ -1,11 +1,10 @@
-import type { ReactNode } from "react";
 import { AddressInfo } from "@/types/addressinfo";
 
-
 type AddressSidePanelInfo = AddressInfo & {
+  // optional fields (backward compatible)
   delivery_note_uri?: string | null;
   deliveryNoteUri?: string | null;
-  postCode?: string | null; // backward compat
+  postCode?: string | null; // some callers still use postCode (camelCase)
 };
 
 function readTrimmedString(v: unknown): string | null {
@@ -13,7 +12,9 @@ function readTrimmedString(v: unknown): string | null {
 }
 
 function ensureOdooDownloadUri(uri: string): string {
+  // keep as-is if already has download param
   if (/([?&])download=/.test(uri)) return uri;
+  // Odoo common binary/content routes
   if (/\/web\/(content|binary)\//.test(uri)) {
     return `${uri}${uri.includes("?") ? "&" : "?"}download=true`;
   }
@@ -23,9 +24,13 @@ function ensureOdooDownloadUri(uri: string): string {
 function guessFileName(uri: string): string | null {
   const m = uri.match(/[?&]filename=([^&]+)/i);
   if (m?.[1]) {
-    try { return decodeURIComponent(m[1]); } catch { return m[1]; }
+    try {
+      return decodeURIComponent(m[1]);
+    } catch {
+      return m[1];
+    }
   }
-  const clean = uri.split("?")[0] ?? "";
+  const clean = (uri.split("?")[0] ?? "").trim();
   const last = clean.split("/").filter(Boolean).pop();
   return last && !/^\d+$/.test(last) ? last : null;
 }
@@ -37,7 +42,6 @@ export function AddressSidePanel({
 }: {
   title: string;
   labelPrefix: "Origin" | "Destination";
-  // info?: AddressInfo | null;
   info?: AddressSidePanelInfo | null;
 }) {
   const isOrigin = labelPrefix === "Origin";
@@ -67,8 +71,7 @@ export function AddressSidePanel({
     emphasize,
   }: {
     label: string;
-    // children: React.ReactNode;
-    children: ReactNode;
+    children: React.ReactNode;
     emphasize?: boolean;
   }) => (
     <div className="grid grid-cols-[8.5rem_1fr] items-start gap-x-3 gap-y-1 rounded-lg bg-white/60 p-2 hover:bg-white/80">
@@ -83,7 +86,9 @@ export function AddressSidePanel({
       <dd
         className={[
           "min-w-0 rounded-md bg-white/70 px-2 py-1 text-sm",
-          emphasize ? "font-semibold text-slate-900" : "font-medium text-slate-900",
+          emphasize
+            ? "font-semibold text-slate-900"
+            : "font-medium text-slate-900",
         ].join(" ")}
       >
         {children}
@@ -91,12 +96,37 @@ export function AddressSidePanel({
     </div>
   );
 
-  const postcode = readTrimmedString(info?.postcode) ?? readTrimmedString(info?.postCode);
-  const deliveryNoteRaw =
-    readTrimmedString(info?.delivery_note_uri) ?? readTrimmedString(info?.deliveryNoteUri);
-  const deliveryNoteUri = deliveryNoteRaw ? ensureOdooDownloadUri(deliveryNoteRaw) : null;
-  const deliveryNoteName = deliveryNoteUri ? guessFileName(deliveryNoteUri) : null;
+  const postcode =
+    readTrimmedString(info?.postcode) ?? readTrimmedString(info?.postCode);
 
+  const deliveryNoteRaw =
+    readTrimmedString(info?.delivery_note_uri) ??
+    readTrimmedString(info?.deliveryNoteUri);
+
+  const deliveryNoteUri = deliveryNoteRaw
+    ? ensureOdooDownloadUri(deliveryNoteRaw)
+    : null;
+  const deliveryNoteName = deliveryNoteUri
+    ? guessFileName(deliveryNoteUri)
+    : null;
+
+  const downloadBtnClass = [
+    "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-semibold shadow-sm transition",
+    "bg-white/70 hover:bg-white",
+    isOrigin
+      ? "border-sky-200 text-sky-800 hover:bg-sky-50"
+      : "border-amber-200 text-amber-800 hover:bg-amber-50",
+  ].join(" ");
+
+  const fileBadgeClass = [
+    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-white/70",
+    isOrigin ? "border-sky-200" : "border-amber-200",
+  ].join(" ");
+
+  const fileIconClass = [
+    "h-4 w-4",
+    isOrigin ? "text-sky-700" : "text-amber-700",
+  ].join(" ");
 
   return (
     <section className={["rounded-xl border p-4", tone.wrap].join(" ")}>
@@ -126,8 +156,12 @@ export function AddressSidePanel({
       <dl className="mt-3 space-y-2 text-sm">
         <Row label="Address" emphasize>
           <div className="min-w-0 leading-6">
-            {info?.street1 ? <div className="text-slate-900">{info.street1}</div> : null}
-            {info?.street2 ? <div className="text-slate-900">{info.street2}</div> : null}
+            {info?.street1 ? (
+              <div className="text-slate-900">{info.street1}</div>
+            ) : null}
+            {info?.street2 ? (
+              <div className="text-slate-900">{info.street2}</div>
+            ) : null}
 
             {info?.districtLine ? (
               <div className={["text-sm font-medium", tone.soft].join(" ")}>
@@ -151,44 +185,86 @@ export function AddressSidePanel({
             !info?.street2 &&
             !info?.districtLine &&
             !info?.extraLine &&
-            !info?.postcode
+            !postcode
               ? dash
               : null}
           </div>
         </Row>
 
-    {deliveryNoteUri ? (
-      <Row label="Delivery Note" emphasize>
-        <div className="flex flex-wrap items-center gap-2">
-          <a
-            href={deliveryNoteUri}
-            className={tone.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            download
-          >
-            Download
-          </a>
-          {deliveryNoteName ? (
-            <span className="max-w-[18rem] truncate text-xs font-medium text-slate-600">
-              {deliveryNoteName}
-            </span>
-          ) : null}
-        </div>
-      </Row>
-    ) : null}
+        {deliveryNoteUri ? (
+          <Row label="Delivery Note" emphasize>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-3">
+              {/* <div className="flex min-w-0 items-center gap-2">
+                <span className={fileBadgeClass} aria-hidden>
+                  <svg
+                    className={fileIconClass}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7l-5-5Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M14 2v5h5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
 
-        {/* <Row label="Mobile">{info?.mobile ? info.mobile : dash}</Row>
+                <div className="min-w-0">
+                  <div
+                    className="truncate text-sm font-semibold text-slate-900"
+                    title={deliveryNoteName ?? "Delivery Note"}
+                  >
+                    {deliveryNoteName ?? "Delivery Note"}
+                  </div>
+                  <div className="text-xs font-medium text-slate-600">
+                    File ready
+                  </div>
+                </div>
+              </div> */}
 
-        <Row label="Email">
-          {info?.email ? (
-            <a href={`mailto:${info.email}`} className={tone.link}>
-              {info.email}
-            </a>
-          ) : (
-            dash
-          )}
-        </Row> */}
+              <a
+                href={deliveryNoteUri}
+                className={[downloadBtnClass, "w-full sm:w-auto"].join(" ")}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                aria-label="Download delivery note"
+                title="Download delivery note"
+              >
+                Download
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden
+                >
+                  <path
+                    d="M12 3v10m0 0 4-4m-4 4-4-4"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M5 21h14"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </a>
+            </div>
+          </Row>
+        ) : null}
 
         <Row label="Latitude">
           <span className="font-semibold tabular-nums">{info?.lat ?? "-"}</span>
@@ -201,7 +277,9 @@ export function AddressSidePanel({
         {/* PIC rows tetap adaptif */}
         {info?.picName !== undefined && (
           <Row
-            label={labelPrefix === "Origin" ? "Pickup PIC Name" : "Drop-off PIC Name"}
+            label={
+              labelPrefix === "Origin" ? "Pickup PIC Name" : "Drop-off PIC Name"
+            }
           >
             {info.picName ? info.picName : dash}
           </Row>
@@ -209,7 +287,11 @@ export function AddressSidePanel({
 
         {info?.picPhone !== undefined && (
           <Row
-            label={labelPrefix === "Origin" ? "Pickup PIC Phone" : "Drop-off PIC Phone"}
+            label={
+              labelPrefix === "Origin"
+                ? "Pickup PIC Phone"
+                : "Drop-off PIC Phone"
+            }
           >
             {info.picPhone ? info.picPhone : dash}
           </Row>
