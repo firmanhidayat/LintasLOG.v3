@@ -689,7 +689,8 @@ export default function AddressForm({
             <Button
               type="button"
               variant="solid"
-              disabled={!canSubmit || submitting}
+              // disabled={!canSubmit || submitting}
+              disabled={submitting}
               onClick={handleSave}
             >
               {mode === "edit"
