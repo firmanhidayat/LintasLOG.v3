@@ -36,6 +36,7 @@ export type ExtraStop = {
   destZipCode: string;
   destLatitude: string;
   destLongitude: string;
+  delivery_note_uri: string;
 };
 
 type Props = {
@@ -80,7 +81,8 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       street2: stop.originStreet2,
       districtLine: stop.originDistrictName,
       province: "",
-      postCode: stop.originZipCode,
+      // postCode: stop.originZipCode,
+      postcode: stop.originZipCode,
       mobile: "-",
       email: "-",
       lat: stop.originLatitude,
@@ -97,7 +99,8 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       street2: stop.destStreet2,
       districtLine: stop.destDistrictName,
       province: "",
-      postCode: stop.destZipCode,
+      // postCode: stop.destZipCode,
+      postcode: stop.destZipCode,
       mobile: "-",
       email: "-",
       lat: stop.destLatitude,
@@ -106,6 +109,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       picPhone: stop.destPicPhone,
       timeLabel: "ETA",
       timeValue: fmtDate(stop.tglETABongkar),
+      delivery_note_uri: stop.delivery_note_uri,
     };
 
     return (

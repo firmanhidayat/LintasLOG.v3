@@ -174,6 +174,7 @@ function blankStop(): ExtraStopWithId {
     destZipCode: "",
     destLatitude: "",
     destLongitude: "",
+    delivery_note_uri: "",
     uid: genUid(),
   };
 }

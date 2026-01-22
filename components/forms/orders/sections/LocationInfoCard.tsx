@@ -56,6 +56,7 @@ type Props = {
   destZipCode: string;
   destLatitude: string;
   destLongitude: string;
+  deliveryNoteUri: string;
 
   multiPickupDrop: boolean;
   setMultiPickupDrop: (v: boolean) => void;
@@ -104,6 +105,7 @@ export default function LocationInfoCard({
   destZipCode,
   destLatitude,
   destLongitude,
+  deliveryNoteUri,
   multiPickupDrop,
   setMultiPickupDrop,
   extraStops,
@@ -153,6 +155,8 @@ export default function LocationInfoCard({
     picPhone: picBongkarTelepon,
     timeLabel: "ETA",
     timeValue: fmtDate(tglBongkar),
+    delivery_note_uri: deliveryNoteUri,
+
   };
 
   return (

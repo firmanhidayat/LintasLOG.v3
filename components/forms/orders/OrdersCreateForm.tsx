@@ -590,6 +590,7 @@ function prefillFromInitial(
       destZipCode: r.dest_zip ?? "",
       destLatitude: r.dest_latitude ?? "",
       destLongitude: r.dest_longitude ?? "",
+      delivery_note_uri: r.delivery_note_uri ?? "",
     })
   );
 
@@ -2119,6 +2120,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                 destZipCode={destZipCode}
                 destLatitude={destLatitude}
                 destLongitude={destLongitude}
+                deliveryNoteUri=""
                 multiPickupDrop={multiPickupDrop}
                 setMultiPickupDrop={setMultiPickupDrop}
                 extraStops={extraStops}

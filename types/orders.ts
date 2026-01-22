@@ -283,6 +283,8 @@ export type OrdersCreateFormProps = {
       dest_zip: string;
       dest_latitude: string;
       dest_longitude: string;
+      delivery_note_uri?: string;
+      
 
       etd_date?: string;
       eta_date?: string;

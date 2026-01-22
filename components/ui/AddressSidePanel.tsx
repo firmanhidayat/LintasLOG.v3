@@ -1,4 +1,34 @@
+import type { ReactNode } from "react";
 import { AddressInfo } from "@/types/addressinfo";
+
+
+type AddressSidePanelInfo = AddressInfo & {
+  delivery_note_uri?: string | null;
+  deliveryNoteUri?: string | null;
+  postCode?: string | null; // backward compat
+};
+
+function readTrimmedString(v: unknown): string | null {
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+function ensureOdooDownloadUri(uri: string): string {
+  if (/([?&])download=/.test(uri)) return uri;
+  if (/\/web\/(content|binary)\//.test(uri)) {
+    return `${uri}${uri.includes("?") ? "&" : "?"}download=true`;
+  }
+  return uri;
+}
+
+function guessFileName(uri: string): string | null {
+  const m = uri.match(/[?&]filename=([^&]+)/i);
+  if (m?.[1]) {
+    try { return decodeURIComponent(m[1]); } catch { return m[1]; }
+  }
+  const clean = uri.split("?")[0] ?? "";
+  const last = clean.split("/").filter(Boolean).pop();
+  return last && !/^\d+$/.test(last) ? last : null;
+}
 
 export function AddressSidePanel({
   title,
@@ -7,7 +37,8 @@ export function AddressSidePanel({
 }: {
   title: string;
   labelPrefix: "Origin" | "Destination";
-  info?: AddressInfo | null;
+  // info?: AddressInfo | null;
+  info?: AddressSidePanelInfo | null;
 }) {
   const isOrigin = labelPrefix === "Origin";
 
@@ -36,7 +67,8 @@ export function AddressSidePanel({
     emphasize,
   }: {
     label: string;
-    children: React.ReactNode;
+    // children: React.ReactNode;
+    children: ReactNode;
     emphasize?: boolean;
   }) => (
     <div className="grid grid-cols-[8.5rem_1fr] items-start gap-x-3 gap-y-1 rounded-lg bg-white/60 p-2 hover:bg-white/80">
@@ -58,6 +90,13 @@ export function AddressSidePanel({
       </dd>
     </div>
   );
+
+  const postcode = readTrimmedString(info?.postcode) ?? readTrimmedString(info?.postCode);
+  const deliveryNoteRaw =
+    readTrimmedString(info?.delivery_note_uri) ?? readTrimmedString(info?.deliveryNoteUri);
+  const deliveryNoteUri = deliveryNoteRaw ? ensureOdooDownloadUri(deliveryNoteRaw) : null;
+  const deliveryNoteName = deliveryNoteUri ? guessFileName(deliveryNoteUri) : null;
+
 
   return (
     <section className={["rounded-xl border p-4", tone.wrap].join(" ")}>
@@ -102,9 +141,9 @@ export function AddressSidePanel({
               </div>
             ) : null}
 
-            {info?.postcode ? (
+            {postcode ? (
               <div className="text-xs font-semibold text-slate-600">
-                Postal Code: <span className="tabular-nums">{info.postcode}</span>
+                Postal Code: <span className="tabular-nums">{postcode}</span>
               </div>
             ) : null}
 
@@ -117,6 +156,27 @@ export function AddressSidePanel({
               : null}
           </div>
         </Row>
+
+    {deliveryNoteUri ? (
+      <Row label="Delivery Note" emphasize>
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={deliveryNoteUri}
+            className={tone.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            download
+          >
+            Download
+          </a>
+          {deliveryNoteName ? (
+            <span className="max-w-[18rem] truncate text-xs font-medium text-slate-600">
+              {deliveryNoteName}
+            </span>
+          ) : null}
+        </div>
+      </Row>
+    ) : null}
 
         {/* <Row label="Mobile">{info?.mobile ? info.mobile : dash}</Row>
 

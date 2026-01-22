@@ -383,6 +383,7 @@ function prefillFromInitial(
     dest_zip: "",
     dest_latitude: "",
     dest_longitude: "",
+    delivery_note_uri: "",
 
     muatanNama: data.cargo_name ?? "",
     muatanDeskripsi: data.cargo_description ?? "",
@@ -461,6 +462,7 @@ function prefillFromInitial(
   form.dest_zip = main?.dest_zip ?? "";
   form.dest_latitude = main?.dest_latitude ?? main?.dest_latitude ?? "";
   form.dest_longitude = main?.dest_longitude ?? "";
+  form.delivery_note_uri = main?.delivery_note_uri ?? "";
 
   if (!form.lokMuat)
     form.lokMuat = (data.origin_address as AddressItem) ?? null;
@@ -499,9 +501,13 @@ function prefillFromInitial(
       destZipCode: r.dest_zip ?? "",
       destLatitude: r.dest_latitude ?? "",
       destLongitude: r.dest_longitude ?? "",
+      delivery_note_uri: r.delivery_note_uri ?? "",
     })
   );
 
+  console.log("Prefill form:", form);
+  console.log("Prefill extraStops:", form.extraStops);
+  
   const current = data.states?.find((s) => s.is_current);
   form.isReadOnly = current
     ? !["draft", "pending"].includes(current.key)
@@ -572,6 +578,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const [destZipCode, setDestZipCode] = useState<string>("");
   const [destLatitude, setDestLatitude] = useState<string>("");
   const [destLongitude, setDestLongitude] = useState<string>("");
+  const [deliveryNoteUri, setSetDeliveryNoteUri] = useState<string>("");
   const [picMuatNama, setPicMuatNama] = useState<string>("");
   const [picMuatTelepon, setPicMuatTelepon] = useState<string>("");
   const [picBongkarNama, setPicBongkarNama] = useState<string>("");
@@ -604,6 +611,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           destZipCode: "",
           destLatitude: "",
           destLongitude: "",
+          delivery_note_uri: "",
         },
         {
           lokMuat: null,
@@ -628,6 +636,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           destZipCode: "",
           destLatitude: "",
           destLongitude: "",
+          delivery_note_uri: "",
         },
       ] as ExtraStop[]
     ).map((s) => ({ ...s, uid: genUid() }))
@@ -748,6 +757,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setDestZipCode(f.dest_zip);
       setDestLatitude(f.dest_latitude);
       setDestLongitude(f.dest_longitude);
+
+      setSetDeliveryNoteUri(f.delivery_note_uri);
 
       setMuatanNama(f.muatanNama);
       setMuatanDeskripsi(f.muatanDeskripsi);
@@ -1125,6 +1136,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setPicMuatTelepon(f.picMuatTelepon);
     setPicBongkarNama(f.picBongkarNama);
     setPicBongkarTelepon(f.picBongkarTelepon);
+    setSetDeliveryNoteUri(f.delivery_note_uri);
     setMuatanNama(f.muatanNama);
     setMuatanDeskripsi(f.muatanDeskripsi);
     setJenisMuatan(f.cargo_type ?? null);
@@ -1231,6 +1243,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           setDestZipCode(f.dest_zip);
           setDestLatitude(f.dest_latitude);
           setDestLongitude(f.dest_longitude);
+          setSetDeliveryNoteUri(f.delivery_note_uri);
           setMuatanNama(f.muatanNama);
           setMuatanDeskripsi(f.muatanDeskripsi);
           setJenisOrder(f.jenisOrder);
@@ -1588,6 +1601,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                 destZipCode={destZipCode}
                 destLatitude={destLatitude}
                 destLongitude={destLongitude}
+                deliveryNoteUri={deliveryNoteUri}
                 multiPickupDrop={multiPickupDrop}
                 setMultiPickupDrop={setMultiPickupDrop}
                 extraStops={extraStops}
@@ -1596,6 +1610,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                 firstErrorKey={firstErrorKey}
                 firstErrorRef={firstErrorRef}
                 extraRefs={extraRefs}
+
               />
 
               <SpecialServicesCard
