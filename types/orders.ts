@@ -95,8 +95,8 @@ export type RoutePayload = {
   dest_address_id: number;
   dest_pic_name: string;
   dest_pic_phone: string;
-  etd_date: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
-  eta_date: string; // "YYYY-MM-DD HH:mm:ss" (UTC)
+  etd_date: string | null // "YYYY-MM-DD HH:mm:ss" (UTC)
+  eta_date: string | null // "YYYY-MM-DD HH:mm:ss" (UTC)
 };
 
 // Payload utama untuk API create/edit order

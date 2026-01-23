@@ -1,3 +1,5 @@
+import { odooUtcToUser, userLocalToOdooUtc } from "@/lib/datetime";
+
 /** ===== Helpers ===== */
 // export function fmtDate(d?: string) {
 //   if (!d) return "-";
@@ -8,24 +10,45 @@
 //   return `${dd}/${mm}/${yyyy}`;
 // }
 
+// export function fmtDate(d?: string, tz?: string) {
+//   if (!d) return "-";
+//   try {
+//     const dt = new Date(d);
+//     const options: Intl.DateTimeFormatOptions = {
+//       day: "2-digit",
+//       month: "2-digit",
+//       year: "numeric",
+//       hour: "2-digit",
+//       minute: "2-digit",
+//       hour12: false,
+//       timeZone: tz || "Asia/Jakarta", // fallback jika TZ belum ada
+//     };
+//     return new Intl.DateTimeFormat("id-ID", options).format(dt);
+//   } catch (e) {
+//     return "-";
+//   }
+// }
+
 export function fmtDate(d?: string, tz?: string) {
-  if (!d) return "-";
-  try {
-    const dt = new Date(d);
-    const options: Intl.DateTimeFormatOptions = {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      timeZone: tz || "Asia/Jakarta", // fallback jika TZ belum ada
-    };
-    return new Intl.DateTimeFormat("id-ID", options).format(dt);
-  } catch (e) {
-    return "-";
-  }
+  // if (!d) return "-";
+  // try {
+  //   const tglMuatConverted = odooUtcToUser(
+  //     d,
+  //     tz ?? "Asia/Jakarta",
+  //     "DD/MM/YYYY HH:mm"
+  //   );
+  //   return tglMuatConverted;
+  //   // return new Intl.DateTimeFormat("id-ID", options).format(dt);
+  // } catch (e) {
+  //   return "-";
+  // }
+    return odooUtcToUser(
+      d,
+      tz ?? "Asia/Jakarta",
+      "DD/MM/YYYY HH:mm"
+    ) || undefined;
 }
+// odooUtcToUser
 
 // export function fmtPrice(v?: number) {
 //   if (v == null) return "-";

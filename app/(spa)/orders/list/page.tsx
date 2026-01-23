@@ -13,6 +13,7 @@ import { GetStatesInLine } from "@/components/ui/DeliveryState";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { odooUtcToUser, userLocalToOdooUtc } from "@/lib/datetime";
 
 const GET_ORDERS_URL = process.env.NEXT_PUBLIC_TMS_ORDER_FORM_URL!;
 const GET_P_ORDERS_URL = process.env.NEXT_PUBLIC_TMS_P_ORDER_FORM_URL!;
@@ -47,7 +48,8 @@ export default function OrdersListPage() {
       cell: (r) =>
         r.route_ids.length > 0
           ? r.route_ids[0].is_main_route
-            ? fmtDate(r.route_ids[0].etd_date)
+            // ? fmtDate(r.route_ids[0].etd_date)
+            ? odooUtcToUser(r.route_ids[0].etd_date,  "Asia/Jakarta")
             : "-"
           : "-",
     },
@@ -72,7 +74,8 @@ export default function OrdersListPage() {
       cell: (r) =>
         r.route_ids.length > 0
           ? r.route_ids[0].is_main_route
-            ? fmtDate(r.route_ids[0].eta_date)
+            // ? fmtDate(r.route_ids[0].eta_date)
+            ? odooUtcToUser(r.route_ids[0].eta_date,  "Asia/Jakarta")
             : "-"
           : "-",
     },
@@ -149,7 +152,8 @@ export default function OrdersListPage() {
         <div className="truncate">
           {r.route_ids.length > 0
             ? r.route_ids[0].is_main_route
-              ? fmtDate(r.route_ids[0].etd_date)
+              // ? fmtDate(r.route_ids[0].etd_date)
+              ? odooUtcToUser(r.route_ids[0].etd_date,  "Asia/Jakarta")
               : "-"
             : "-"}
         </div>
@@ -179,7 +183,8 @@ export default function OrdersListPage() {
         <div className="truncate">
           {r.route_ids.length > 0
             ? r.route_ids[0].is_main_route
-              ? fmtDate(r.route_ids[0].eta_date)
+              // ? fmtDate(r.route_ids[0].eta_date)
+              ? odooUtcToUser(r.route_ids[0].eta_date,  "Asia/Jakarta")
               : "-"
             : "-"}
         </div>

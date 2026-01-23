@@ -13,7 +13,6 @@ import { goSignIn } from "@/lib/goSignIn";
 import { useI18nReady } from "@/hooks/useI18nReady";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { FieldTextarea } from "@/components/form/FieldTextarea";
 import ChatterPanel from "@/components/chat/ChatterPanel";
 import OrderInfoCard from "@/components/forms/orders/sections/OrderInfoCard";
 import LocationInfoCard from "@/components/forms/orders/sections/LocationInfoCard";
@@ -23,10 +22,11 @@ import CostDetailsCard from "@/components/forms/orders/sections/CostDetailsCard"
 import ShippingDocumentsCard from "@/components/forms/orders/sections/ShippingDocumentsCard";
 import { tzDateToUtcISO } from "@/lib/tz";
 import { useAuth } from "@/components/providers/AuthProvider";
-// import { Megaphone } from "lucide-react";
 import { ClaimItem } from "@/types/claims";
 import { fetchOrderClaims } from "@/services/claimService";
 import { ClaimListModal } from "@/components/claims/ClaimListModal";
+
+import { odooUtcToUser, userLocalToOdooUtc } from "@/lib/datetime";
 
 import type {
   AddressItem,
@@ -415,6 +415,9 @@ function toExistingFileItems(
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>
 ) {
+
+  const tz = "Asia/Jakarta";
+
   let claimCount = 0;
   if ("reviewed_claim_ids_count" in data) {
     const v = (data as { reviewed_claim_ids_count?: unknown })
@@ -426,6 +429,7 @@ function prefillFromInitial(
       if (Number.isFinite(n)) claimCount = n;
     }
   }
+  
   const isReviewed = (data.state ?? "").toLowerCase().includes("review");
   const form = {
     states: data.states ? extractApiSteps(data) : ([] as StatusStep[]),
@@ -446,8 +450,11 @@ function prefillFromInitial(
     kotaBongkar:
       data.dest_city ??
       (data.dest_city_id ? ({ id: data.dest_city_id } as CityItem) : null),
-    tglMuat: apiToLocalIsoMinute(data.pickup_date_planne, "08:00"),
-    tglBongkar: apiToLocalIsoMinute(data.drop_off_date_planne, "08:00"),
+    // tglMuat: apiToLocalIsoMinute(data.pickup_date_planne, "08:00"),
+    // tglBongkar: apiToLocalIsoMinute(data.drop_off_date_planne, "08:00"),
+    tglMuat: odooUtcToUser(data.pickup_date_planne,tz),
+    tglBongkar: odooUtcToUser(data.drop_off_date_planne, tz),
+
     lokMuat: null as AddressItem | null,
     lokBongkar: null as AddressItem | null,
 
@@ -524,11 +531,30 @@ function prefillFromInitial(
 
   const main = routes.find((r) => r.is_main_route);
 
+  console.log("tglMuat before converted:", main?.etd_date);
+  console.log("tglBongkar before converted:", main?.eta_date);
+
+  
+
   form.mainRouteId = typeof main?.id === "number" ? main.id : null;
 
+  const tglMuatConverted = odooUtcToUser(
+    main?.etd_date || form.tglMuat,
+    tz,
+    "DD/MM/YYYY HH:mm"
+  );
+  const tglBongkarConverted = odooUtcToUser(
+    main?.eta_date || form.tglBongkar,
+    tz,
+    "DD/MM/YYYY HH:mm"
+  );
+
+  console.log("tglMuatConverted:", tglMuatConverted);
+  console.log("tglBongkarConverted:", tglBongkarConverted);
+
   // Prefill dari route main kalau ada
-  form.tglMuat = apiToLocalIsoMinute(main?.etd_date) || form.tglMuat;
-  form.tglBongkar = apiToLocalIsoMinute(main?.eta_date) || form.tglBongkar;
+  form.tglMuat = tglMuatConverted; // apiToLocalIsoMinute(main?.etd_date) || form.tglMuat;
+  form.tglBongkar = tglBongkarConverted; // apiToLocalIsoMinute(main?.eta_date) || form.tglBongkar;
   form.lokMuat = addrFromRoute(main, "origin");
   form.lokBongkar = addrFromRoute(main, "dest");
   form.picMuatNama = main?.origin_pic_name ?? "";
@@ -573,8 +599,12 @@ function prefillFromInitial(
       originPicPhone: r.origin_pic_phone ?? "",
       destPicName: r.dest_pic_name ?? "",
       destPicPhone: r.dest_pic_phone ?? "",
-      tglETDMuat: apiToLocalIsoMinute(r.etd_date) ?? r.etd_date ?? "",
-      tglETABongkar: apiToLocalIsoMinute(r.eta_date) ?? r.eta_date ?? "",
+      // tglETDMuat: apiToLocalIsoMinute(r.etd_date) ?? r.etd_date ?? "",
+      // tglETABongkar: apiToLocalIsoMinute(r.eta_date) ?? r.eta_date ?? "",
+
+      tglETDMuat: odooUtcToUser(r.etd_date, tz, "DD/MM/YYYY HH:mm"),
+      tglETABongkar: odooUtcToUser(r.eta_date, tz, "DD/MM/YYYY HH:mm"),
+
       originAddressName: r.origin_address_name ?? "",
       originStreet: r.origin_street ?? "",
       originStreet2: r.origin_street2 ?? "",
@@ -890,7 +920,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     mode === "edit" && !initialData ? true : false
   );
 
-  const [chatOpen, setChatOpen] = useState(false);
+  // const [chatOpen, setChatOpen] = useState(false);
   const canShowChat = isReadOnly || respIsSuccess;
 
   const canShowReviewClaims = mode === "edit";
@@ -920,12 +950,12 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   const [reloadSelfAfterDlg, setReloadSelfAfterDlg] = useState(false);
 
-  function openSuccessDialog(message?: string) {
-    setDlgKind("success");
-    setDlgTitle(t("common.saved") ?? "Berhasil disimpan");
-    setDlgMsg(message ?? t("common.saved_desc") ?? "Data berhasil disimpan.");
-    setDlgOpen(true);
-  }
+  // function openSuccessDialog(message?: string) {
+  //   setDlgKind("success");
+  //   setDlgTitle(t("common.saved") ?? "Berhasil disimpan");
+  //   setDlgMsg(message ?? t("common.saved_desc") ?? "Data berhasil disimpan.");
+  //   setDlgOpen(true);
+  // }
 
   function openErrorDialog(err: unknown, title?: string) {
     const msg =
@@ -946,12 +976,12 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     fetchClaims();
   }
 
-  function onHandleReviewClaimButton() {
-    localStorage.removeItem("order-id");
-    localStorage.setItem("order-id", String(effectiveOrderId));
-    console.log(localStorage);
-    router.push("/claims/create/");
-  }
+  // function onHandleReviewClaimButton() {
+  //   localStorage.removeItem("order-id");
+  //   localStorage.setItem("order-id", String(effectiveOrderId));
+  //   console.log(localStorage);
+  //   router.push("/claims/create/");
+  // }
 
   function handleChangeKotaMuat(city: CityItem | null) {
     setKotaMuat(city);
@@ -1010,6 +1040,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
     setKotaMuat(f.kotaMuat);
     setKotaBongkar(f.kotaBongkar);
+
+    console.log(" PROFILE TZ :: ", profile?.tz);
 
     setTglMuat(f.tglMuat);
     setTglBongkar(f.tglBongkar);
@@ -1478,22 +1510,22 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     packingListAttachmentId?: number;
     deliveryNoteAttachmentId?: number;
   }): ApiPayload {
-    const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+    // const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 
-    const toBackendDate = (localStr: string, tz: string): string => {
-      if (!localStr) return "";
-      const utcIso = tzDateToUtcISO(localStr, tz);
-      if (!utcIso) return "";
-      const d = new Date(utcIso);
-      if (Number.isNaN(d.getTime())) return "";
-      const yyyy = d.getUTCFullYear();
-      const MM = pad2(d.getUTCMonth() + 1);
-      const dd = pad2(d.getUTCDate());
-      const HH = pad2(d.getUTCHours());
-      const mm = pad2(d.getUTCMinutes());
-      const ss = pad2(d.getUTCSeconds());
-      return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
-    };
+    // const toBackendDate = (localStr: string, tz: string): string => {
+    //   if (!localStr) return "";
+    //   const utcIso = tzDateToUtcISO(localStr, tz);
+    //   if (!utcIso) return "";
+    //   const d = new Date(utcIso);
+    //   if (Number.isNaN(d.getTime())) return "";
+    //   const yyyy = d.getUTCFullYear();
+    //   const MM = pad2(d.getUTCMonth() + 1);
+    //   const dd = pad2(d.getUTCDate());
+    //   const HH = pad2(d.getUTCHours());
+    //   const mm = pad2(d.getUTCMinutes());
+    //   const ss = pad2(d.getUTCSeconds());
+    //   return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
+    // };
 
     const mainRoute = {
       ...(mode === "edit" && mainRouteId ? { id: mainRouteId } : {}),
@@ -1504,8 +1536,10 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       dest_address_id: Number(lokBongkar?.id ?? 0),
       dest_pic_name: (picBongkarNama ?? "").trim(),
       dest_pic_phone: (picBongkarTelepon ?? "").trim(),
-      etd_date: toBackendDate(tglMuat, profileTimezone),
-      eta_date: toBackendDate(tglBongkar, profileTimezone),
+      etd_date: userLocalToOdooUtc(tglMuat, profileTimezone),
+      eta_date: userLocalToOdooUtc(tglBongkar, profileTimezone),
+      // etd_date: toBackendDate(tglMuat, profileTimezone),
+      // eta_date: toBackendDate(tglBongkar, profileTimezone),
     };
 
     const extraRoutes = multiPickupDrop
@@ -1522,8 +1556,13 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
             dest_address_id: Number(s.lokBongkar?.id ?? 0),
             dest_pic_name: (s.destPicName ?? "").trim(),
             dest_pic_phone: (s.destPicPhone ?? "").trim(),
-            etd_date: toBackendDate(s.tglETDMuat ?? "", profileTimezone),
-            eta_date: toBackendDate(s.tglETABongkar ?? "", profileTimezone),
+            // etd_date: toBackendDate(s.tglETDMuat ?? "", profileTimezone),
+            // eta_date: toBackendDate(s.tglETABongkar ?? "", profileTimezone),
+            etd_date: userLocalToOdooUtc(s.tglETDMuat ?? "", profileTimezone),
+            eta_date: userLocalToOdooUtc(
+              s.tglETABongkar ?? "",
+              profileTimezone
+            ),
           }))
       : [];
 
@@ -1945,7 +1984,9 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       return;
     }
 
-    const payload = chattersUrl ? { body: chatMsg.trim() } : { message: chatMsg.trim() };
+    const payload = chattersUrl
+      ? { body: chatMsg.trim() }
+      : { message: chatMsg.trim() };
 
     try {
       setChatSending(true);
@@ -1981,7 +2022,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     }
   }
 
-/* ========================================================================== */
+  /* ========================================================================== */
 
   if (!i18nReady || loadingDetail) {
     return (
@@ -2280,10 +2321,9 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
             {/* <div className="flex items-center justify-start gap-3 pt-3"></div> */}
           </div>
-          
         </CardBody>
       </Card>
-      
+
       <Card>
         <CardBody>
           {canShowChat && (
