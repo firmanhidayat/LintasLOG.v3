@@ -565,6 +565,7 @@ export default function AddressForm({
   }
 
   async function doSubmit(payload: AddressPayload) {
+    console.log("[AddressForm] submit payload:", payload);
     const isUpdate = mode === "edit" && addressId != null;
     const url = isUpdate
       ? `${ADDRESS_POST_URL}/${addressId}`
@@ -612,14 +613,14 @@ export default function AddressForm({
     const payload: AddressPayload = {
       name: name.trim(),
       street: street.trim(),
-      street2: street2.trim() || undefined,
+      street2: street2.trim() || "",
       district_id: (district?.id as number) ?? 0,
-      zip: zip.trim() || undefined,
-      email: email.trim() || undefined,
-      mobile: mobile.trim() || undefined,
-      latitude: typeof lat === "number" ? lat : undefined,
-      longitude: typeof lng === "number" ? lng : undefined,
-      map_description: mapDesc,
+      zip: zip.trim() || "",
+      email: email.trim() || "",
+      mobile: mobile.trim() || "",
+      latitude: typeof lat === "number" ? lat : 0,
+      longitude: typeof lng === "number" ? lng : 0,
+      map_description: mapDesc || "",
       type: type,
     };
 
@@ -641,7 +642,10 @@ export default function AddressForm({
   }
 
   function handleDiscard() {
+    if(type === "delivery")
     router.push("/orders/addresses/list");
+    else
+    router.push("/fleetndriver/pool/list");
   }
 
   if (!i18nReady) {
