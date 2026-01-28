@@ -30,8 +30,9 @@
     "fleetndriver": {
       "title": "Fleet & Driver",
       "list": "Fleet & Driver List",
-      "fleet": "Fleet",
-      "driver": "Driver"
+      "fleet": "Kendaraan",
+      "driver": "Pengemudi",
+      "pool": "Alamat Pool"
     },
     "docs": "Dokumentasi & Tutorial"
   }

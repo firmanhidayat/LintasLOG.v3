@@ -1,6 +1,7 @@
 {
     "addresses": {
         "create": "Tambah Alamat Baru",
+        "poolcreate": "Tambah Alamat Pool Baru",
         "title": "Alamat",
         "search": {
             "placeholder": "cari..."

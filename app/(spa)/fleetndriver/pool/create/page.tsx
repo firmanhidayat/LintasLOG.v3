@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import AddressForm from "@/forms/AddressesForm";
 import { useI18nReady } from "@/hooks/useI18nReady";
-// import { t } from "@/lib/i18n";
 
 export default function CreateAddressesPage() {
   const router = useRouter();
@@ -19,15 +18,11 @@ export default function CreateAddressesPage() {
   }
 
   return (
-    // <div className="max-auto" data-lang={activeLang}>
-    //   <h1 className="mb-4 text-xl font-semibold">
-    //     {t("addr.page.createTitle")}
-    //   </h1>
     <AddressForm
-      type="delivery"
+      type="other"
       mode="create"
       onSuccess={() => {
-        router.push("/orders/addresses/list");
+        router.push("/fleetndriver/pool/list");
       }}
     />
     // </div>

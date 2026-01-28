@@ -90,6 +90,7 @@ export type AddressFormProps = {
   }>;
   onSuccess?: (data: unknown) => void;
   className?: string;
+  type: string; // jenis alamat, misal "delivery" atau "other"
 };
 
 type AddressPayload = {
@@ -141,6 +142,7 @@ export default function AddressForm({
   initialData,
   onSuccess,
   className,
+  type,
 }: AddressFormProps) {
   const { ready: i18nReady } = useI18nReady();
   const router = useRouter();
@@ -618,7 +620,7 @@ export default function AddressForm({
       latitude: typeof lat === "number" ? lat : undefined,
       longitude: typeof lng === "number" ? lng : undefined,
       map_description: mapDesc,
-      type: "delivery",
+      type: type,
     };
 
     try {

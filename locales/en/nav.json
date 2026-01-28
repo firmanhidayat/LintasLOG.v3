@@ -31,7 +31,8 @@
       "title": "Fleet & Driver",
       "list": "Fleet & Driver List",
       "fleet": "Fleet",
-      "driver": "Driver"
+      "driver": "Driver",
+      "pool": "Pool Address"
     },
     "docs": "Docs & Tutorials"
   }

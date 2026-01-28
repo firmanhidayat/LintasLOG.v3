@@ -115,7 +115,7 @@ export default function AddressDetailsPage() {
         </div>
       ) : (
         <AddressForm
-        type="delivery"
+          type="other"
           mode="edit"
           {...(addressId ? { addressId } : {})}
           initialData={initial}

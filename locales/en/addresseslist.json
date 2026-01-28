@@ -1,6 +1,7 @@
 {
     "addresses": {
         "create": "Create New Address",
+        "poolcreate": "Create New Pool Address",
         "title": "Addresses",
         "search": {
             "placeholder": "search…"

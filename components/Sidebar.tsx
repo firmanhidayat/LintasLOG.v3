@@ -22,6 +22,7 @@ import {
   IconTruck,
   IconFleet,
   IconDriver,
+  IconPoolAddresses,
 } from "./icons/Icon";
 import { TmsUserType } from "@/types/tms-profile";
 import verifiedBadge from "@/images/verified.svg";
@@ -378,6 +379,17 @@ const SidebarContent = memo(function SidebarContent() {
                 href: "/fleetndriver/driver/list",
                 icon: IconDriver,
               },
+              {
+                label: t("nav.fleetndriver.pool"),
+                href: "/fleetndriver/pool/list",
+                icon: IconDriver,
+              },
+              // ,
+              // {
+              //   label: t("nav.fleetndriver.pool"),
+              //   href: "/fleetndriver/pool/list",
+              //   icon: IconPoolAddresses,
+              // },
             ]}
             open={openMap.fleetndriver}
             onToggle={toggle("fleetndriver")}

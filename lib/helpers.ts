@@ -1,4 +1,4 @@
-import { odooUtcToUser, userLocalToOdooUtc } from "@/lib/datetime";
+import { odooUtcToUser, formatDatetimeLocalValue } from "@/lib/datetime";
 
 /** ===== Helpers ===== */
 // export function fmtDate(d?: string) {
@@ -29,24 +29,40 @@ import { odooUtcToUser, userLocalToOdooUtc } from "@/lib/datetime";
 //   }
 // }
 
-export function fmtDate(d?: string, tz?: string) {
-  // if (!d) return "-";
-  // try {
-  //   const tglMuatConverted = odooUtcToUser(
+export function fmtDate(value?: string | null, tz?: string) {
+  // // if (!d) return "-";
+  // // try {
+  // //   const tglMuatConverted = odooUtcToUser(
+  // //     d,
+  // //     tz ?? "Asia/Jakarta",
+  // //     "DD/MM/YYYY HH:mm"
+  // //   );
+  // //   return tglMuatConverted;
+  // //   // return new Intl.DateTimeFormat("id-ID", options).format(dt);
+  // // } catch (e) {
+  // //   return "-";
+  // // }
+  //   return odooUtcToUser(
   //     d,
   //     tz ?? "Asia/Jakarta",
   //     "DD/MM/YYYY HH:mm"
-  //   );
-  //   return tglMuatConverted;
-  //   // return new Intl.DateTimeFormat("id-ID", options).format(dt);
-  // } catch (e) {
-  //   return "-";
-  // }
-    return odooUtcToUser(
-      d,
-      tz ?? "Asia/Jakarta",
-      "DD/MM/YYYY HH:mm"
-    ) || undefined;
+  //   ) || undefined;
+
+  const raw = String(value ?? "").trim();
+  if (!raw) return "-";
+
+  // if already formatted by UI (defensive)
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(raw) || /^\d{2}-\d{2}-\d{4}/.test(raw)) {
+    return raw;
+  }
+
+  // <input type="datetime-local"> value
+  if (raw.includes("T")) {
+    return formatDatetimeLocalValue(raw, "DD/MM/YYYY HH:mm");
+  }
+
+  // Odoo UTC string (YYYY-MM-DD HH:mm:ss) -> user tz
+  return odooUtcToUser(raw, tz ?? "Asia/Jakarta", "DD/MM/YYYY HH:mm");
 }
 // odooUtcToUser
 
