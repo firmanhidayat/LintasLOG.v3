@@ -119,7 +119,7 @@ export default function AddressDetailsPage() {
           mode="edit"
           {...(addressId ? { addressId } : {})}
           initialData={initial}
-          onSuccess={() => router.push("/orders/addresses/list")}
+          onSuccess={() => router.push("/fleetndriver/pool/list")}
         />
       )}
     </div>

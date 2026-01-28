@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export default function AddressesPage() {
   const router = useRouter();
   useEffect(() => {
-    router.replace("/order/addresses/list");
+    router.replace("/fleetndriver/pool/list");
   }, [router]);
   return null; // tidak render apa-apa
 }

@@ -129,7 +129,7 @@ export default function AddressesListPage() {
         enableDetailsAction={true}
         enableDeleteAction={true}
         onEditAction={(id, row, index) => {
-          const ed_url = `/orders/addresses/details?id=${encodeURIComponent(
+          const ed_url = `/fleetndriver/pool/details?id=${encodeURIComponent(
             String(id)
           )}`;
           router.push(ed_url);
@@ -171,7 +171,7 @@ export default function AddressesListPage() {
         columnVisibilityStorageKey="addresses"
         postFetchTransform={(list) => list}
         rowNavigateTo={(id) => ({
-          pathname: "orders/addresses/details",
+          pathname: "fleetndriver/pool/details",
           query: { id },
         })}
       />
