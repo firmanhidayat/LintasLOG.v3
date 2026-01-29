@@ -31,8 +31,12 @@ type Props = {
   cargoCBM: number;
   setCargoCBM: (v: number) => void;
 
-  jumlahMuatan: number;
-  setJumlahMuatan: (v: number) => void;
+  // jumlahMuatan: number;
+  // setJumlahMuatan: (v: number) => void;
+
+
+  cargoQTY: number;
+  setCargoQTY: (v: number) => void;
 
   errors: Record<string, string>;
   firstErrorKey?: string;
@@ -83,8 +87,10 @@ export default function CargoInfoCard({
   setJenisMuatan,
   cargoCBM,
   setCargoCBM,
-  setJumlahMuatan,
-  jumlahMuatan,
+  // setJumlahMuatan,
+  // jumlahMuatan,
+  cargoQTY,
+  setCargoQTY,
 
   errors,
   firstErrorKey,
@@ -100,7 +106,7 @@ export default function CargoInfoCard({
     format2comma(cargoCBM)
   );
   const [jumlahMuatanText, setJumlahMuatanText] = useState<string>(() =>
-    format2comma(jumlahMuatan)
+    format2comma(cargoQTY)
   );
 
   // Track fokus supaya tidak "menimpa" input saat user sedang mengetik
@@ -112,8 +118,8 @@ export default function CargoInfoCard({
     if (!cargoCBMFocused) setCargoCBMText(format2comma(cargoCBM));
   }, [cargoCBM, cargoCBMFocused]);
   useEffect(() => {
-    if (!jumlahFocused) setJumlahMuatanText(format2comma(jumlahMuatan));
-  }, [jumlahMuatan, jumlahFocused]);
+    if (!jumlahFocused) setJumlahMuatanText(format2comma(cargoQTY));
+  }, [cargoQTY, jumlahFocused]);
 
   // ===== Cargo CBM handlers =====
   const onChangeCargoCBM = (raw: string) => {
@@ -146,7 +152,8 @@ export default function CargoInfoCard({
       setJumlahMuatanText("");
       return;
     }
-    setJumlahMuatan(Number(n.toFixed(2)));
+    // setJumlahMuatan(Number(n.toFixed(2)));
+    setCargoQTY(Number(n.toFixed(2)));
     setJumlahMuatanText(format2comma(n));
   };
 
@@ -287,8 +294,8 @@ export default function CargoInfoCard({
                 <Field.Root
                   value={jumlahMuatanText}
                   onChange={onChangeJumlah}
-                  error={errors.jumlahMuatan}
-                  touched={Boolean(errors.jumlahMuatan)}
+                  error={errors.cargoQTY}
+                  touched={Boolean(errors.cargoQTY)}
                   className="flex-auto"
                 >
                   <Field.Label>Jumlah Muatan</Field.Label>

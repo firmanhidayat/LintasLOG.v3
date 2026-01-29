@@ -876,8 +876,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       "tglBongkar",
       "jenisMuatan",
       "cargoCBM",
-      // "cargoQTY",
-      "jumlahMuatan",
+      "cargoQTY",
+      // "jumlahMuatan",
       "lokMuat",
       "lokBongkar",
     ] as const;
@@ -2185,8 +2185,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                 setMuatanDeskripsi={setMuatanDeskripsi}
                 jenisMuatan={jenisMuatan}
                 setJenisMuatan={setJenisMuatan}
-                jumlahMuatan={cargoQTY ?? 0}
-                setJumlahMuatan={setCargoQTY}
+                cargoQTY={cargoQTY ?? 0}
+                setCargoQTY={setCargoQTY}
                 cargoCBM={cargoCBM ?? 0}
                 setCargoCBM={setCargoCBM}
                 errors={errors}
