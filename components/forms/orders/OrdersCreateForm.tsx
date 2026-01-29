@@ -876,7 +876,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       "tglBongkar",
       "jenisMuatan",
       "cargoCBM",
-      "cargoQTY",
+      // "cargoQTY",
+      "jumlahMuatan",
       "lokMuat",
       "lokBongkar",
     ] as const;
