@@ -253,7 +253,7 @@ export default function OrderInfoCard({
             touched={Boolean(errors.namaPenerima)}
             value={namaPenerima || ""}
             onChange={setNamaPenerima}
-            required={true}
+            // required={true}
           >
             <Field.Label>{t("orders.nama_penerima")}</Field.Label>
             <Field.Control>
