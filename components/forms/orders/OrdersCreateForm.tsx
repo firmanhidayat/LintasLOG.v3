@@ -1512,6 +1512,9 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     //   return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
     // };
 
+    console.log("[buildApiPayload] :  tglMuat ",tglMuat)
+    console.log("[buildApiPayload] : tglBongkar ",tglBongkar)
+
     const mainRoute = {
       ...(mode === "edit" && mainRouteId ? { id: mainRouteId } : {}),
       is_main_route: true,
@@ -1771,6 +1774,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   function confirmAndSubmit() {
     const eobj = validate();
+    console.log("confirmAndSubmit, validation errors:", eobj);
     if (Object.keys(eobj).length > 0) {
       setConfirmOpen(false);
       return;
@@ -1781,6 +1785,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const eobj = validate();
+    console.log("handleSubmit, validation errors:", eobj);
     if (Object.keys(eobj).length > 0) {
       requestAnimationFrame(() => {
         if (firstErrorRef.current) {

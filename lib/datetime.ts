@@ -98,14 +98,54 @@ export function odooUtcToDatetimeLocalValue(
   const tzSpec = parseTzSpec(userTz);
   return toUserZone(dUtc, tzSpec).format("YYYY-MM-DDTHH:mm");
 }
+// function parseLocalInUserTz(raw: string, userTz: string): dayjs.Dayjs | null {
+//   // Interpret raw as a datetime *in userTz* (NOT in browser timezone).
+//   for (const fmt of INPUT_FORMATS) {
+//     const d = dayjs.tz(raw, fmt, userTz);
+//     if (d.isValid()) return d;
+//   }
+//   const fb = dayjs.tz(raw, userTz);
+//   return fb.isValid() ? fb : null;
+// }
+
 function parseLocalInUserTz(raw: string, userTz: string): dayjs.Dayjs | null {
   // Interpret raw as a datetime *in userTz* (NOT in browser timezone).
-  for (const fmt of INPUT_FORMATS) {
-    const d = dayjs.tz(raw, fmt, userTz);
-    if (d.isValid()) return d;
+  // dayjs.tz() can throw RangeError ("Invalid time value") when format doesn't match input,
+  // so we try likely formats first + wrap tz parsing in try/catch.
+  const candidates: string[] = [];
+
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(raw)) {
+    candidates.push("YYYY-MM-DDTHH:mm:ss");
+  } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw)) {
+    candidates.push("YYYY-MM-DDTHH:mm");
+  } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(raw)) {
+    candidates.push("YYYY-MM-DD HH:mm:ss");
+  } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(raw)) {
+    candidates.push("YYYY-MM-DD HH:mm");
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    candidates.push("YYYY-MM-DD");
   }
-  const fb = dayjs.tz(raw, userTz);
-  return fb.isValid() ? fb : null;
+
+  // fallback formats (dedupe)
+  for (const f of INPUT_FORMATS) {
+    if (!candidates.includes(f)) candidates.push(f);
+  }
+
+  for (const fmt of candidates) {
+    try {
+      const d = dayjs.tz(raw, fmt, userTz);
+      if (d.isValid()) return d;
+    } catch {
+      // ignore and continue
+    }
+  }
+
+  try {
+    const fb = dayjs.tz(raw, userTz);
+    return fb.isValid() ? fb : null;
+  } catch {
+    return null;
+  }
 }
 
 export function formatDatetimeLocalValue(
