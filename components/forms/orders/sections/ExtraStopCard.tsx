@@ -123,6 +123,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             title="Origin Address"
             labelPrefix="Origin"
             info={origin}
+            
           />
           <AddressSidePanel
             title="Destination Address"

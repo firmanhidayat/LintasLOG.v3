@@ -39,21 +39,21 @@ export default function OrdersListPage() {
       mandatory: true,
       cell: (r) => <div className="font-medium text-gray-900">{r.name}</div>,
     },
-    {
-      id: "pickup_date",
-      label: t("orders.columns.pickupDate") || "Tanggal Pickup",
-      sortable: true,
-      sortValue: (r) => r.pickup_date_planne ?? "",
-      className: "w-[60px]",
-      defaultVisible: true,
-      cell: (r) =>
-        r.route_ids.length > 0
-          ? r.route_ids[0].is_main_route
-            // ? fmtDate(r.route_ids[0].etd_date)
-            ? fmtDate(r.route_ids[0].etd_date, tz)
-            : "-"
-          : "-",
-    },
+    // {
+    //   id: "pickup_date",
+    //   label: t("orders.columns.pickupDate") || "Tanggal Pickup",
+    //   sortable: true,
+    //   sortValue: (r) => r.pickup_date_planne ?? "",
+    //   className: "w-[60px]",
+    //   defaultVisible: true,
+    //   cell: (r) =>
+    //     r.route_ids.length > 0
+    //       ? r.route_ids[0].is_main_route
+    //         // ? fmtDate(r.route_ids[0].etd_date)
+    //         ? fmtDate(r.route_ids[0].etd_date, tz)
+    //         : "-"
+    //       : "-",
+    // },
     {
       id: "pickup_to",
       label: t("orders.columns.pickupTo") || "Tujuan Pickup",
@@ -65,21 +65,21 @@ export default function OrdersListPage() {
         <span className="text-gray-700">{r.origin_city?.name ?? "-"}</span>
       ),
     },
-    {
-      id: "drop_date",
-      label: t("orders.columns.dropDate") || "Tanggal Drop",
-      sortable: true,
-      sortValue: (r) => r.drop_off_date_planne ?? "",
-      className: "w-[60px]",
-      defaultVisible: true,
-      cell: (r) =>
-        r.route_ids.length > 0
-          ? r.route_ids[0].is_main_route
-            // ? fmtDate(r.route_ids[0].eta_date)
-            ? fmtDate(r.route_ids[0].eta_date, tz)
-            : "-"
-          : "-",
-    },
+    // {
+    //   id: "drop_date",
+    //   label: t("orders.columns.dropDate") || "Tanggal Drop",
+    //   sortable: true,
+    //   sortValue: (r) => r.drop_off_date_planne ?? "",
+    //   className: "w-[60px]",
+    //   defaultVisible: true,
+    //   cell: (r) =>
+    //     r.route_ids.length > 0
+    //       ? r.route_ids[0].is_main_route
+    //         // ? fmtDate(r.route_ids[0].eta_date)
+    //         ? fmtDate(r.route_ids[0].eta_date, tz)
+    //         : "-"
+    //       : "-",
+    // },
     {
       id: "drop_to",
       label: t("orders.columns.dropTo") || "Tujuan Drop",
@@ -143,24 +143,24 @@ export default function OrdersListPage() {
       ),
       mandatory: true,
     },
-    {
-      id: "pickup_date",
-      label: t("orders.columns.pickupDate") || "Tanggal Pickup",
-      sortable: true,
-      sortValue: (r) => r.pickup_date_planne ?? "",
-      className: "min-w-[100px] max-w-[120px]",
-      cell: (r) => (
-        <div className="truncate">
-          {r.route_ids.length > 0
-            ? r.route_ids[0].is_main_route
-              // ? fmtDate(r.route_ids[0].etd_date)
-              ? fmtDate(r.route_ids[0].etd_date, tz)
-              : "-"
-            : "-"}
-        </div>
-      ),
-      defaultVisible: true,
-    },
+    // {
+    //   id: "pickup_date",
+    //   label: t("orders.columns.pickupDate") || "Tanggal Pickup",
+    //   sortable: true,
+    //   sortValue: (r) => r.pickup_date_planne ?? "",
+    //   className: "min-w-[100px] max-w-[120px]",
+    //   cell: (r) => (
+    //     <div className="truncate">
+    //       {r.route_ids.length > 0
+    //         ? r.route_ids[0].is_main_route
+    //           // ? fmtDate(r.route_ids[0].etd_date)
+    //           ? fmtDate(r.route_ids[0].etd_date, tz)
+    //           : "-"
+    //         : "-"}
+    //     </div>
+    //   ),
+    //   defaultVisible: true,
+    // },
     {
       id: "pickup_to",
       label: t("orders.columns.pickupTo") || "Tujuan Pickup",
@@ -174,24 +174,24 @@ export default function OrdersListPage() {
       ),
       defaultVisible: true,
     },
-    {
-      id: "drop_date",
-      label: t("orders.columns.dropDate") || "Tanggal Drop",
-      sortable: true,
-      sortValue: (r) => r.drop_off_date_planne ?? "",
-      className: "min-w-[100px] max-w-[120px]",
-      cell: (r) => (
-        <div className="truncate">
-          {r.route_ids.length > 0
-            ? r.route_ids[0].is_main_route
-              // ? fmtDate(r.route_ids[0].eta_date)
-              ? fmtDate(r.route_ids[0].eta_date, tz)
-              : "-"
-            : "-"}
-        </div>
-      ),
-      defaultVisible: true,
-    },
+    // {
+    //   id: "drop_date",
+    //   label: t("orders.columns.dropDate") || "Tanggal Drop",
+    //   sortable: true,
+    //   sortValue: (r) => r.drop_off_date_planne ?? "",
+    //   className: "min-w-[100px] max-w-[120px]",
+    //   cell: (r) => (
+    //     <div className="truncate">
+    //       {r.route_ids.length > 0
+    //         ? r.route_ids[0].is_main_route
+    //           // ? fmtDate(r.route_ids[0].eta_date)
+    //           ? fmtDate(r.route_ids[0].eta_date, tz)
+    //           : "-"
+    //         : "-"}
+    //     </div>
+    //   ),
+    //   defaultVisible: true,
+    // },
     {
       id: "drop_to",
       label: t("orders.columns.dropTo") || "Tujuan Drop",

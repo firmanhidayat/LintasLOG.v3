@@ -9,5 +9,13 @@ const nextConfig: NextConfig = {
   // assetPrefix: "/lini_translog/static/frontend",
   assetPrefix: "/tms",
   trailingSlash: true,
+  // async rewrites() {
+  //   return [
+  //     {
+  //       source: "/api-tms/:path*",
+  //       destination: "https://odoodev.linitekno.com/api-tms/:path*",
+  //     },
+  //   ];
+  // },
 };
 export default nextConfig;

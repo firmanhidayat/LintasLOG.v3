@@ -1,10 +1,43 @@
+import type React from "react";
 import { AddressInfo } from "@/types/addressinfo";
+import IndMultiFileUpload, {
+  type UploadedFileItem as IndUploadedFileItem,
+} from "@/components/form/IndMultiFileUpload";
 
 type AddressSidePanelInfo = AddressInfo & {
   // optional fields (backward compatible)
   delivery_note_uri?: string | null;
   deliveryNoteUri?: string | null;
   postCode?: string | null; // some callers still use postCode (camelCase)
+};
+
+type AttachmentItem = {
+  id: number;
+  name: string;
+  url: string;
+  mimetype?: string | null;
+};
+
+type AttachmentGroupBase = {
+  id: number | string;
+  name: string;
+  attachments?: AttachmentItem[] | null;
+};
+
+type AttachmentUI = {
+  accept?: string;
+  maxFileSizeMB?: number;
+  maxFiles?: number;
+  uploadButtonText?: string;
+  hint?: string;
+};
+
+export type AttachmentControl<TGroup extends AttachmentGroupBase = AttachmentGroupBase> = {
+  value: TGroup | null;
+  onChange: (v: TGroup | null) => void;
+  uploadGroup: (files: File[]) => Promise<TGroup>;
+  deleteFile: (fileId: number) => Promise<TGroup | null | void>;
+  ui?: AttachmentUI;
 };
 
 function readTrimmedString(v: unknown): string | null {
@@ -35,14 +68,33 @@ function guessFileName(uri: string): string | null {
   return last && !/^\d+$/.test(last) ? last : null;
 }
 
-export function AddressSidePanel({
+function toUploadedItemsFromGroup<TGroup extends AttachmentGroupBase>(
+  group: TGroup | null
+): IndUploadedFileItem[] {
+  const items = group?.attachments ?? [];
+  return items
+    .filter((x) => x && typeof x.id === "number" && !!x.url)
+    .map((x) => ({
+      id: x.id,
+      name: x.name,
+      url: x.url,
+      mimetype: x.mimetype ?? undefined,
+      groupId: group?.id,
+    }));
+}
+
+export function AddressSidePanel<TGroup extends AttachmentGroupBase = AttachmentGroupBase>({
   title,
   labelPrefix,
   info,
+  mode,
+  attachment,
 }: {
   title: string;
   labelPrefix: "Origin" | "Destination";
   info?: AddressSidePanelInfo | null;
+  mode?: string;
+  attachment?: AttachmentControl<TGroup>;
 }) {
   const isOrigin = labelPrefix === "Origin";
 
@@ -118,15 +170,17 @@ export function AddressSidePanel({
       : "border-amber-200 text-amber-800 hover:bg-amber-50",
   ].join(" ");
 
-  const fileBadgeClass = [
-    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-white/70",
-    isOrigin ? "border-sky-200" : "border-amber-200",
-  ].join(" ");
+  const showAttachment = mode === "edit" && !!attachment;
+  const uploadedItems = showAttachment
+    ? toUploadedItemsFromGroup<TGroup>(attachment?.value ?? null)
+    : [];
 
-  const fileIconClass = [
-    "h-4 w-4",
-    isOrigin ? "text-sky-700" : "text-amber-700",
-  ].join(" ");
+  const ui = attachment?.ui;
+  const uploadAccept = ui?.accept ?? "application/pdf,image/*";
+  const uploadMaxFileSizeMB = ui?.maxFileSizeMB ?? 10;
+  const uploadMaxFiles = ui?.maxFiles;
+  const uploadHint = ui?.hint ?? "PDF/JPG/PNG. Maks. 10 MB per file.";
+  const uploadButtonText = ui?.uploadButtonText ?? "Upload";
 
   return (
     <section className={["rounded-xl border p-4", tone.wrap].join(" ")}>
@@ -194,42 +248,6 @@ export function AddressSidePanel({
         {deliveryNoteUri ? (
           <Row label="Delivery Note" emphasize>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-3">
-              {/* <div className="flex min-w-0 items-center gap-2">
-                <span className={fileBadgeClass} aria-hidden>
-                  <svg
-                    className={fileIconClass}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7l-5-5Z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M14 2v5h5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-
-                <div className="min-w-0">
-                  <div
-                    className="truncate text-sm font-semibold text-slate-900"
-                    title={deliveryNoteName ?? "Delivery Note"}
-                  >
-                    {deliveryNoteName ?? "Delivery Note"}
-                  </div>
-                  <div className="text-xs font-medium text-slate-600">
-                    File ready
-                  </div>
-                </div>
-              </div> */}
-
               <a
                 href={deliveryNoteUri}
                 className={[downloadBtnClass, "w-full sm:w-auto"].join(" ")}
@@ -262,6 +280,11 @@ export function AddressSidePanel({
                   />
                 </svg>
               </a>
+              {deliveryNoteName ? (
+                <div className="truncate text-xs font-semibold text-slate-700">
+                  {deliveryNoteName}
+                </div>
+              ) : null}
             </div>
           </Row>
         ) : null}
@@ -304,107 +327,54 @@ export function AddressSidePanel({
           </Row>
         ) : null}
       </dl>
+
+      {/* Independent uploader (edit only) */}
+      {showAttachment ? (
+        <div className="mt-4">
+          <IndMultiFileUpload
+            label={`${sideLabel} Attachment`}
+            accept={uploadAccept}
+            maxFileSizeMB={uploadMaxFileSizeMB}
+            maxFiles={uploadMaxFiles}
+            hint={uploadHint}
+            uploadButtonText={uploadButtonText}
+            uploadedItems={uploadedItems}
+            autoUpload
+            clearQueueAfterUpload
+            uploadFiles={async (files) => {
+              if (!attachment) return [];
+              const beforeIds = new Set(
+                (attachment.value?.attachments ?? []).map((a) => String(a.id))
+              );
+              const nextGroup = await attachment.uploadGroup(files);
+              attachment.onChange(nextGroup);
+
+              const after = toUploadedItemsFromGroup<TGroup>(nextGroup);
+              const newOnes = after.filter((x) => !beforeIds.has(String(x.id)));
+              return newOnes;
+            }}
+            onRemoveUploaded={async (item) => {
+              if (!attachment) return;
+
+              const res = await attachment.deleteFile(Number(item.id));
+
+              if (res && typeof res === "object") {
+                attachment.onChange(res as TGroup);
+                return;
+              }
+
+              // fallback: optimistic update jika API delete tidak return group
+              const curr = attachment.value;
+              if (!curr) return;
+              const nextAttachments = (curr.attachments ?? []).filter(
+                (a) => String(a.id) !== String(item.id)
+              );
+              const patched = { ...curr, attachments: nextAttachments } as TGroup;
+              attachment.onChange(patched);
+            }}
+          />
+        </div>
+      ) : null}
     </section>
   );
 }
-
-// import { AddressInfo } from "@/types/addressinfo";
-
-// export function AddressSidePanel({
-//   title,
-//   labelPrefix,
-//   info,
-// }: {
-//   title: string;
-//   labelPrefix: "Origin" | "Destination";
-//   info?: AddressInfo | null;
-// }) {
-//   return (
-//     <div className="space-y-2">
-//       {/* Header: left title, right warehouse name */}
-//       <div className="grid grid-cols-[1fr,auto] items-baseline">
-//         <div className="text-slate-600">{title}</div>
-//         <div className="text-left font-semibold text-primary/100">
-//           {info?.name ?? "-"}
-//         </div>
-//       </div>
-
-//       <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-2 text-sm">
-//         <dt className="text-slate-500">Address</dt>
-//         <dd className="col-start-2 min-w-0 leading-6 text-slate-700">
-//           {info?.street1 && <div>{info.street1}</div>}
-//           {info?.street2 && <div>{info.street2}</div>}
-//           {info?.districtLine && (
-//             <span className="block text-sky-600">{info.districtLine}</span>
-//           )}
-//           {info?.extraLine && (
-//             <span className="block text-sky-600">{info.extraLine}</span>
-//           )}
-//         </dd>
-
-//         <dt className="text-slate-500">{labelPrefix} Mobile</dt>
-//         <dd className="col-start-2 font-medium text-slate-900">
-//           {info?.mobile || "-"}
-//         </dd>
-
-//         <dt className="text-slate-500">{labelPrefix} Email</dt>
-//         <dd className="col-start-2 font-medium">
-//           {info?.email ? (
-//             <a
-//               href={`mailto:${info.email}`}
-//               className="text-sky-600 hover:underline"
-//             >
-//               {info.email}
-//             </a>
-//           ) : (
-//             "-"
-//           )}
-//         </dd>
-
-//         <dt className="text-slate-500">{labelPrefix} Latitude</dt>
-//         <dd className="col-start-2 font-semibold tabular-nums text-slate-900">
-//           {info?.lat ?? "-"}
-//         </dd>
-
-//         <dt className="text-slate-500">{labelPrefix} Longitude</dt>
-//         <dd className="col-start-2 font-semibold tabular-nums text-slate-900">
-//           {info?.lng ?? "-"}
-//         </dd>
-
-//         {/* PIC rows adapt label to Origin/Destination wording */}
-//         {info?.picName !== undefined && (
-//           <>
-//             <dt className="text-slate-500">
-//               {labelPrefix === "Origin"
-//                 ? "Pickup PIC Name"
-//                 : "Drop-off PIC Name"}
-//             </dt>
-//             <dd className="col-start-2 font-medium text-slate-900">
-//               {info.picName || "-"}
-//             </dd>
-//           </>
-//         )}
-//         {info?.picPhone !== undefined && (
-//           <>
-//             <dt className="text-slate-500">
-//               {labelPrefix === "Origin"
-//                 ? "Pickup PIC Phone"
-//                 : "Drop-off PIC Phone"}
-//             </dt>
-//             <dd className="col-start-2 font-semibold text-slate-900">
-//               {info.picPhone || "-"}
-//             </dd>
-//           </>
-//         )}
-//         {info?.timeLabel && (
-//           <>
-//             <dt className="text-slate-500">{info.timeLabel}</dt>
-//             <dd className="col-start-2 font-semibold text-slate-900">
-//               {info.timeValue || "-"}
-//             </dd>
-//           </>
-//         )}
-//       </dl>
-//     </div>
-//   );
-// }

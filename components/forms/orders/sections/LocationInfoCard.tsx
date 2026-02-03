@@ -1,9 +1,11 @@
+"use client";
+
 import React from "react";
 import { t } from "@/lib/i18n";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import DateTimePickerTW from "@/components/form/DateTimePickerTW";
 import AddressAutocomplete from "@/components/forms/orders/AddressAutocomplete";
-import type { AddressItem, CityItem } from "@/types/orders";
+import type { AddressItem, CityItem, OrderAttachmentGroup } from "@/types/orders";
 import MultiPickupDropSection from "../MultiPickupDropSection";
 import type { ExtraStop } from "./ExtraStopCard";
 import { cn } from "@/lib/cn";
@@ -67,6 +69,27 @@ type Props = {
   firstErrorKey?: string;
   firstErrorRef?: DivRef;
 
+    mode: "create" | "edit" | "view";
+  pickupAttachment?: OrderAttachmentGroup | null;
+  setPickupAttachment?: (v: OrderAttachmentGroup | null) => void;
+  uploadPickupAttachmentGroup?: (
+    files: File[]
+  ) => Promise<OrderAttachmentGroup>;
+  deletePickupAttachmentFile?: (fileId: number) => Promise<OrderAttachmentGroup | null>;
+  dropOffAttachment?: OrderAttachmentGroup | null;
+  setDropOffAttachment?: (v: OrderAttachmentGroup | null) => void;
+  uploadDropOffAttachmentGroup?: (
+    files: File[]
+  ) => Promise<OrderAttachmentGroup>;
+  deleteDropOffAttachmentFile?: (fileId: number) => Promise<OrderAttachmentGroup | null>;
+  // setPickupAttachment,
+  // uploadPickupAttachmentGroup,
+  // deletePickupAttachmentFile,
+  // dropOffAttachment,
+  // setDropOffAttachment,
+  // uploadDropOffAttachmentGroup,
+  // deleteDropOffAttachmentFile,
+
   // map by uid —> konsisten dengan MultiPickupDropSection
   extraRefs?: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
 };
@@ -106,6 +129,15 @@ export default function LocationInfoCard({
   destLatitude,
   destLongitude,
   deliveryNoteUri,
+  mode = "create",
+  pickupAttachment,
+  setPickupAttachment,
+  uploadPickupAttachmentGroup,
+  deletePickupAttachmentFile,
+  dropOffAttachment,
+  setDropOffAttachment,
+  uploadDropOffAttachmentGroup,
+  deleteDropOffAttachmentFile,
   multiPickupDrop,
   setMultiPickupDrop,
   extraStops,
@@ -156,8 +188,47 @@ export default function LocationInfoCard({
     timeLabel: "ETA",
     timeValue: fmtDate(tglBongkar),
     delivery_note_uri: deliveryNoteUri,
-
   };
+
+  const showSidePanels = isReadOnly || mode === "edit";
+
+  const pickupAttachmentControl =
+    mode === "edit" &&
+    !!setPickupAttachment &&
+    !!uploadPickupAttachmentGroup &&
+    !!deletePickupAttachmentFile
+      ? {
+          value: pickupAttachment ?? null,
+          onChange: setPickupAttachment,
+          uploadGroup: uploadPickupAttachmentGroup,
+          deleteFile: deletePickupAttachmentFile,
+          ui: {
+            accept: "application/pdf,image/*",
+            maxFileSizeMB: 10,
+            uploadButtonText: "Upload",
+            hint: "PDF/JPG/PNG. Maks. 10 MB per file.",
+          },
+        }
+      : undefined;
+
+  const dropOffAttachmentControl =
+    mode === "edit" &&
+    !!setDropOffAttachment &&
+    !!uploadDropOffAttachmentGroup &&
+    !!deleteDropOffAttachmentFile
+      ? {
+          value: dropOffAttachment ?? null,
+          onChange: setDropOffAttachment,
+          uploadGroup: uploadDropOffAttachmentGroup,
+          deleteFile: deleteDropOffAttachmentFile,
+          ui: {
+            accept: "application/pdf,image/*",
+            maxFileSizeMB: 10,
+            uploadButtonText: "Upload",
+            hint: "PDF/JPG/PNG. Maks. 10 MB per file.",
+          },
+        }
+      : undefined;
 
   return (
     <Card>
@@ -261,19 +332,23 @@ export default function LocationInfoCard({
           </div>
 
           {/* Readonly panels */}
-          <div className={cn("space-y-4", !isReadOnly && "hidden")}>
+          <div className={cn("space-y-4", !showSidePanels && "hidden")}>
             <AddressSidePanel
               title="Origin Address"
               labelPrefix="Origin"
               info={origin}
+              mode={mode}
+              attachment={pickupAttachmentControl}
             />
           </div>
 
-          <div className={cn("space-y-4", !isReadOnly && "hidden")}>
+          <div className={cn("space-y-4", !showSidePanels && "hidden")}>
             <AddressSidePanel
               title="Destination Address"
               labelPrefix="Destination"
               info={destination}
+              mode={mode}
+              attachment={dropOffAttachmentControl}
             />
           </div>
         </div>
