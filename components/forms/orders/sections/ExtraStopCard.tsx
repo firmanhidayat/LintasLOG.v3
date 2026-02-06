@@ -39,6 +39,10 @@ export type ExtraStop = {
   delivery_note_uri: string;
 };
 
+type AddressSidePanelAttachment = React.ComponentProps<
+  typeof AddressSidePanel
+>["attachment"];
+
 type Props = {
   id?: number;
   isReadOnly: boolean;
@@ -54,6 +58,8 @@ type Props = {
   setTglETDMuat: (v: string) => void;
   tglETABongkar: string;
   setTglETABongkar: (v: string) => void;
+  pickupAttachment?: AddressSidePanelAttachment;
+  dropOffAttachment?: AddressSidePanelAttachment;
 };
 
 const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
@@ -72,6 +78,8 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       setTglETDMuat,
       tglETABongkar,
       setTglETABongkar,
+      pickupAttachment,
+      dropOffAttachment,
     },
     ref
   ) => {
@@ -110,12 +118,14 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       delivery_note_uri: stop.delivery_note_uri,
     };
 
+    const showSidePanels =
+      isReadOnly || !!pickupAttachment || !!dropOffAttachment;
+    const sidePanelMode = isReadOnly ? "view" : "edit";
     return (
-      <div>
-        <div
-          ref={ref}
-          className={cn(
-            !isReadOnly && "hidden",
+      <div ref={ref}>
+        <div className={cn(
+            // !isReadOnly && "hidden",
+            !showSidePanels && "hidden",
             "grid grid-cols-1 gap-8 lg:grid-cols-2"
           )}
         >
@@ -123,18 +133,19 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             title="Origin Address"
             labelPrefix="Origin"
             info={origin}
-            
+            mode={sidePanelMode}
+            attachment={pickupAttachment}
           />
           <AddressSidePanel
             title="Destination Address"
             labelPrefix="Destination"
             info={destination}
+            mode={sidePanelMode}
+            attachment={dropOffAttachment}
           />
         </div>
 
-        <div
-          ref={ref}
-          className={cn(
+        <div className={cn(
             "rounded-xl border border-gray-200 p-3 ",
             isReadOnly && "hidden"
           )}
