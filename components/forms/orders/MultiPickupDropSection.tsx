@@ -8,6 +8,7 @@ type ExtraStopWithId = ExtraStop & { uid: string };
 
 type Props = {
   isReadOnly: boolean;
+  userType?: string | "";
   multiPickupDrop: boolean;
   setMultiPickupDrop: (v: boolean) => void;
 
@@ -64,6 +65,7 @@ function blankStop(): ExtraStopWithId {
 
 export default function MultiPickupDropSection({
   isReadOnly,
+  userType,
   multiPickupDrop,
   setMultiPickupDrop,
   extraStops,
@@ -174,6 +176,7 @@ export default function MultiPickupDropSection({
           {extraStops.map((stop, idx) => (
             <div key={stop.uid} className="relative">
               {/* Remove button (only edit mode) */}
+              
               {!isReadOnly && (
                 <div className="absolute right-2 top-2 z-10">
                   <button
@@ -189,6 +192,7 @@ export default function MultiPickupDropSection({
 
               <ExtraStopCard
                 isReadOnly={isReadOnly}
+                userType={userType}
                 ref={(el) => {
                   if (extraRefs?.current)
                     extraRefs.current[stop.uid] = el ?? null;

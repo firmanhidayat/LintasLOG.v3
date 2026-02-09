@@ -1786,6 +1786,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
               <LocationInfoCard
                 mode={mode}
                 isReadOnly={isReadOnly}
+                userType="transporter"
                 tglMuat={tglMuat}
                 setTglMuat={setTglMuat}
                 tglBongkar={tglBongkar}

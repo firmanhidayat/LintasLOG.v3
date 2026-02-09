@@ -5,7 +5,11 @@ import { t } from "@/lib/i18n";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import DateTimePickerTW from "@/components/form/DateTimePickerTW";
 import AddressAutocomplete from "@/components/forms/orders/AddressAutocomplete";
-import type { AddressItem, CityItem, OrderAttachmentGroup } from "@/types/orders";
+import type {
+  AddressItem,
+  CityItem,
+  OrderAttachmentGroup,
+} from "@/types/orders";
 import MultiPickupDropSection from "../MultiPickupDropSection";
 import type { ExtraStop } from "./ExtraStopCard";
 import { cn } from "@/lib/cn";
@@ -22,6 +26,7 @@ type DivRef =
 
 type Props = {
   isReadOnly: boolean;
+  userType?: string | "";
   tglMuat: string;
   setTglMuat: (v: string) => void;
   tglBongkar: string;
@@ -69,19 +74,23 @@ type Props = {
   firstErrorKey?: string;
   firstErrorRef?: DivRef;
 
-    mode: "create" | "edit" | "view";
+  mode: "create" | "edit" | "view";
   pickupAttachment?: OrderAttachmentGroup | null;
   setPickupAttachment?: (v: OrderAttachmentGroup | null) => void;
   uploadPickupAttachmentGroup?: (
     files: File[]
   ) => Promise<OrderAttachmentGroup>;
-  deletePickupAttachmentFile?: (fileId: number) => Promise<OrderAttachmentGroup | null>;
+  deletePickupAttachmentFile?: (
+    fileId: number
+  ) => Promise<OrderAttachmentGroup | null>;
   dropOffAttachment?: OrderAttachmentGroup | null;
   setDropOffAttachment?: (v: OrderAttachmentGroup | null) => void;
   uploadDropOffAttachmentGroup?: (
     files: File[]
   ) => Promise<OrderAttachmentGroup>;
-  deleteDropOffAttachmentFile?: (fileId: number) => Promise<OrderAttachmentGroup | null>;
+  deleteDropOffAttachmentFile?: (
+    fileId: number
+  ) => Promise<OrderAttachmentGroup | null>;
   // setPickupAttachment,
   // uploadPickupAttachmentGroup,
   // deletePickupAttachmentFile,
@@ -96,6 +105,7 @@ type Props = {
 
 export default function LocationInfoCard({
   isReadOnly,
+  userType,
   tglMuat,
   setTglMuat,
   tglBongkar,
@@ -193,10 +203,14 @@ export default function LocationInfoCard({
   };
 
   const showSidePanels = isReadOnly || mode !== "view";
+  const showOnlyTransporter = userType === "transporter" ? true : false;
+
   const panelMode = isReadOnly || mode === "view" ? "view" : "edit";
   const canEditAttachment = panelMode === "edit";
 
-  type PanelAttachment = React.ComponentProps<typeof AddressSidePanel>["attachment"];
+  type PanelAttachment = React.ComponentProps<
+    typeof AddressSidePanel
+  >["attachment"];
   type PanelControl = NonNullable<PanelAttachment>;
   type PanelGroup = PanelControl["value"];
   type PanelGroupNonNull = Exclude<PanelGroup, null | undefined>;
@@ -211,7 +225,9 @@ export default function LocationInfoCard({
           onChange: (v) =>
             setPickupAttachment(v as unknown as OrderAttachmentGroup | null),
           uploadGroup: async (files) =>
-            (await uploadPickupAttachmentGroup(files)) as unknown as PanelGroupNonNull,
+            (await uploadPickupAttachmentGroup(
+              files
+            )) as unknown as PanelGroupNonNull,
           deleteFile: async (fileId) =>
             (await deletePickupAttachmentFile(fileId)) as unknown as PanelGroup,
           ui: {
@@ -234,9 +250,13 @@ export default function LocationInfoCard({
           onChange: (v) =>
             setDropOffAttachment(v as unknown as OrderAttachmentGroup | null),
           uploadGroup: async (files) =>
-            (await uploadDropOffAttachmentGroup(files)) as unknown as PanelGroupNonNull,
+            (await uploadDropOffAttachmentGroup(
+              files
+            )) as unknown as PanelGroupNonNull,
           deleteFile: async (fileId) =>
-            (await deleteDropOffAttachmentFile(fileId)) as unknown as PanelGroup,
+            (await deleteDropOffAttachmentFile(
+              fileId
+            )) as unknown as PanelGroup,
           ui: {
             accept: "application/pdf,image/*",
             maxFileSizeMB: 10,
@@ -256,124 +276,129 @@ export default function LocationInfoCard({
       </CardHeader>
       <CardBody>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Kolom 1 - Editable */}
-          <div className={cn("space-y-4", isReadOnly && "hidden")}>
-            <div ref={refIf("tglMuat")}>
-              <DateTimePickerTW
-                label={t("orders.tgl_muat")}
-                value={tglMuat}
-                onChange={setTglMuat}
-                error={errors.tglMuat}
-                touched={Boolean(errors.tglMuat)}
-                displayFormat="DD-MM-YYYY"
-              />
+          {userType === "shipper" && (
+          <>
+            {/* Kolom 1 - Editable */}
+            <div className={cn("space-y-4", isReadOnly && "hidden")}>
+              <div ref={refIf("tglMuat")}>
+                <DateTimePickerTW
+                  label={t("orders.tgl_muat")}
+                  value={tglMuat}
+                  onChange={setTglMuat}
+                  error={errors.tglMuat}
+                  touched={Boolean(errors.tglMuat)}
+                  displayFormat="DD-MM-YYYY"
+                />
+              </div>
+
+              <div ref={refIf("lokMuat")}>
+                <AddressAutocomplete
+                  label={t("orders.lokasi_muat")}
+                  cityId={kotaMuat?.id ?? null}
+                  value={lokMuat}
+                  onChange={setLokMuat}
+                  disabled={lokasiMuatDisabled}
+                />
+                {errors.lokMuat && (
+                  <div className="mt-1 text-xs text-red-600">
+                    {errors.lokMuat}
+                  </div>
+                )}
+              </div>
+
+              <Field.Root value={picMuatNama} onChange={setPicMuatNama}>
+                <Field.Label>{t("orders.pic_muat_name")}</Field.Label>
+                <Field.Input />
+                <Field.Error />
+              </Field.Root>
+
+              <Field.Root
+                type="tel"
+                value={picMuatTelepon}
+                onChange={setPicMuatTelepon}
+                placeholder={t("placeholders.phone")}
+              >
+                <Field.Label>{t("orders.pic_muat_phone")}</Field.Label>
+                <Field.Input />
+                <Field.Error />
+              </Field.Root>
             </div>
 
-            <div ref={refIf("lokMuat")}>
-              <AddressAutocomplete
-                label={t("orders.lokasi_muat")}
-                cityId={kotaMuat?.id ?? null}
-                value={lokMuat}
-                onChange={setLokMuat}
-                disabled={lokasiMuatDisabled}
-              />
-              {errors.lokMuat && (
-                <div className="mt-1 text-xs text-red-600">
-                  {errors.lokMuat}
-                </div>
-              )}
+            {/* Kolom 2 - Editable */}
+            <div className={cn("space-y-4", isReadOnly && "hidden")}>
+              <div ref={refIf("tglBongkar")}>
+                <DateTimePickerTW
+                  label={t("orders.tgl_bongkar")}
+                  value={tglBongkar}
+                  onChange={setTglBongkar}
+                  error={errors.tglBongkar}
+                  touched={Boolean(errors.tglBongkar)}
+                  displayFormat="DD-MM-YYYY"
+                />
+              </div>
+
+              <div ref={refIf("lokBongkar")}>
+                <AddressAutocomplete
+                  label={t("orders.lokasi_bongkar")}
+                  cityId={kotaBongkar?.id ?? null}
+                  value={lokBongkar}
+                  onChange={setLokBongkar}
+                  disabled={lokasiBongkarDisabled}
+                />
+                {errors.lokBongkar && (
+                  <div className="mt-1 text-xs text-red-600">
+                    {errors.lokBongkar}
+                  </div>
+                )}
+              </div>
+
+              <Field.Root value={picBongkarNama} onChange={setPicBongkarNama}>
+                <Field.Label>{t("orders.pic_bongkar_name")}</Field.Label>
+                <Field.Input />
+                <Field.Error />
+              </Field.Root>
+
+              <Field.Root
+                type="tel"
+                value={picBongkarTelepon}
+                onChange={setPicBongkarTelepon}
+                placeholder={t("placeholders.phone")}
+              >
+                <Field.Label>{t("orders.pic_bongkar_phone")}</Field.Label>
+                <Field.Input />
+                <Field.Error />
+              </Field.Root>
             </div>
+          </>
+          )}{/* Readonly panels */}
+          {showOnlyTransporter === true && (
+            <>
+              <div className={cn("space-y-4", !showSidePanels && "hidden")}>
+                <AddressSidePanel
+                  title="Origin Address"
+                  labelPrefix="Origin"
+                  info={origin}
+                  mode={panelMode}
+                  attachment={pickupAttachmentControl}
+                />
+              </div>
 
-            <Field.Root value={picMuatNama} onChange={setPicMuatNama}>
-              <Field.Label>{t("orders.pic_muat_name")}</Field.Label>
-              <Field.Input />
-              <Field.Error />
-            </Field.Root>
-
-            <Field.Root
-              type="tel"
-              value={picMuatTelepon}
-              onChange={setPicMuatTelepon}
-              placeholder={t("placeholders.phone")}
-            >
-              <Field.Label>{t("orders.pic_muat_phone")}</Field.Label>
-              <Field.Input />
-              <Field.Error />
-            </Field.Root>
-          </div>
-
-          {/* Kolom 2 - Editable */}
-          <div className={cn("space-y-4", isReadOnly && "hidden")}>
-            <div ref={refIf("tglBongkar")}>
-              <DateTimePickerTW
-                label={t("orders.tgl_bongkar")}
-                value={tglBongkar}
-                onChange={setTglBongkar}
-                error={errors.tglBongkar}
-                touched={Boolean(errors.tglBongkar)}
-                displayFormat="DD-MM-YYYY"
-              />
-            </div>
-
-            <div ref={refIf("lokBongkar")}>
-              <AddressAutocomplete
-                label={t("orders.lokasi_bongkar")}
-                cityId={kotaBongkar?.id ?? null}
-                value={lokBongkar}
-                onChange={setLokBongkar}
-                disabled={lokasiBongkarDisabled}
-              />
-              {errors.lokBongkar && (
-                <div className="mt-1 text-xs text-red-600">
-                  {errors.lokBongkar}
-                </div>
-              )}
-            </div>
-
-            <Field.Root value={picBongkarNama} onChange={setPicBongkarNama}>
-              <Field.Label>{t("orders.pic_bongkar_name")}</Field.Label>
-              <Field.Input />
-              <Field.Error />
-            </Field.Root>
-
-            <Field.Root
-              type="tel"
-              value={picBongkarTelepon}
-              onChange={setPicBongkarTelepon}
-              placeholder={t("placeholders.phone")}
-            >
-              <Field.Label>{t("orders.pic_bongkar_phone")}</Field.Label>
-              <Field.Input />
-              <Field.Error />
-            </Field.Root>
-          </div>
-
-          {/* Readonly panels */}
-          <div className={cn("space-y-4", !showSidePanels && "hidden")}>
-            <AddressSidePanel
-              title="Origin Address"
-              labelPrefix="Origin"
-              info={origin}
-              mode={panelMode}
-              attachment={pickupAttachmentControl}
-              
-            />
-            
-          </div>
-
-          <div className={cn("space-y-4", !showSidePanels && "hidden")}>
-            <AddressSidePanel
-              title="Destination Address"
-              labelPrefix="Destination"
-              info={destination}
-              mode={panelMode}
-              attachment={dropOffAttachmentControl}
-            />
-          </div>
+              <div className={cn("space-y-4", !showSidePanels && "hidden")}>
+                <AddressSidePanel
+                  title="Destination Address"
+                  labelPrefix="Destination"
+                  info={destination}
+                  mode={panelMode}
+                  attachment={dropOffAttachmentControl}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* ==== Multi Pickup/Drop (dipisah ke komponen) ==== */}
         <MultiPickupDropSection
+          userType={userType}
           isReadOnly={isReadOnly}
           multiPickupDrop={multiPickupDrop}
           setMultiPickupDrop={setMultiPickupDrop}

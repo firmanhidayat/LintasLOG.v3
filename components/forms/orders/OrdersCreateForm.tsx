@@ -754,6 +754,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   }, [orderId, qsId]);
 
   const { profile } = useAuth();
+  console.log("OrdersCreateForm profile:", profile);
+  console.log("OrdersCreateForm userType:", userType);
 
   const { ready: i18nReady } = useI18nReady();
   const { hasChatImpulse, setHasChatImpulse } = useChatImpulseChannel();
@@ -2221,6 +2223,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
               {/* Info Lokasi */}
               <LocationInfoCard
                 isReadOnly={isReadOnly}
+                userType="shipper"
                 tglMuat={tglMuat}
                 setTglMuat={setTglMuat}
                 tglBongkar={tglBongkar}
