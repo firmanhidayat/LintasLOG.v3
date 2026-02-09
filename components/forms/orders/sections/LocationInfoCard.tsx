@@ -170,6 +170,7 @@ export default function LocationInfoCard({
     picPhone: picMuatTelepon,
     timeLabel: "ETD",
     timeValue: fmtDate(tglMuat),
+    pickup_attachment_id: pickupAttachment?.id ?? null,
   };
 
   const destination = {
@@ -188,6 +189,7 @@ export default function LocationInfoCard({
     timeLabel: "ETA",
     timeValue: fmtDate(tglBongkar),
     delivery_note_uri: deliveryNoteUri,
+    drop_off_attachment_id: dropOffAttachment?.id ?? null,
   };
 
   const showSidePanels = isReadOnly || mode !== "view";
@@ -354,7 +356,9 @@ export default function LocationInfoCard({
               info={origin}
               mode={panelMode}
               attachment={pickupAttachmentControl}
+              
             />
+            
           </div>
 
           <div className={cn("space-y-4", !showSidePanels && "hidden")}>
