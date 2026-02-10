@@ -132,7 +132,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       <div ref={ref}>
         <div
           className={cn(
-            !isReadOnly && "hidden",
+            // !isReadOnly && "hidden",
             // !showSidePanels  && "hidden",
             "grid grid-cols-1 gap-8 lg:grid-cols-2"
           )}
