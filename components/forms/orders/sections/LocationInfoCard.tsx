@@ -74,7 +74,7 @@ type Props = {
   firstErrorKey?: string;
   firstErrorRef?: DivRef;
 
-  mode: "create" | "edit" | "view";
+  mode: "create" | "edit";
   pickupAttachment?: OrderAttachmentGroup | null;
   setPickupAttachment?: (v: OrderAttachmentGroup | null) => void;
   uploadPickupAttachmentGroup?: (
@@ -160,6 +160,12 @@ export default function LocationInfoCard({
   const lokasiMuatDisabled = !kotaMuat;
   const lokasiBongkarDisabled = !kotaBongkar;
 
+  console.log("userType in LocationInfoCard:", userType);
+  console.log("mode in LocationInfoCard:", mode);
+  console.log("isReadOnly in LocationInfoCard:", isReadOnly);
+  console.log("pickupAttachment in LocationInfoCard:", pickupAttachment);
+  console.log("dropOffAttachment in LocationInfoCard:", dropOffAttachment);
+
   const refIf = (k: string) =>
     firstErrorKey === k
       ? (firstErrorRef as React.Ref<HTMLDivElement>)
@@ -202,10 +208,10 @@ export default function LocationInfoCard({
     drop_off_attachment_id: dropOffAttachment?.id ?? null,
   };
 
-  const showSidePanels = isReadOnly || mode !== "view";
+  const showSidePanels = isReadOnly ;//|| mode !== "view";
   const showOnlyTransporter = userType === "transporter" ? true : false;
 
-  const panelMode = isReadOnly || mode === "view" ? "view" : "edit";
+  const panelMode = isReadOnly || mode === "edit" ? "edit" : "create";
   const canEditAttachment = panelMode === "edit";
 
   type PanelAttachment = React.ComponentProps<
@@ -276,10 +282,10 @@ export default function LocationInfoCard({
       </CardHeader>
       <CardBody>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {userType === "shipper" && (
-          <>
+          
             {/* Kolom 1 - Editable */}
-            <div className={cn("space-y-4", isReadOnly && "hidden")}>
+            {/* <div className={cn("space-y-4", isReadOnly && "hidden")}> */}
+            <div className="space-y-4">
               <div ref={refIf("tglMuat")}>
                 <DateTimePickerTW
                   label={t("orders.tgl_muat")}
@@ -325,7 +331,8 @@ export default function LocationInfoCard({
             </div>
 
             {/* Kolom 2 - Editable */}
-            <div className={cn("space-y-4", isReadOnly && "hidden")}>
+            {/* <div className={cn("space-y-4", isReadOnly && "hidden")}> */}
+            <div className="space-y-4">
               <div ref={refIf("tglBongkar")}>
                 <DateTimePickerTW
                   label={t("orders.tgl_bongkar")}
@@ -369,11 +376,11 @@ export default function LocationInfoCard({
                 <Field.Error />
               </Field.Root>
             </div>
-          </>
-          )}{/* Readonly panels */}
-          {showOnlyTransporter === true && (
+          {/* Readonly panels */}
+          {userType === "transporter" && (
             <>
-              <div className={cn("space-y-4", !showSidePanels && "hidden")}>
+              {/* <div className={cn("space-y-4", !showSidePanels && "hidden")}> */}
+              <div className="space-y-4">
                 <AddressSidePanel
                   title="Origin Address"
                   labelPrefix="Origin"
@@ -383,7 +390,8 @@ export default function LocationInfoCard({
                 />
               </div>
 
-              <div className={cn("space-y-4", !showSidePanels && "hidden")}>
+              {/* <div className={cn("space-y-4", !showSidePanels && "hidden")}> */}
+              <div className="space-y-4">
                 <AddressSidePanel
                   title="Destination Address"
                   labelPrefix="Destination"

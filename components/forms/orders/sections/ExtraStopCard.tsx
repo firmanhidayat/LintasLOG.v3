@@ -132,8 +132,8 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       <div ref={ref}>
         <div
           className={cn(
-            // !isReadOnly && "hidden",
-            !showSidePanels && showOnlyTransporter && "hidden",
+            !isReadOnly && "hidden",
+            // !showSidePanels  && "hidden",
             "grid grid-cols-1 gap-8 lg:grid-cols-2"
           )}
         >
@@ -169,86 +169,84 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             </div>
           )}
 
-          {userType === "shipper" && (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {/** Kolom 1 */}
-              <div className="space-y-4">
-                <DateTimePickerTW
-                  label={(t("orders.tgl_muat") ?? "Tgl Muat") + ` (${idx + 1})`}
-                  value={tglETDMuat}
-                  onChange={setTglETDMuat}
-                  displayFormat="DD-MM-YYYY"
-                />
-                <AddressAutocomplete
-                  label={
-                    (t("orders.lokasi_muat") ?? "Lokasi Muat") + ` (${idx + 1})`
-                  }
-                  cityId={cityIdMuat}
-                  value={stop.lokMuat}
-                  onChange={(v) => onChange({ lokMuat: v })}
-                  disabled={!!lokasiMuatDisabled}
-                />
-                <FieldText
-                  label={
-                    (t("orders.pic_muat_name") ?? "PIC Muat - Nama") +
-                    ` (${idx + 1})`
-                  }
-                  value={stop.originPicName}
-                  onChange={(v) => onChange({ originPicName: v })}
-                />
-                <FieldPhone
-                  label={
-                    (t("orders.pic_muat_phone") ?? "PIC Muat - Telepon") +
-                    ` (${idx + 1})`
-                  }
-                  value={stop.originPicPhone}
-                  onChange={(v) => onChange({ originPicPhone: v })}
-                  kind="mobile"
-                  placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
-                />
-              </div>
-
-              {/** Kolom 2 */}
-              <div className="space-y-4">
-                <DateTimePickerTW
-                  label={
-                    (t("orders.tgl_bongkar") ?? "Tgl Bongkar") + ` (${idx + 1})`
-                  }
-                  value={tglETABongkar}
-                  onChange={setTglETABongkar}
-                  displayFormat="DD-MM-YYYY"
-                />
-                <AddressAutocomplete
-                  label={
-                    (t("orders.lokasi_bongkar") ?? "Lokasi Bongkar") +
-                    ` (${idx + 1})`
-                  }
-                  cityId={cityIdBongkar}
-                  value={stop.lokBongkar}
-                  onChange={(v) => onChange({ lokBongkar: v })}
-                  disabled={!!lokasiBongkarDisabled}
-                />
-                <FieldText
-                  label={
-                    (t("orders.pic_bongkar_name") ?? "PIC Bongkar - Nama") +
-                    ` (${idx + 1})`
-                  }
-                  value={stop.destPicName}
-                  onChange={(v) => onChange({ destPicName: v })}
-                />
-                <FieldPhone
-                  label={
-                    (t("orders.pic_bongkar_phone") ?? "PIC Bongkar - Telepon") +
-                    ` (${idx + 1})`
-                  }
-                  value={stop.destPicPhone}
-                  onChange={(v) => onChange({ destPicPhone: v })}
-                  kind="mobile"
-                  placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
-                />
-              </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/** Kolom 1 */}
+            <div className="space-y-4">
+              <DateTimePickerTW
+                label={(t("orders.tgl_muat") ?? "Tgl Muat") + ` (${idx + 1})`}
+                value={tglETDMuat}
+                onChange={setTglETDMuat}
+                displayFormat="DD-MM-YYYY"
+              />
+              <AddressAutocomplete
+                label={
+                  (t("orders.lokasi_muat") ?? "Lokasi Muat") + ` (${idx + 1})`
+                }
+                cityId={cityIdMuat}
+                value={stop.lokMuat}
+                onChange={(v) => onChange({ lokMuat: v })}
+                disabled={!!lokasiMuatDisabled}
+              />
+              <FieldText
+                label={
+                  (t("orders.pic_muat_name") ?? "PIC Muat - Nama") +
+                  ` (${idx + 1})`
+                }
+                value={stop.originPicName}
+                onChange={(v) => onChange({ originPicName: v })}
+              />
+              <FieldPhone
+                label={
+                  (t("orders.pic_muat_phone") ?? "PIC Muat - Telepon") +
+                  ` (${idx + 1})`
+                }
+                value={stop.originPicPhone}
+                onChange={(v) => onChange({ originPicPhone: v })}
+                kind="mobile"
+                placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
+              />
             </div>
-          )}
+
+            {/** Kolom 2 */}
+            <div className="space-y-4">
+              <DateTimePickerTW
+                label={
+                  (t("orders.tgl_bongkar") ?? "Tgl Bongkar") + ` (${idx + 1})`
+                }
+                value={tglETABongkar}
+                onChange={setTglETABongkar}
+                displayFormat="DD-MM-YYYY"
+              />
+              <AddressAutocomplete
+                label={
+                  (t("orders.lokasi_bongkar") ?? "Lokasi Bongkar") +
+                  ` (${idx + 1})`
+                }
+                cityId={cityIdBongkar}
+                value={stop.lokBongkar}
+                onChange={(v) => onChange({ lokBongkar: v })}
+                disabled={!!lokasiBongkarDisabled}
+              />
+              <FieldText
+                label={
+                  (t("orders.pic_bongkar_name") ?? "PIC Bongkar - Nama") +
+                  ` (${idx + 1})`
+                }
+                value={stop.destPicName}
+                onChange={(v) => onChange({ destPicName: v })}
+              />
+              <FieldPhone
+                label={
+                  (t("orders.pic_bongkar_phone") ?? "PIC Bongkar - Telepon") +
+                  ` (${idx + 1})`
+                }
+                value={stop.destPicPhone}
+                onChange={(v) => onChange({ destPicPhone: v })}
+                kind="mobile"
+                placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
+              />
+            </div>
+          </div>
         </div>
       </div>
     );
