@@ -45,6 +45,7 @@ type AddressSidePanelAttachment = React.ComponentProps<
 
 type Props = {
   id?: number;
+  orderId?: number | string;
   userType?: string | "";
   isReadOnly: boolean;
   idx: number;
@@ -66,6 +67,7 @@ type Props = {
 const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
   (
     {
+      orderId,
       isReadOnly,
       idx,
       userType,
@@ -101,6 +103,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       timeLabel: "ETD",
       timeValue: fmtDate(stop.tglETDMuat),
       pickup_attachment_id: pickupAttachment?.value?.id ?? null,
+      drop_off_attachment_id: dropOffAttachment?.value?.id ?? null,
     };
 
     const destination = {
@@ -119,6 +122,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       timeLabel: "ETA",
       timeValue: fmtDate(stop.tglETABongkar),
       delivery_note_uri: stop.delivery_note_uri,
+      pickup_attachment_id: pickupAttachment?.value?.id ?? null,
       drop_off_attachment_id: dropOffAttachment?.value?.id ?? null,
     };
 
@@ -143,6 +147,8 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             info={origin}
             mode={sidePanelMode}
             attachment={pickupAttachment}
+            orderId={orderId}
+            currentRouteId={stop.id ?? undefined}
           />
           <AddressSidePanel
             title="Destination Address"
@@ -150,6 +156,8 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             info={destination}
             mode={sidePanelMode}
             attachment={dropOffAttachment}
+            orderId={orderId}
+            currentRouteId={stop.id ?? undefined}
           />
         </div>
 
@@ -255,3 +263,4 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
 
 ExtraStopCard.displayName = "ExtraStopCard";
 export default ExtraStopCard;
+

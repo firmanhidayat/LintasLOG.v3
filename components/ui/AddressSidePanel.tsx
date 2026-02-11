@@ -8,6 +8,10 @@ type AddressSidePanelInfo = AddressInfo & {
   delivery_note_uri?: string | null;
   deliveryNoteUri?: string | null;
   postCode?: string | null; // some callers still use postCode (camelCase)
+
+  // current route doc-attachment ids (optional)
+  pickup_attachment_id?: number | string | null;
+  drop_off_attachment_id?: number | string | null;
 };
 
 type AttachmentItem = {
@@ -91,20 +95,6 @@ function guessFileName(uri: string): string | null {
   return last && !/^\d+$/.test(last) ? last : null;
 }
 
-// function toUploadedItemsFromGroup<TGroup extends AttachmentGroupBase>(
-//   group: TGroup | null
-// ): IndUploadedFileItem[] {
-//   const items = group?.attachments ?? [];
-//   return items
-//     .filter((x) => x && typeof x.id === "number" && !!x.url)
-//     .map((x) => ({
-//       id: x.id,
-//       name: x.name,
-//       url: resolveUrlMaybe(x.url),
-//       mimetype: x.mimetype ?? undefined,
-//       groupId: group?.id,
-//     }));
-// }
 
 export function AddressSidePanel<
   TGroup extends AttachmentGroupBase = AttachmentGroupBase
@@ -114,19 +104,19 @@ export function AddressSidePanel<
   info,
   mode,
   attachment,
+  orderId,
+  currentRouteId,
 }: {
   title: string;
   labelPrefix: "Origin" | "Destination";
   info?: AddressSidePanelInfo | null;
   mode?: string;
   attachment?: AttachmentControl<TGroup>;
+  orderId?: number | string;
+  currentRouteId?: number | string;
 }) {
   const isOrigin = labelPrefix === "Origin";
-  
-  console.log("AddressSidePanel info", info);
-  console.log("AddressSidePanel attachment", attachment);
 
-  // Tone berbeda agar Origin vs Destination langsung kebaca
   const tone = isOrigin
     ? {
         wrap: "border-sky-200 bg-sky-50/60",
@@ -197,11 +187,9 @@ export function AddressSidePanel<
       : "border-amber-200 text-amber-800 hover:bg-amber-50",
   ].join(" ");
 
-  // const uploadedItems = toUploadedItemsFromGroup<TGroup>(attachment?.value ?? null);
-  const showUploader =
-    mode === "edit" && !!attachment?.uploadGroup && !!attachment?.onChange;
-
-  // const showReadonlyAttachmentList = uploadedItems.length > 0 && !showUploader;
+  // IndMultiFileUpload melakukan upload sendiri (independent), jadi tidak perlu
+  // mensyaratkan attachment.uploadGroup ada untuk menampilkan uploader.
+  const showUploader = mode === "edit" && !!attachment?.onChange;
 
   const ui = attachment?.ui;
   const uploadAccept = ui?.accept ?? "application/pdf,image/*";
@@ -273,15 +261,6 @@ export function AddressSidePanel<
           </div>
         </Row>
 
-        {/* <Row label="Latitude">
-          <span className="font-semibold tabular-nums">{info?.lat ?? "-"}</span>
-        </Row>
-
-        <Row label="Longitude">
-          <span className="font-semibold tabular-nums">{info?.lng ?? "-"}</span>
-        </Row> */}
-
-        {/* PIC rows tetap adaptif */}
         {info?.picName !== undefined && (
           <Row
             label={
@@ -311,62 +290,7 @@ export function AddressSidePanel<
           </Row>
         ) : null}
 
-        {/* {showReadonlyAttachmentList ? (
-          
-          <Row label="Attachments" emphasize>
-            <ul className="space-y-2">
-              {uploadedItems.map((it) => {
-                
-                console.log("it.url", it.url);
-
-                const href = ensureOdooDownloadUri(resolveUrlMaybe(it.url ?? ""));
-                const name = String(it.name ?? "").trim() || `File_${String(it.id)}`;
-                return (
-                  <li
-                    key={String(it.id)}
-                    className="flex items-center justify-between gap-3 rounded-md bg-white/60 px-2 py-1"
-                  >
-                    <div className="min-w-0 truncate text-sm font-semibold text-slate-800">
-                      {name}
-                    </div>
-                    <a
-                      href={href}
-                      className={downloadBtnClass}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download
-                      aria-label={`Download ${name}`}
-                      title="Download"
-                    >
-                      Download
-                      <svg
-                        className="h-4 w-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        aria-hidden
-                      >
-                        <path
-                          d="M12 3v10m0 0 4-4m-4 4-4-4"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M5 21h14"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </Row>
-        ) : null} */}
+        
       </dl>
 
       {deliveryNoteUri ? (
@@ -418,20 +342,31 @@ export function AddressSidePanel<
       {/* Independent uploader (edit only) */}
       {showUploader ? (
         <div className="mt-4">
-          <IndMultiFileUpload
-            groupId={attachment.value?.id ?? undefined}
-            docType={isOrigin ? "route_purchase_pickup" : "route_purchase_drop_off"}
-            label={`${sideLabel} Attachment`}
-            accept={uploadAccept}
-            maxFileSizeMB={uploadMaxFileSizeMB}
-            maxFiles={uploadMaxFiles}
-            hint={uploadHint}
-            uploadButtonText={uploadButtonText}
-            // uploadedItems={uploadedItems}
-            autoUpload={true}
-            clearQueueAfterUpload
-            
-          />
+<IndMultiFileUpload
+  orderId={orderId}
+  routeId={currentRouteId}
+  // gunakan null (bukan undefined) agar props groupId selalu "controlled" dan stabil
+  groupId={attachment.value?.id ?? null}
+  // preserve the other side when PATCH-ing route doc-attachment
+  routePickupAttachmentId={info?.pickup_attachment_id ?? null}
+  routeDropOffAttachmentId={info?.drop_off_attachment_id ?? null}
+  docType={isOrigin ? "route_purchase_pickup" : "route_purchase_drop_off"}
+  label={`${sideLabel} Attachment`}
+  accept={uploadAccept}
+  maxFileSizeMB={uploadMaxFileSizeMB}
+  maxFiles={uploadMaxFiles}
+  hint={uploadHint}
+  uploadButtonText={uploadButtonText}
+  autoUpload={true}
+  clearQueueAfterUpload
+  onGroupLoaded={(g) => {
+    // keep parent attachment state in sync (so other panel won't lose its id)
+    attachment?.onChange?.(g as unknown as TGroup);
+  }}
+  onGroupIdChange={(_, g) => {
+    if (g) attachment?.onChange?.(g as unknown as TGroup);
+  }}
+/>
         </div>
       ) : null}
     </section>
