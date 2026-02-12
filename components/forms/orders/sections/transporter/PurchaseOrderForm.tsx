@@ -2087,36 +2087,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                     </span>
                   )}
 
-                  {/* {canShowChat && (
-                    <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      chatAnchorRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
-                      setHasChatImpulse(false);
-                    }}
-                    className={`relative pr-8 ${
-                      hasChatImpulse ? "motion-safe:animate-pulse" : ""
-                    }`}
-                    aria-label={
-                      t("orders.chat_broadcast") ?? "Chat / Broadcast Message"
-                    }
-                    title={
-                      t("orders.chat_broadcast") ?? "Chat / Broadcast Message"
-                    }
-                  >
-                    {t("orders.chat_broadcast") ?? "Chat / Broadcast Message"}
-                    {hasChatImpulse && (
-                      <span className="pointer-events-none absolute right-2 top-2 inline-flex">
-                        <span className="motion-safe:animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
-                      </span>
-                    )}
-                    </Button>
-                  )} */}
 
                   {canShowClaims &&
                     AUTOSET_TMS_STATE_FOR_BTNCLAIM.has(

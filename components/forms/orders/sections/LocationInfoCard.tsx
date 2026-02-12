@@ -155,8 +155,8 @@ export default function LocationInfoCard({
   const lokasiMuatDisabled = !kotaMuat;
   const lokasiBongkarDisabled = !kotaBongkar;
 
-  console.log("orderId in LocationInfoCard:", orderId);
-  console.log("currentRouteId in LocationInfoCard:", currentRouteId);
+  // console.log("orderId in LocationInfoCard:", orderId);
+  // console.log("currentRouteId in LocationInfoCard:", currentRouteId);
 
   const refIf = (k: string) =>
     firstErrorKey === k
@@ -200,6 +200,9 @@ export default function LocationInfoCard({
     drop_off_attachment_id: dropOffAttachment?.id ?? null,
   };
 
+  console.log("origin:", origin);
+  console.log("destination:", destination);
+
   const panelMode = isReadOnly || mode === "edit" ? "edit" : "create";
   const canEditAttachment = panelMode === "edit";
 
@@ -221,6 +224,7 @@ export default function LocationInfoCard({
             setPickupAttachment(v as unknown as OrderAttachmentGroup | null),
           uploadGroup: async (files) =>
             (await uploadPickupAttachmentGroup(
+              //console.log("files to upload (pickup):",files)
               files
             )) as unknown as PanelGroupNonNull,
           deleteFile: async (fileId) =>

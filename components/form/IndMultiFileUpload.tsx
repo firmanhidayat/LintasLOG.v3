@@ -3,6 +3,15 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+/** Keep latest prop/callback without forcing re-create of useCallback functions */
+function useLatestRef<T>(value: T) {
+  const ref = useRef(value);
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+  return ref;
+}
+
 /**
  * ============================================================
  * IndMultiFileUpload (TMS/Odoo Document Attachments)
@@ -110,6 +119,7 @@ export type IndMultiFileUploadProps = {
   orderId?: number | string;
   routeId?: number | string;
 
+  /** Optional: id attachment sisi lain pada route yang sama. Dipakai agar PATCH tidak mengosongkan field lain. */
   routePickupAttachmentId?: number | string | null;
   routeDropOffAttachmentId?: number | string | null;
 
@@ -359,7 +369,16 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
   const [err, setErr] = useState<string | null>(null);
   const [groupInfo, setGroupInfo] = useState<TmsAttachmentGroup | null>(null);
 
-  // Avoid infinite loading: abort + timeout for list fetch
+  // Stabilize changing props/callbacks to avoid auto-refresh loop due to identity changes
+  const requestHeadersRef = useLatestRef(requestHeaders);
+  const withCredentialsRef = useLatestRef(withCredentials);
+  const onGroupLoadedRef = useLatestRef(onGroupLoaded);
+  const onRejectRef = useLatestRef(onReject);
+  const onUploadSuccessRef = useLatestRef(onUploadSuccess);
+  const onUploadErrorRef = useLatestRef(onUploadError);
+  const onRouteDocAttachmentPatchedRef = useLatestRef(onRouteDocAttachmentPatched);
+
+  // Anti-pending / anti-loop controls
   const skipNextAutoLoadRef = useRef(false);
   const pendingBindRef = useRef<number | string | null>(null);
   const lastPatchedRef = useRef<string>("");
@@ -374,7 +393,6 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
       refreshAbortRef.current?.abort();
     };
   }, []);
-
 
   const maxBytes = useMemo(() => Math.max(0, maxFileSizeMB) * 1024 * 1024, [maxFileSizeMB]);
 
@@ -513,16 +531,16 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         method: "GET",
         headers: {
           accept: "application/json",
-          ...(requestHeaders ?? {}),
+          ...(requestHeadersRef.current ?? {}),
         },
-        credentials: withCredentials ? "include" : "same-origin",
+        credentials: withCredentialsRef.current ? "include" : "same-origin",
         signal,
       });
 
       if (!res.ok) throw new Error(await readResponseError(res));
       return (await res.json()) as TmsAttachmentGroup;
     },
-    [baseUrl, requestHeaders, withCredentials]
+    [baseUrl, requestHeadersRef, withCredentialsRef]
   );
 
   const createGroup = useCallback(
@@ -535,16 +553,16 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         method: "POST",
         headers: {
           accept: "application/json",
-          ...(requestHeaders ?? {}),
+          ...(requestHeadersRef.current ?? {}),
         },
         body: fd,
-        credentials: withCredentials ? "include" : "same-origin",
+        credentials: withCredentialsRef.current ? "include" : "same-origin",
       });
 
       if (!res.ok) throw new Error(await readResponseError(res));
       return (await res.json()) as TmsAttachmentGroup;
     },
-    [baseUrl, docType, requestHeaders, withCredentials]
+    [baseUrl, docType, requestHeadersRef, withCredentialsRef]
   );
 
   const addFiles = useCallback(
@@ -556,16 +574,16 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         method: "POST",
         headers: {
           accept: "application/json",
-          ...(requestHeaders ?? {}),
+          ...(requestHeadersRef.current ?? {}),
         },
         body: fd,
-        credentials: withCredentials ? "include" : "same-origin",
+        credentials: withCredentialsRef.current ? "include" : "same-origin",
       });
 
       if (!res.ok) throw new Error(await readResponseError(res));
       return (await res.json()) as TmsAttachmentGroup;
     },
-    [baseUrl, requestHeaders, withCredentials]
+    [baseUrl, requestHeadersRef, withCredentialsRef]
   );
 
   const deleteAttachment = useCallback(
@@ -574,14 +592,14 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         method: "DELETE",
         headers: {
           accept: "*/*",
-          ...(requestHeaders ?? {}),
+          ...(requestHeadersRef.current ?? {}),
         },
-        credentials: withCredentials ? "include" : "same-origin",
+        credentials: withCredentialsRef.current ? "include" : "same-origin",
       });
 
       if (!res.ok) throw new Error(await readResponseError(res));
     },
-    [baseUrl, requestHeaders, withCredentials]
+    [baseUrl, requestHeadersRef, withCredentialsRef]
   );
 
   /**
@@ -589,7 +607,6 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
    * maka bind ke route lewat endpoint:
    *   PATCH /api-tms/purchase-orders/{orderId}/routes/{routeId}/doc-attachment
    */
-
   const patchRouteDocAttachment = useCallback(
     async (newGroupId: number | string) => {
       const normalizeId = (v: unknown): number | string | null => {
@@ -606,7 +623,7 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
       const oId = orderId;
       const rId = routeId;
 
-      // route belum siap di load pertama -> defer patch, nanti di-run saat orderId/routeId sudah ada
+      // route belum siap saat load pertama -> defer PATCH
       if (oId === undefined || oId === null || rId === undefined || rId === null) {
         pendingBindRef.current = gid;
         return;
@@ -617,7 +634,6 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
       lastPatchedRef.current = key;
 
       let payload: Record<string, number | string> | null = null;
-
       if (docType === "route_purchase_pickup") {
         payload = { pickup_attachment_id: gid };
         const other = normalizeId(routeDropOffAttachmentId);
@@ -640,32 +656,31 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         headers: {
           accept: "application/json",
           "Content-Type": "application/json",
-          ...(requestHeaders ?? {}),
+          ...(requestHeadersRef.current ?? {}),
         },
         body: JSON.stringify(payload),
-        credentials: withCredentials ? "include" : "same-origin",
+        credentials: withCredentialsRef.current ? "include" : "same-origin",
       });
 
       if (!res.ok) throw new Error(await readResponseError(res));
-
       pendingBindRef.current = null;
-      onRouteDocAttachmentPatched?.({ orderId: oId, routeId: rId, docType, groupId: gid });
+      onRouteDocAttachmentPatchedRef.current?.({ orderId: oId, routeId: rId, docType, groupId: gid });
     },
     [
       baseUrl,
       docType,
-      onRouteDocAttachmentPatched,
       orderId,
       purchaseOrdersUrlProp,
-      requestHeaders,
       routeDropOffAttachmentId,
       routePickupAttachmentId,
       routeId,
-      withCredentials,
+      requestHeadersRef,
+      withCredentialsRef,
+      onRouteDocAttachmentPatchedRef,
     ]
   );
 
-  // Jika upload terjadi sebelum orderId/routeId siap (load awal), bind otomatis setelah siap.
+  // Jika upload terjadi sebelum orderId/routeId siap, bind otomatis setelah siap.
   useEffect(() => {
     const gid = pendingBindRef.current;
     if (gid === null) return;
@@ -688,13 +703,11 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     try {
       const g = await fetchGroup(groupId, controller.signal);
       if (!mountedRef.current || seq !== refreshSeqRef.current) return;
-
       setGroupInfo(g);
-      onGroupLoaded?.(g);
+      onGroupLoadedRef.current?.(g);
       setUploaded(groupToUploadedItems(g));
     } catch (e) {
       if (!mountedRef.current || seq !== refreshSeqRef.current) return;
-
       const msg = controller.signal.aborted
         ? "Request timeout saat memuat list file. Klik Refresh untuk coba lagi."
         : e instanceof Error
@@ -706,7 +719,7 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
       if (!mountedRef.current || seq !== refreshSeqRef.current) return;
       setLoadingList(false);
     }
-  }, [fetchGroup, groupId, groupToUploadedItems, onGroupLoaded, setUploaded]);
+  }, [fetchGroup, groupId, groupToUploadedItems, onGroupLoadedRef, setUploaded]);
 
   /** Auto load list when groupId exists */
   useEffect(() => {
@@ -718,7 +731,6 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     }
     void refreshList();
   }, [groupId, loadOnMount, refreshList]);
-
 
   /**
    * ===============
@@ -738,7 +750,7 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
       const g = groupId !== null && groupId !== undefined ? await addFiles(groupId, queue) : await createGroup(queue);
 
       if (creatingNewGroup) {
-        // response createGroup sudah mengandung attachments, jadi skip auto-refresh pertama (hindari request pending/loop)
+        // response createGroup sudah mengandung attachments, jadi hindari auto-refresh pertama
         skipNextAutoLoadRef.current = true;
       }
 
@@ -752,14 +764,14 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
       }
 
       setGroupInfo(g);
-      onGroupLoaded?.(g);
+      onGroupLoadedRef.current?.(g);
       setGroupId(g.id, g);
 
       const allItems = groupToUploadedItems(g);
       setUploaded(allItems);
 
       const newItems = allItems.filter((it) => !prevIds.has(String(it.id)));
-      onUploadSuccess?.(newItems, queue, g);
+      onUploadSuccessRef.current?.(newItems, queue, g);
 
       if (clearQueueAfterUpload) setQueue([]);
 
@@ -769,7 +781,7 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         );
       }
     } catch (e) {
-      onUploadError?.(e);
+      onUploadErrorRef.current?.(e);
       setErr(e instanceof Error ? e.message : "Gagal upload file.");
     } finally {
       setBusy(false);
@@ -782,11 +794,12 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     disabled,
     groupId,
     groupToUploadedItems,
-    onGroupLoaded,
-    onUploadError,
-    onUploadSuccess,
+    onGroupLoadedRef,
+    onUploadErrorRef,
+    onUploadSuccessRef,
     patchRouteDocAttachment,
     queue,
+    skipNextAutoLoadRef,
     setGroupId,
     setQueue,
     setUploaded,
