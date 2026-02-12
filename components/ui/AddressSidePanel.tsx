@@ -344,9 +344,9 @@ export function AddressSidePanel<
           <IndMultiFileUpload
             orderId={orderId}
             routeId={currentRouteId}
-            groupId={attachment?.value?.id ?? null}
-            routePickupAttachmentId={routePickupAttachmentId ?? null}
-            routeDropOffAttachmentId={routeDropOffAttachmentId ?? null}
+            routePickupAttachmentId={routePickupAttachmentId}
+            routeDropOffAttachmentId={routeDropOffAttachmentId}
+            groupId={attachment.value?.id ?? undefined}
             docType={isOrigin ? "route_purchase_pickup" : "route_purchase_drop_off"}
             label={`${sideLabel} Attachment`}
             accept={uploadAccept}
@@ -356,23 +356,6 @@ export function AddressSidePanel<
             uploadButtonText={uploadButtonText}
             autoUpload={true}
             clearQueueAfterUpload
-            onGroupLoaded={(g) => {
-              attachment?.onChange?.(g as unknown as TGroup);
-            }}
-            onGroupIdChange={(nextId, group) => {
-              const onChange = attachment?.onChange;
-              if (!onChange) return;
-              if (group) {
-                onChange(group as unknown as TGroup);
-                return;
-              }
-              if (nextId === null || nextId === undefined) {
-                onChange(null);
-                return;
-              }
-              // fallback minimal group so parent doesn't lose the id
-              onChange({ id: nextId, name: String(nextId), attachments: [] } as unknown as TGroup);
-            }}
           />
         </div>
       ) : null}
