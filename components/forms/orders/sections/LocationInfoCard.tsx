@@ -154,6 +154,7 @@ export default function LocationInfoCard({
 }: Props) {
   const lokasiMuatDisabled = !kotaMuat;
   const lokasiBongkarDisabled = !kotaBongkar;
+  console.log("currentRouteId in LocationInfoCard:", currentRouteId);
 
   const refIf = (k: string) =>
     firstErrorKey === k
@@ -176,7 +177,6 @@ export default function LocationInfoCard({
     timeLabel: "ETD",
     timeValue: fmtDate(tglMuat),
     pickup_attachment_id: pickupAttachment?.id ?? null,
-    drop_off_attachment_id: dropOffAttachment?.id ?? null,
   };
 
   const destination = {
@@ -195,7 +195,6 @@ export default function LocationInfoCard({
     timeLabel: "ETA",
     timeValue: fmtDate(tglBongkar),
     delivery_note_uri: deliveryNoteUri,
-    pickup_attachment_id: pickupAttachment?.id ?? null,
     drop_off_attachment_id: dropOffAttachment?.id ?? null,
   };
 
@@ -374,6 +373,8 @@ export default function LocationInfoCard({
                   labelPrefix="Origin"
                   orderId={orderId}
                   currentRouteId={currentRouteId}
+                  routePickupAttachmentId={pickupAttachment?.id ?? null}
+                  // routeDropOffAttachmentId={dropOffAttachment?.id ?? null}
                   info={origin}
                   mode={panelMode}
                   attachment={pickupAttachmentControl}
@@ -387,6 +388,8 @@ export default function LocationInfoCard({
                   labelPrefix="Destination"
                   orderId={orderId}
                   currentRouteId={currentRouteId}
+                  // routePickupAttachmentId={pickupAttachment?.id ?? null}
+                  routeDropOffAttachmentId={dropOffAttachment?.id ?? null}
                   info={destination}
                   mode={panelMode}
                   attachment={dropOffAttachmentControl}

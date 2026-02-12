@@ -21,13 +21,6 @@ export type OrderAttachmentGroup = {
   attachments?: OrderAttachmentItem[];
 };
 
-// export type AttachmentItem = {
-//   id: number;
-//   name: string;
-//   url: string;
-//   mimetype?: string;
-// };
-
 /// Item untuk dropdown city, address, etc.
 export interface CityItem {
   id: number | string;

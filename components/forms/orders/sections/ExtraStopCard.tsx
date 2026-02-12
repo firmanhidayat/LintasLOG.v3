@@ -3,7 +3,7 @@ import { t } from "@/lib/i18n";
 import AddressAutocomplete from "@/components/forms/orders/AddressAutocomplete";
 import { FieldText } from "@/components/form/FieldText";
 import DateTimePickerTW from "@/components/form/DateTimePickerTW";
-import type { AddressItem } from "@/types/orders";
+import type { AddressItem, OrderAttachmentGroup } from "@/types/orders";
 import FieldPhone from "@/components/form/FieldPhone";
 import { cn } from "@/lib/cn";
 import { AddressSidePanel } from "@/components/ui/AddressSidePanel";
@@ -37,6 +37,13 @@ export type ExtraStop = {
   destLatitude: string;
   destLongitude: string;
   delivery_note_uri: string;
+
+  /**
+   * Independent upload attachments (optional; populated from API prefill).
+   * NOTE: routeId (stop.id) is the key for PATCH `/routes/{routeId}/doc-attachment`.
+   */
+  pickup_attachment?: OrderAttachmentGroup | null;
+  drop_off_attachment?: OrderAttachmentGroup | null;
 };
 
 type AddressSidePanelAttachment = React.ComponentProps<
@@ -103,7 +110,6 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       timeLabel: "ETD",
       timeValue: fmtDate(stop.tglETDMuat),
       pickup_attachment_id: pickupAttachment?.value?.id ?? null,
-      drop_off_attachment_id: dropOffAttachment?.value?.id ?? null,
     };
 
     const destination = {
@@ -122,7 +128,6 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       timeLabel: "ETA",
       timeValue: fmtDate(stop.tglETABongkar),
       delivery_note_uri: stop.delivery_note_uri,
-      pickup_attachment_id: pickupAttachment?.value?.id ?? null,
       drop_off_attachment_id: dropOffAttachment?.value?.id ?? null,
     };
 
@@ -149,6 +154,8 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             attachment={pickupAttachment}
             orderId={orderId}
             currentRouteId={stop.id ?? undefined}
+            routePickupAttachmentId={pickupAttachment?.value?.id ?? null}
+            routeDropOffAttachmentId={dropOffAttachment?.value?.id ?? null}
           />
           <AddressSidePanel
             title="Destination Address"
@@ -158,6 +165,8 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             attachment={dropOffAttachment}
             orderId={orderId}
             currentRouteId={stop.id ?? undefined}
+            routePickupAttachmentId={pickupAttachment?.value?.id ?? null}
+            routeDropOffAttachmentId={dropOffAttachment?.value?.id ?? null}
           />
         </div>
 

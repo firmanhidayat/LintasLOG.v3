@@ -8,10 +8,6 @@ type AddressSidePanelInfo = AddressInfo & {
   delivery_note_uri?: string | null;
   deliveryNoteUri?: string | null;
   postCode?: string | null; // some callers still use postCode (camelCase)
-
-  // current route doc-attachment ids (optional)
-  pickup_attachment_id?: number | string | null;
-  drop_off_attachment_id?: number | string | null;
 };
 
 type AttachmentItem = {
@@ -106,6 +102,8 @@ export function AddressSidePanel<
   attachment,
   orderId,
   currentRouteId,
+  routePickupAttachmentId,
+  routeDropOffAttachmentId,
 }: {
   title: string;
   labelPrefix: "Origin" | "Destination";
@@ -114,6 +112,8 @@ export function AddressSidePanel<
   attachment?: AttachmentControl<TGroup>;
   orderId?: number | string;
   currentRouteId?: number | string;
+  routePickupAttachmentId?: number | string | null;
+  routeDropOffAttachmentId?: number | string | null;
 }) {
   const isOrigin = labelPrefix === "Origin";
 
@@ -187,9 +187,8 @@ export function AddressSidePanel<
       : "border-amber-200 text-amber-800 hover:bg-amber-50",
   ].join(" ");
 
-  // IndMultiFileUpload melakukan upload sendiri (independent), jadi tidak perlu
-  // mensyaratkan attachment.uploadGroup ada untuk menampilkan uploader.
-  const showUploader = mode === "edit" && !!attachment?.onChange;
+  const showUploader =
+    mode === "edit" && !!attachment?.uploadGroup && !!attachment?.onChange;
 
   const ui = attachment?.ui;
   const uploadAccept = ui?.accept ?? "application/pdf,image/*";
@@ -342,31 +341,26 @@ export function AddressSidePanel<
       {/* Independent uploader (edit only) */}
       {showUploader ? (
         <div className="mt-4">
-<IndMultiFileUpload
-  orderId={orderId}
-  routeId={currentRouteId}
-  // gunakan null (bukan undefined) agar props groupId selalu "controlled" dan stabil
-  groupId={attachment.value?.id ?? null}
-  // preserve the other side when PATCH-ing route doc-attachment
-  routePickupAttachmentId={info?.pickup_attachment_id ?? null}
-  routeDropOffAttachmentId={info?.drop_off_attachment_id ?? null}
-  docType={isOrigin ? "route_purchase_pickup" : "route_purchase_drop_off"}
-  label={`${sideLabel} Attachment`}
-  accept={uploadAccept}
-  maxFileSizeMB={uploadMaxFileSizeMB}
-  maxFiles={uploadMaxFiles}
-  hint={uploadHint}
-  uploadButtonText={uploadButtonText}
-  autoUpload={true}
-  clearQueueAfterUpload
-  onGroupLoaded={(g) => {
-    // keep parent attachment state in sync (so other panel won't lose its id)
-    attachment?.onChange?.(g as unknown as TGroup);
-  }}
-  onGroupIdChange={(_, g) => {
-    if (g) attachment?.onChange?.(g as unknown as TGroup);
-  }}
-/>
+          <IndMultiFileUpload
+            orderId={orderId}
+            routeId={currentRouteId}
+            routePickupAttachmentId={routePickupAttachmentId}
+            routeDropOffAttachmentId={routeDropOffAttachmentId}
+            groupId={attachment.value?.id ?? undefined}
+            docType={isOrigin ? "route_purchase_pickup" : "route_purchase_drop_off"}
+            label={`${sideLabel} Attachment`}
+            accept={uploadAccept}
+            maxFileSizeMB={uploadMaxFileSizeMB}
+            maxFiles={uploadMaxFiles}
+            hint={uploadHint}
+            uploadButtonText={uploadButtonText}
+            autoUpload={true}
+            clearQueueAfterUpload
+            onGroupLoaded={(g) => attachment?.onChange?.(g as unknown as TGroup)}
+            onGroupIdChange={(_, g) => {
+              if (g) attachment?.onChange?.(g as unknown as TGroup);
+            }}
+          />
         </div>
       ) : null}
     </section>

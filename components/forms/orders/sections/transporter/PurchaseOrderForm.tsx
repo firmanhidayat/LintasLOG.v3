@@ -90,7 +90,7 @@ function normalizeKey(s: unknown): string {
     .replace(/[\s_-]+/g, "");
 }
 function extractApiSteps(
-  d: NonNullable<OrdersCreateFormProps["initialData"]>
+  d: NonNullable<OrdersCreateFormProps["initialData"]>,
 ): StatusStep[] {
   const items = (d.tms_states ?? []) as StatusStep[];
   return items.map((it): StatusStep => {
@@ -120,7 +120,7 @@ const toRecordItem = (v: unknown): RecordItem | null => {
   const idNum = Number(o.id);
   const nameRaw = typeof o.name === "string" ? o.name.trim() : "";
   const fallbackName = String(
-    o.display_name ?? o.label ?? o.license_plate ?? o.plate_no ?? o.code ?? ""
+    o.display_name ?? o.label ?? o.license_plate ?? o.plate_no ?? o.code ?? "",
   );
   const name =
     nameRaw && nameRaw.toLowerCase() !== "false" ? nameRaw : fallbackName;
@@ -145,50 +145,6 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
 const safeArray = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
-
-function toFiniteNumber(v: unknown): number | undefined {
-  if (typeof v === "number") return Number.isFinite(v) ? v : undefined;
-  if (typeof v === "string") {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : undefined;
-  }
-  return undefined;
-}
-
-function isMainRouteFlag(v: unknown): boolean {
-  if (v === true) return true;
-  if (v === 1 || v === "1") return true;
-  if (typeof v === "string") {
-    const s = v.trim().toLowerCase();
-    return s === "true" || s === "1" || s === "yes" || s === "y";
-  }
-  return false;
-}
-
-function extractMainRouteIdFromInitial(
-  data: NonNullable<OrdersCreateFormProps["initialData"]>
-): number | undefined {
-  const rawRoutes = safeArray<unknown>(
-    (data as unknown as Record<string, unknown>).route_ids ??
-      (data as unknown as Record<string, unknown>).routes
-  );
-
-  const routesList: RouteItem[] = rawRoutes
-    .flatMap((x) => (Array.isArray(x) ? x : [x]))
-    .flatMap((x) => (Array.isArray(x) ? x : [x]))
-    .filter((x): x is RouteItem => isPlainObject(x)) as RouteItem[];
-
-  const main =
-    routesList.find((r) => isMainRouteFlag((r as Record<string, unknown>).is_main_route)) ??
-    routesList[0];
-
-  const fallback =
-    toFiniteNumber((data as unknown as Record<string, unknown>).current_main_route_id) ??
-    toFiniteNumber((data as unknown as Record<string, unknown>).current_route_id) ??
-    toFiniteNumber((data as unknown as Record<string, unknown>).route_id);
-
-  return toFiniteNumber((main as Record<string, unknown> | undefined)?.id) ?? fallback;
-}
 
 const pickString = (...vals: unknown[]): string => {
   for (const v of vals) {
@@ -297,7 +253,7 @@ function extractSuratJalanDownloads(data: unknown): DownloadableFile[] {
 
   // 3) Terkadang tersimpan di level route
   const routes = safeArray<Record<string, unknown>>(
-    (data as Record<string, unknown>).route_ids
+    (data as Record<string, unknown>).route_ids,
   );
   for (const r of routes) {
     if (!isPlainObject(r)) continue;
@@ -331,8 +287,8 @@ function extractSuratJalanDownloads(data: unknown): DownloadableFile[] {
           o.download_url,
           o.file_url,
           o.public_url,
-          o.attachment_url
-        )
+          o.attachment_url,
+        ),
       ) ||
       ((): string => {
         const datas = pickString(o.datas, o.data, o.base64, o.content_base64);
@@ -352,11 +308,11 @@ function extractSuratJalanDownloads(data: unknown): DownloadableFile[] {
         o.filename,
         o.file_name,
         o.display_name,
-        o.original_name
+        o.original_name,
       ) || `File_${String(o.id ?? "") || String(out.length + 1)}`;
 
     const docType = normalizeDocHint(
-      o.doc_type ?? o.document_type ?? o.type ?? o.category ?? o.tag
+      o.doc_type ?? o.document_type ?? o.type ?? o.category ?? o.tag,
     );
     const nameKey = normalizeDocHint(name);
 
@@ -386,7 +342,7 @@ function extractSuratJalanDownloads(data: unknown): DownloadableFile[] {
 
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>,
-  userTz: string = "Asia/Jakarta"
+  userTz: string = "Asia/Jakarta",
 ) {
   const tz = userTz;
   let claimCount = 0;
@@ -425,7 +381,7 @@ function prefillFromInitial(
     tglBongkar: odooUtcToDatetimeLocalValue(
       data.drop_off_date_planne,
       tz,
-      "17:00"
+      "17:00",
     ),
     lokMuat: null as AddressItem | null,
     lokBongkar: null as AddressItem | null,
@@ -487,21 +443,22 @@ function prefillFromInitial(
     original_res_model: data.original_res_model,
   };
 
-  // route_ids kadang berbentuk array 2D (contoh: [[{...}]]) dan flag is_main_route bisa berupa boolean / 1 / "1"
   const rawRoutes = safeArray<unknown>(
     (data as unknown as Record<string, unknown>).route_ids ??
-      (data as unknown as Record<string, unknown>).routes
+      (data as unknown as Record<string, unknown>).routes,
   );
 
   const routesList: RouteItem[] = rawRoutes
     .flatMap((x) => (Array.isArray(x) ? x : [x]))
-    // jaga-jaga kalau nesting lebih dari 1 level
     .flatMap((x) => (Array.isArray(x) ? x : [x]))
     .filter((x): x is RouteItem => isPlainObject(x)) as RouteItem[];
 
+  const isMainRouteFlag = (v: unknown): boolean =>
+    v === true || v === 1 || v === "1" || v === "true";
+
   function addrFromRoute(
     r: RouteItem | undefined,
-    which: "origin" | "dest"
+    which: "origin" | "dest",
   ): AddressItem | null {
     if (!r) return null;
     const obj = which === "origin" ? r.origin_address : r.dest_address;
@@ -509,12 +466,10 @@ function prefillFromInitial(
     const id = which === "origin" ? r.origin_address_id : r.dest_address_id;
     return id ? ({ id } as AddressItem) : null;
   }
-  // const main = routes.find((r) => r.is_main_route);
   const main =
     routesList.find((r) =>
-      isMainRouteFlag((r as unknown as Record<string, unknown>).is_main_route)
-    ) ??
-    routesList[0];
+      isMainRouteFlag((r as unknown as Record<string, unknown>).is_main_route),
+    ) ?? routesList[0];
 
   form.tglMuat =
     odooUtcToDatetimeLocalValue(main?.etd_date ?? null, tz) || form.tglMuat;
@@ -530,6 +485,7 @@ function prefillFromInitial(
   form.origin_address_name = main?.origin_address_name ?? "";
   form.origin_street = main?.origin_street ?? "";
   form.origin_street2 = main?.origin_street2 ?? "";
+
   form.origin_district_name = main?.origin_district?.name ?? "";
   form.origin_zip = main?.origin_zip ?? "";
   form.origin_latitude = main?.origin_latitude ?? "";
@@ -543,22 +499,16 @@ function prefillFromInitial(
   form.dest_latitude = main?.dest_latitude ?? main?.dest_latitude ?? "";
   form.dest_longitude = main?.dest_longitude ?? "";
   form.delivery_note_uri = main?.delivery_note_uri ?? "";
-  form.currentMainRouteId =
-    toFiniteNumber((main as unknown as Record<string, unknown> | undefined)?.id) ??
-    toFiniteNumber((data as unknown as Record<string, unknown>).current_main_route_id) ??
-    toFiniteNumber((data as unknown as Record<string, unknown>).current_route_id) ??
-    toFiniteNumber((data as unknown as Record<string, unknown>).route_id);
+
+  form.currentMainRouteId = main?.id ?? undefined;
 
   form.pickupAttachment =
-    (isPlainObject(main)
-      ? ((main as unknown as { pickup_attachment?: OrderAttachmentGroup | null })
-          .pickup_attachment ?? null)
-      : null) ?? null;
+    (main as unknown as { pickup_attachment?: OrderAttachmentGroup | null })
+      .pickup_attachment ?? null;
+
   form.dropOffAttachment =
-    (isPlainObject(main)
-      ? ((main as unknown as { drop_off_attachment?: OrderAttachmentGroup | null })
-          .drop_off_attachment ?? null)
-      : null) ?? null;
+    (main as unknown as { drop_off_attachment?: OrderAttachmentGroup | null })
+      .drop_off_attachment ?? null;
 
   if (!form.lokMuat)
     form.lokMuat = (data.origin_address as AddressItem) ?? null;
@@ -569,14 +519,14 @@ function prefillFromInitial(
   form.amount_shipping_multi_charge = data.amount_shipping_multi_charge ?? "";
   form.amount_tax = data.amount_tax ?? "";
   form.amount_total = data.amount_total ?? "";
-  
 
   const extras: RouteItem[] = routesList.filter(
-    (r) => !isMainRouteFlag((r as unknown as Record<string, unknown>).is_main_route)
+    (r) =>
+      !isMainRouteFlag((r as unknown as Record<string, unknown>).is_main_route),
   );
 
-  console.log("Found extra routes:", extras.length);
-  console.log("form MAIN data:", form);
+  // console.log("Found extra routes:", extras.length);
+  // console.log("form MAIN data:", form);
 
   form.extraStops = extras.map(
     (r): ExtraStop => ({
@@ -607,11 +557,19 @@ function prefillFromInitial(
       destLatitude: r.dest_latitude ?? "",
       destLongitude: r.dest_longitude ?? "",
       delivery_note_uri: r.delivery_note_uri ?? "",
-    })
+
+      // Independent attachments untuk extra route
+      pickup_attachment:
+        (r as unknown as { pickup_attachment?: OrderAttachmentGroup | null })
+          .pickup_attachment ?? null,
+      drop_off_attachment:
+        (r as unknown as { drop_off_attachment?: OrderAttachmentGroup | null })
+          .drop_off_attachment ?? null,
+    }),
   );
 
-  console.log("Prefill form:", form);
-  console.log("Prefill extraStops:", form.extraStops);
+  // console.log("Prefill form:", form);
+  // console.log("Prefill extraStops:", form.extraStops);
 
   const current = data.states?.find((s) => s.is_current);
   form.isReadOnly = current
@@ -650,8 +608,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     return undefined;
   }, [profile]);
 
-  console.log("Current Profile Name:", currentProfileName);
-  console.log("Mode: ", mode, " Initial Data:", initialData);
+  // console.log("Current Profile Name:", currentProfileName);
+  // console.log("Mode: ", mode, " Initial Data:", initialData);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -690,10 +648,10 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const [picMuatTelepon, setPicMuatTelepon] = useState<string>("");
   const [picBongkarNama, setPicBongkarNama] = useState<string>("");
   const [picBongkarTelepon, setPicBongkarTelepon] = useState<string>("");
-  
+
   const [currentMainRouteId, setCurrentMainRouteId] = useState<
     number | undefined
-  >(() => (initialData ? extractMainRouteIdFromInitial(initialData) : undefined));
+  >(undefined);
 
   const [multiPickupDrop, setMultiPickupDrop] = useState<boolean>(false);
   const [claimIdsCount, setClaimIdsCount] = useState<number>(0);
@@ -751,7 +709,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           delivery_note_uri: "",
         },
       ] as ExtraStop[]
-    ).map((s) => ({ ...s, uid: genUid() }))
+    ).map((s) => ({ ...s, uid: genUid() })),
   );
   const [dokumenFiles, setDokumenFiles] = useState<File[]>([]);
   const [sjPodFiles, setSjPodFiles] = useState<File[]>([]);
@@ -776,7 +734,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const [statusCurrent, setStatusCurrent] = useState<string | undefined>("");
   const [steps, setSteps] = useState<StatusStep[]>([]);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(
-    mode === "edit" && !initialData ? true : false
+    mode === "edit" && !initialData ? true : false,
   );
   const [reasonOpen, setReasonOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
@@ -803,7 +761,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setDlgKind("error");
     setDlgTitle(title || (t("common.failed_save") ?? "Gagal menyimpan"));
     setDlgMsg(
-      <pre className="whitespace-pre-wrap text-xs text-red-700">{msg}</pre>
+      <pre className="whitespace-pre-wrap text-xs text-red-700">{msg}</pre>,
     );
     setDlgOpen(true);
   }
@@ -825,7 +783,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       const claimsData = await fetchOrderClaims_T(effectiveOrderId);
       setClaims(claimsData.items);
     } catch (error) {
-      console.error("Failed to fetch claims:", error);
+      // console.error("Failed to fetch claims:", error);
       openErrorDialog(error, "Failed to load claims");
     } finally {
       setClaimsLoading(false);
@@ -840,7 +798,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   function onHandleClaimButton() {
     localStorage.removeItem("order-id");
     localStorage.setItem("order-id", String(effectiveOrderId));
-    console.log(localStorage);
+    // console.log(localStorage);
     router.push("/claims/create/");
   }
 
@@ -926,7 +884,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setStatusCurrent(f.states.find((s) => s.is_current)?.key);
       setIsReadOnly(f.isReadOnly);
     },
-    []
+    [],
   );
 
   const softReloadDetail = React.useCallback(async () => {
@@ -952,7 +910,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         hydrateFromPrefill(f);
       });
     } catch (e) {
-      console.error("[PurchaseOrder] soft reload failed:", e);
+      // console.error("[PurchaseOrder] soft reload failed:", e);
     } finally {
       setIsRefreshing(false);
     }
@@ -962,7 +920,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!effectiveOrderId) {
       openErrorDialog(
         "ID Purchase Order tidak ditemukan.",
-        "Data tidak lengkap"
+        "Data tidak lengkap",
       );
       return;
     }
@@ -988,7 +946,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
-      console.error("[PurchaseOrder] accept error:", e);
+      // console.error("[PurchaseOrder] accept error:", e);
       openErrorDialog(e);
     } finally {
       setAcceptLoading(false);
@@ -998,7 +956,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!effectiveOrderId) {
       openErrorDialog(
         "ID Purchase Order tidak ditemukan.",
-        "Data tidak lengkap"
+        "Data tidak lengkap",
       );
       return;
     }
@@ -1028,7 +986,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
-      console.error("[PurchaseOrder] accept error:", e);
+      // console.error("[PurchaseOrder] accept error:", e);
       openErrorDialog(e);
     } finally {
       setAcceptLoading(false);
@@ -1038,7 +996,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!effectiveOrderId) {
       openErrorDialog(
         "ID Purchase Order tidak ditemukan.",
-        "Data tidak lengkap"
+        "Data tidak lengkap",
       );
       return;
     }
@@ -1064,7 +1022,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
-      console.error("[PurchaseOrder] accept error:", e);
+      // console.error("[PurchaseOrder] accept error:", e);
       openErrorDialog(e);
     } finally {
       setAcceptLoading(false);
@@ -1074,7 +1032,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!effectiveOrderId) {
       openErrorDialog(
         "ID Purchase Order tidak ditemukan.",
-        "Data tidak lengkap"
+        "Data tidak lengkap",
       );
       return;
     }
@@ -1086,7 +1044,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     try {
       setRejectLoading(true);
       const url = buildPOrderActionUrl(effectiveOrderId, "reject");
-      console.log(JSON.stringify({ tms_reject_reason: r }));
+      // console.log(JSON.stringify({ tms_reject_reason: r }));
 
       const res = await fetch(url, {
         method: "POST",
@@ -1119,9 +1077,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   const [chatterResModel, setChatterResModel] = useState<string>("");
   const [chatterResId, setChatterResId] = useState<string | number | undefined>(
-    undefined
+    undefined,
   );
-  
 
   // const chatAnchorRef = useRef<HTMLDivElement | null>(null);
 
@@ -1141,7 +1098,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       Object.fromEntries(layananPreset.map((k) => [k, false])) as Record<
         Layanan,
         boolean
-      >
+      >,
   );
   const [layananLainnya, setLayananLainnya] = useState<string>("");
   const [muatanNama, setMuatanNama] = useState<string>("");
@@ -1210,12 +1167,12 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setSjPodDownloads(extractSuratJalanDownloads(initialData));
 
     setChatterResModel(
-      typeof f.res_model === "string" ? f.res_model : String(f.res_model ?? "")
+      typeof f.res_model === "string" ? f.res_model : String(f.res_model ?? ""),
     );
     setChatterResId(
       typeof f.res_id === "string" || typeof f.res_id === "number"
         ? f.res_id
-        : undefined
+        : undefined,
     );
 
     setNamaPenerima(f.namaPenerima);
@@ -1234,9 +1191,14 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setSetDeliveryNoteUri(f.delivery_note_uri);
     setPickupAttachment(f.pickupAttachment ?? null);
     setDropOffAttachment(f.dropOffAttachment ?? null);
-    
+
     setCurrentMainRouteId(f.currentMainRouteId);
-    console.log("CURRENT MAIN F:", f, "CurrentMainRouteID : ", f.currentMainRouteId);
+    console.log(
+      "CURRENT MAIN F:",
+      f,
+      "CurrentMainRouteID : ",
+      f.currentMainRouteId,
+    );
 
     setMuatanNama(f.muatanNama);
     setMuatanDeskripsi(f.muatanDeskripsi);
@@ -1348,7 +1310,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
           setPickupAttachment(f.pickupAttachment ?? null);
           setDropOffAttachment(f.dropOffAttachment ?? null);
-          setCurrentMainRouteId(f.currentMainRouteId);
           setMuatanNama(f.muatanNama);
           setMuatanDeskripsi(f.muatanDeskripsi);
           setJenisOrder(f.jenisOrder);
@@ -1365,12 +1326,12 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           setChatterResModel(
             typeof f.res_model === "string"
               ? f.res_model
-              : String(f.res_model ?? "")
+              : String(f.res_model ?? ""),
           );
           setChatterResId(
             typeof f.res_id === "string" || typeof f.res_id === "number"
               ? f.res_id
-              : undefined
+              : undefined,
           );
 
           if (userType === "transporter") {
@@ -1409,10 +1370,10 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   useEffect(() => {
     if (statusCurrent?.toLowerCase() === "preparation" && effectiveOrderId) {
       setUrlCandidateFleet(
-        buildLookupUrlCandidate(effectiveOrderId, "candidate-fleets")
+        buildLookupUrlCandidate(effectiveOrderId, "candidate-fleets"),
       );
       setUrlCandidateDriver(
-        buildLookupUrlCandidate(effectiveOrderId, "candidate-drivers")
+        buildLookupUrlCandidate(effectiveOrderId, "candidate-drivers"),
       );
     }
   }, [statusCurrent, effectiveOrderId]);
@@ -1429,7 +1390,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   function buildPOrderActionUrl(
     id: string | number,
-    action: "accept" | "reject" | "preparation" | "fleet-and-driver"
+    action: "accept" | "reject" | "preparation" | "fleet-and-driver",
   ): string {
     const base = buildDetailUrl(DETAIL_URL_TPL, id).replace(/\/$/, "");
     return `${base}/${action}`;
@@ -1437,7 +1398,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   function buildLookupUrlCandidate(
     id: string | number,
-    action: "candidate-fleets" | "candidate-drivers"
+    action: "candidate-fleets" | "candidate-drivers",
   ): string {
     const base = buildDetailUrl(DETAIL_URL_TPL, id).replace(/\/$/, "");
     return `${base}/${action}`;
@@ -1503,7 +1464,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   function pick(
     obj: JsonObject | null | undefined,
     keys: string[],
-    fallback = "-"
+    fallback = "-",
   ): string {
     for (const k of keys) {
       if (!obj) break;
@@ -1584,10 +1545,10 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   async function deleteRemoteAttachment(
     docAttachmentId: number,
-    attachmentId: number
+    attachmentId: number,
   ) {
     const url = `${DOCUMENT_ATTACHMENTS_URL}/${encodeURIComponent(
-      String(docAttachmentId)
+      String(docAttachmentId),
     )}/attachments/${encodeURIComponent(String(attachmentId))}`;
 
     const res = await fetch(url, {
@@ -1598,13 +1559,13 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(
-        `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`
+        `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`,
       );
     }
   }
 
   async function fetchDocumentAttachmentGroup(
-    groupId: number
+    groupId: number,
   ): Promise<DocumentAttachmentsResponse> {
     const res = await fetch(`${DOCUMENT_ATTACHMENTS_URL}/${groupId}`, {
       method: "GET",
@@ -1614,7 +1575,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!res.ok) {
       const t = await res.text().catch(() => "");
       throw new Error(
-        `Gagal mengambil attachment group (HTTP ${res.status}). ${t}`.trim()
+        `Gagal mengambil attachment group (HTTP ${res.status}). ${t}`.trim(),
       );
     }
     return (await res.json()) as DocumentAttachmentsResponse;
@@ -1629,7 +1590,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         | typeof DOC_ATTACHMENT_PICKUP_TYPE
         | typeof DOC_ATTACHMENT_DROP_OFF_TYPE;
       groupId?: number | null;
-    }
+    },
   ): Promise<DocumentAttachmentsResponse> {
     const groupId = opts.groupId ?? null;
 
@@ -1639,7 +1600,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     const url = groupId
       ? `${DOCUMENT_ATTACHMENTS_URL}/${groupId}`
       : `${DOCUMENT_ATTACHMENTS_URL}?doc_type=${encodeURIComponent(
-          opts.docType
+          opts.docType,
         )}`;
 
     const res = await fetch(url, {
@@ -1665,7 +1626,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
     const maybe = json as Partial<DocumentAttachmentsResponse> | null;
     const finalGroupId =
-      typeof maybe?.id === "number" ? maybe.id : groupId ?? null;
+      typeof maybe?.id === "number" ? maybe.id : (groupId ?? null);
 
     if (!finalGroupId) {
       throw new Error("Upload berhasil tetapi tidak mendapatkan group id.");
@@ -1683,10 +1644,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     return await fetchDocumentAttachmentGroup(finalGroupId);
   }
 
-  // ===== Pickup / Drop-off attachments =====
-  // Catatan: PATCH route doc-attachment sekarang ditangani oleh IndMultiFileUpload
-  // (untuk mencegah overwrite sisi lain dengan nilai 0).
-
+  // ===== Pickup / Drop-off attachments (independent uploader) =====
   const uploadPickupAttachmentGroup = useCallback(
     async (files: File[]) => {
       const g = await uploadDocumentsForDocTypeGroup(files, {
@@ -1696,7 +1654,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setPickupAttachment(g);
       return g;
     },
-    [pickupAttachment?.id]
+    [pickupAttachment?.id],
   );
 
   const uploadDropOffAttachmentGroup = useCallback(
@@ -1708,7 +1666,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setDropOffAttachment(g);
       return g;
     },
-    [dropOffAttachment?.id]
+    [dropOffAttachment?.id],
   );
 
   const deletePickupAttachmentFile = useCallback(
@@ -1722,7 +1680,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         ? {
             ...pickupAttachment,
             attachments: (pickupAttachment.attachments ?? []).filter(
-              (a) => a.id !== attachmentId
+              (a) => a.id !== attachmentId,
             ),
           }
         : null;
@@ -1730,7 +1688,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setPickupAttachment(next);
       return next;
     },
-    [pickupAttachment]
+    [pickupAttachment],
   );
 
   const deleteDropOffAttachmentFile = useCallback(
@@ -1744,7 +1702,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         ? {
             ...dropOffAttachment,
             attachments: (dropOffAttachment.attachments ?? []).filter(
-              (a) => a.id !== attachmentId
+              (a) => a.id !== attachmentId,
             ),
           }
         : null;
@@ -1752,7 +1710,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setDropOffAttachment(next);
       return next;
     },
-    [dropOffAttachment]
+    [dropOffAttachment],
   );
   console.log(statusCurrent);
   console.log("chatterResModel:", chatterResModel);
@@ -1883,14 +1841,17 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                 destLatitude={destLatitude}
                 destLongitude={destLongitude}
                 deliveryNoteUri={deliveryNoteUri}
+
                 pickupAttachment={pickupAttachment}
                 setPickupAttachment={setPickupAttachment}
                 uploadPickupAttachmentGroup={uploadPickupAttachmentGroup}
                 deletePickupAttachmentFile={deletePickupAttachmentFile}
+                
                 dropOffAttachment={dropOffAttachment}
                 setDropOffAttachment={setDropOffAttachment}
                 uploadDropOffAttachmentGroup={uploadDropOffAttachmentGroup}
                 deleteDropOffAttachmentFile={deleteDropOffAttachmentFile}
+                
                 multiPickupDrop={multiPickupDrop}
                 setMultiPickupDrop={setMultiPickupDrop}
                 extraStops={extraStops}
@@ -1977,7 +1938,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
               {mode === "edit" &&
                 AUTOSET_STATUSES.has(
-                  (statusCurrent ?? "").trim().toLowerCase()
+                  (statusCurrent ?? "").trim().toLowerCase(),
                 ) && (
                   <Card className="bg-primary/60">
                     <CardHeader>
@@ -2174,7 +2135,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
                   {canShowClaims &&
                     AUTOSET_TMS_STATE_FOR_BTNCLAIM.has(
-                      (statusCurrent ?? "").trim().toLowerCase()
+                      (statusCurrent ?? "").trim().toLowerCase(),
                     ) && (
                       <Button
                         type="button"
@@ -2216,7 +2177,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                       variant="solid"
                     >
                       {acceptLoading
-                        ? t("common.sending") ?? "Mengirim…"
+                        ? (t("common.sending") ?? "Mengirim…")
                         : t("common.accept")}
                     </Button>
                   </div>
@@ -2285,7 +2246,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
               onClick={handleReject}
               disabled={rejectLoading || !reason.trim()}
             >
-              {rejectLoading ? t("common.sending") ?? "Mengirim…" : "Ya"}
+              {rejectLoading ? (t("common.sending") ?? "Mengirim…") : "Ya"}
             </Button>
             <Button
               variant="outline"

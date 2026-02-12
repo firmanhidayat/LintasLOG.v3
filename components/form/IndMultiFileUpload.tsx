@@ -110,10 +110,7 @@ export type IndMultiFileUploadProps = {
   orderId?: number | string;
   routeId?: number | string;
 
-  /**
-   * Current route doc-attachment IDs (optional).
-   * Used to avoid overwriting the other side when PATCH-ing /doc-attachment.
-   */
+  /** Optional: preserve other side doc-attachment id when PATCH */
   routePickupAttachmentId?: number | string | null;
   routeDropOffAttachmentId?: number | string | null;
 
@@ -363,10 +360,20 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
   const [err, setErr] = useState<string | null>(null);
   const [groupInfo, setGroupInfo] = useState<TmsAttachmentGroup | null>(null);
 
-  // Jika upload terjadi saat orderId/routeId belum siap (mis. initial load),
-  // kita simpan groupId supaya bisa di-PATCH otomatis begitu routeId tersedia.
-  const pendingRoutePatchRef = useRef<number | string | null>(null);
-  const patchInFlightRef = useRef(false);
+  // Prevent infinite loading: abort/timeout GET list requests, and avoid auto-refresh right after upload
+  const mountedRef = useRef(true);
+  const refreshAbortRef = useRef<AbortController | null>(null);
+  const refreshSeqRef = useRef(0);
+  const skipNextAutoLoadRef = useRef(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      refreshAbortRef.current?.abort();
+    };
+  }, []);
+
 
   const maxBytes = useMemo(() => Math.max(0, maxFileSizeMB) * 1024 * 1024, [maxFileSizeMB]);
 
@@ -582,25 +589,11 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
    */
   const patchRouteDocAttachment = useCallback(
     async (newGroupId: number | string) => {
-      // only for these docTypes
-      const gid: number | string =
-        typeof newGroupId === "number"
-          ? newGroupId
-          : /^\d+$/.test(String(newGroupId))
-            ? Number(newGroupId)
-            : newGroupId;
-
       const oId = orderId;
       const rId = routeId;
 
-      const hasOrder = oId !== undefined && oId !== null && String(oId).trim() !== "";
-      const hasRoute = rId !== undefined && rId !== null && String(rId).trim() !== "";
-
-      // Jika order/route belum siap, simpan agar bisa dipatch otomatis nanti.
-      if (!hasOrder || !hasRoute) {
-        pendingRoutePatchRef.current = gid;
-        return;
-      }
+      if (oId === undefined || oId === null) return;
+      if (rId === undefined || rId === null) return;
 
       const normId = (v: unknown): number | string | null => {
         if (v === undefined || v === null) return null;
@@ -614,6 +607,10 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         return null;
       };
 
+      const gid = normId(newGroupId);
+      if (gid === null) return;
+
+      // PATCH should not reset the other side. Preserve if provided.
       let payload: Record<string, number | string> | null = null;
       if (docType === "route_purchase_pickup") {
         const other = normId(routeDropOffAttachmentId);
@@ -625,7 +622,7 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         const other = normId(routePickupAttachmentId);
         payload =
           other !== null
-            ? { pickup_attachment_id: other, drop_off_attachment_id: gid }
+            ? { drop_off_attachment_id: gid, pickup_attachment_id: other }
             : { drop_off_attachment_id: gid };
       } else {
         return;
@@ -635,6 +632,8 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
       const url = `${poBase}/${encodeURIComponent(String(oId))}/routes/${encodeURIComponent(
         String(rId)
       )}/doc-attachment`;
+
+      console.log("[IndMultiFileUpload] PATCH route doc-attachment", { url, payload });
 
       const res = await fetch(url, {
         method: "PATCH",
@@ -664,66 +663,87 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     ]
   );
 
-  // Jika sebelumnya tertunda karena orderId/routeId belum siap,
-  // jalankan PATCH otomatis ketika sudah tersedia.
-  useEffect(() => {
-    const pending = pendingRoutePatchRef.current;
-    if (pending === null || pending === undefined) return;
-
-    const oId = orderId;
-    const rId = routeId;
-    const hasOrder = oId !== undefined && oId !== null && String(oId).trim() !== "";
-    const hasRoute = rId !== undefined && rId !== null && String(rId).trim() !== "";
-    if (!hasOrder || !hasRoute) return;
-
-    if (patchInFlightRef.current) return;
-    patchInFlightRef.current = true;
-
-    void patchRouteDocAttachment(pending)
-      .then(() => {
-        pendingRoutePatchRef.current = null;
-      })
-      .catch((e) => {
-        pendingRoutePatchRef.current = null;
-        setErr(
-          e instanceof Error
-            ? `Upload berhasil, tapi gagal mengikat attachment ke route. ${e.message}`
-            : "Upload berhasil, tapi gagal mengikat attachment ke route."
-        );
-      })
-      .finally(() => {
-        patchInFlightRef.current = false;
-      });
-  }, [orderId, routeId, patchRouteDocAttachment]);
-
   const refreshList = useCallback(async () => {
     if (!groupId) return;
+
+    // cancel previous list request (avoid endless pending)
+    refreshAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    refreshAbortRef.current = ctrl;
+
+    const seq = ++refreshSeqRef.current;
     setLoadingList(true);
     setErr(null);
+
+    const timeoutMs = 15000;
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+
     try {
-      const g = await fetchGroup(groupId);
+      const res = await fetch(`${baseUrl}/${groupId}`, {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          ...(requestHeaders ?? {}),
+        },
+        credentials: withCredentials ? "include" : "same-origin",
+        signal: ctrl.signal,
+      });
+
+      if (!res.ok) throw new Error(await readResponseError(res));
+      const g = (await res.json()) as TmsAttachmentGroup;
+
+      if (!mountedRef.current || refreshSeqRef.current !== seq) return;
+
       setGroupInfo(g);
       onGroupLoaded?.(g);
       setUploaded(groupToUploadedItems(g));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal memuat list file.");
+      if (!mountedRef.current || refreshSeqRef.current !== seq) return;
+
+      const isAbort =
+        typeof e === "object" &&
+        e !== null &&
+        "name" in e &&
+        (e as { name?: unknown }).name === "AbortError";
+
+      setErr(
+        isAbort
+          ? "Request timeout saat memuat list file. Coba klik Refresh lagi."
+          : e instanceof Error
+            ? e.message
+            : "Gagal memuat list file."
+      );
     } finally {
+      clearTimeout(timer);
+      if (!mountedRef.current || refreshSeqRef.current !== seq) return;
       setLoadingList(false);
     }
-  }, [fetchGroup, groupId, groupToUploadedItems, onGroupLoaded, setUploaded]);
+  }, [
+    baseUrl,
+    groupId,
+    groupToUploadedItems,
+    onGroupLoaded,
+    requestHeaders,
+    setUploaded,
+    withCredentials,
+  ]);
 
-  /** Auto load list when groupId exists (guarded to avoid loop) */
-  const lastLoadedGroupIdRef = useRef<string>("");
+  /** Auto load list when groupId exists */
   useEffect(() => {
     if (!loadOnMount) return;
     if (!groupId) return;
 
-    const gid = String(groupId);
-    if (lastLoadedGroupIdRef.current === gid) return;
-    lastLoadedGroupIdRef.current = gid;
+    // after upload success we already have fresh list from response, skip one auto-load
+    if (skipNextAutoLoadRef.current) {
+      skipNextAutoLoadRef.current = false;
+      return;
+    }
+
+    // avoid re-fetch when group already loaded
+    if (groupInfo && String(groupInfo.id) === String(groupId)) return;
 
     void refreshList();
-  }, [groupId, loadOnMount, refreshList]);
+  }, [groupId, groupInfo, loadOnMount, refreshList]);
 
   /**
    * ===============
@@ -750,6 +770,12 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
           patchWarn = e instanceof Error ? e.message : "Gagal PATCH route doc-attachment.";
         }
       }
+
+      // We already have the latest group payload from the upload response.
+      // Avoid triggering loadOnMount refresh (GET) which can hang/pending via proxy.
+      skipNextAutoLoadRef.current = true;
+      refreshAbortRef.current?.abort();
+      setLoadingList(false);
 
       setGroupInfo(g);
       onGroupLoaded?.(g);
@@ -793,34 +819,12 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     uploaded,
   ]);
 
-  // Keep latest doUpload in a ref so auto-upload effect doesn't loop due to doUpload identity changes.
-  const doUploadRef = useRef<() => Promise<void>>(async () => {});
-  useEffect(() => {
-    doUploadRef.current = doUpload;
-  }, [doUpload]);
-
-  /** Auto-upload (only once per queue signature; no auto-retry loop) */
-  const autoSigRef = useRef<string>("");
-  const queueSig = useMemo(() => queue.map(fileKey).join("|"), [queue]);
-
+  /** Auto-upload when queue changes */
   useEffect(() => {
     if (!autoUpload) return;
-
-    // reset signature when queue emptied
-    if (!queue.length) {
-      autoSigRef.current = "";
-      return;
-    }
-
-    // avoid re-trigger while busy or for the same queue content
-    if (busy) return;
-
-    const sig = `${String(groupId ?? "null")}::${queueSig}`;
-    if (autoSigRef.current === sig) return;
-    autoSigRef.current = sig;
-
-    void doUploadRef.current();
-  }, [autoUpload, busy, groupId, queue.length, queueSig]);
+    if (!queue.length) return;
+    void doUpload();
+  }, [autoUpload, doUpload, queue.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Delete uploaded attachment (server) then refresh list
