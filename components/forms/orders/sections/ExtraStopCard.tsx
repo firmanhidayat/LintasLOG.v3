@@ -3,7 +3,7 @@ import { t } from "@/lib/i18n";
 import AddressAutocomplete from "@/components/forms/orders/AddressAutocomplete";
 import { FieldText } from "@/components/form/FieldText";
 import DateTimePickerTW from "@/components/form/DateTimePickerTW";
-import type { AddressItem, OrderAttachmentGroup } from "@/types/orders";
+import type { AddressItem } from "@/types/orders";
 import FieldPhone from "@/components/form/FieldPhone";
 import { cn } from "@/lib/cn";
 import { AddressSidePanel } from "@/components/ui/AddressSidePanel";
@@ -37,13 +37,6 @@ export type ExtraStop = {
   destLatitude: string;
   destLongitude: string;
   delivery_note_uri: string;
-
-  /**
-   * Independent upload attachments (optional; populated from API prefill).
-   * NOTE: routeId (stop.id) is the key for PATCH `/routes/{routeId}/doc-attachment`.
-   */
-  pickup_attachment?: OrderAttachmentGroup | null;
-  drop_off_attachment?: OrderAttachmentGroup | null;
 };
 
 type AddressSidePanelAttachment = React.ComponentProps<

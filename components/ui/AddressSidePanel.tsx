@@ -1,8 +1,6 @@
 import type React from "react";
 import { AddressInfo } from "@/types/addressinfo";
-import IndMultiFileUpload, {
-  type UploadedFileItem as IndUploadedFileItem,
-} from "@/components/form/IndMultiFileUpload";
+import IndMultiFileUpload from "@/components/form/IndMultiFileUpload";
 
 type AddressSidePanelInfo = AddressInfo & {
   delivery_note_uri?: string | null;
@@ -116,6 +114,8 @@ export function AddressSidePanel<
   routeDropOffAttachmentId?: number | string | null;
 }) {
   const isOrigin = labelPrefix === "Origin";
+  
+  console.log("AddressSidePanel info:", orderId, currentRouteId, info);
 
   const tone = isOrigin
     ? {
@@ -344,9 +344,9 @@ export function AddressSidePanel<
           <IndMultiFileUpload
             orderId={orderId}
             routeId={currentRouteId}
-            routePickupAttachmentId={routePickupAttachmentId}
-            routeDropOffAttachmentId={routeDropOffAttachmentId}
-            groupId={attachment.value?.id ?? undefined}
+            groupId={attachment?.value?.id ?? null}
+            routePickupAttachmentId={routePickupAttachmentId ?? null}
+            routeDropOffAttachmentId={routeDropOffAttachmentId ?? null}
             docType={isOrigin ? "route_purchase_pickup" : "route_purchase_drop_off"}
             label={`${sideLabel} Attachment`}
             accept={uploadAccept}
@@ -356,9 +356,22 @@ export function AddressSidePanel<
             uploadButtonText={uploadButtonText}
             autoUpload={true}
             clearQueueAfterUpload
-            onGroupLoaded={(g) => attachment?.onChange?.(g as unknown as TGroup)}
-            onGroupIdChange={(_, g) => {
-              if (g) attachment?.onChange?.(g as unknown as TGroup);
+            onGroupLoaded={(g) => {
+              attachment?.onChange?.(g as unknown as TGroup);
+            }}
+            onGroupIdChange={(nextId, group) => {
+              const onChange = attachment?.onChange;
+              if (!onChange) return;
+              if (group) {
+                onChange(group as unknown as TGroup);
+                return;
+              }
+              if (nextId === null || nextId === undefined) {
+                onChange(null);
+                return;
+              }
+              // fallback minimal group so parent doesn't lose the id
+              onChange({ id: nextId, name: String(nextId), attachments: [] } as unknown as TGroup);
             }}
           />
         </div>

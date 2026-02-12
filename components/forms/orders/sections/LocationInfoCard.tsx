@@ -154,6 +154,8 @@ export default function LocationInfoCard({
 }: Props) {
   const lokasiMuatDisabled = !kotaMuat;
   const lokasiBongkarDisabled = !kotaBongkar;
+
+  console.log("orderId in LocationInfoCard:", orderId);
   console.log("currentRouteId in LocationInfoCard:", currentRouteId);
 
   const refIf = (k: string) =>
@@ -374,7 +376,7 @@ export default function LocationInfoCard({
                   orderId={orderId}
                   currentRouteId={currentRouteId}
                   routePickupAttachmentId={pickupAttachment?.id ?? null}
-                  // routeDropOffAttachmentId={dropOffAttachment?.id ?? null}
+                  routeDropOffAttachmentId={dropOffAttachment?.id ?? null}
                   info={origin}
                   mode={panelMode}
                   attachment={pickupAttachmentControl}
@@ -388,7 +390,7 @@ export default function LocationInfoCard({
                   labelPrefix="Destination"
                   orderId={orderId}
                   currentRouteId={currentRouteId}
-                  // routePickupAttachmentId={pickupAttachment?.id ?? null}
+                  routePickupAttachmentId={pickupAttachment?.id ?? null}
                   routeDropOffAttachmentId={dropOffAttachment?.id ?? null}
                   info={destination}
                   mode={panelMode}
