@@ -443,7 +443,6 @@ function prefillFromInitial(
     original_res_model: data.original_res_model,
   };
 
-  // route_ids kadang berbentuk array 2D (contoh: [[{...}]]) dan flag is_main_route bisa berupa boolean / 1 / "1"
   const rawRoutes = safeArray<unknown>(
     (data as unknown as Record<string, unknown>).route_ids ??
       (data as unknown as Record<string, unknown>).routes
@@ -500,6 +499,8 @@ function prefillFromInitial(
   form.dest_latitude = main?.dest_latitude ?? main?.dest_latitude ?? "";
   form.dest_longitude = main?.dest_longitude ?? "";
   form.delivery_note_uri = main?.delivery_note_uri ?? "";
+
+  console.log("Main route found for prefill:", main);
   form.currentMainRouteId = main?.id ?? undefined;
 
   form.pickupAttachment = (main as unknown as { pickup_attachment?: OrderAttachmentGroup | null }).pickup_attachment ?? null;
@@ -520,8 +521,8 @@ function prefillFromInitial(
     (r) => !isMainRouteFlag((r as unknown as Record<string, unknown>).is_main_route)
   );
 
-  console.log("Found extra routes:", extras.length);
-  console.log("form MAIN data:", form);
+  // console.log("Found extra routes:", extras.length);
+  // console.log("form MAIN data:", form);
 
   form.extraStops = extras.map(
     (r): ExtraStop => ({
@@ -555,8 +556,8 @@ function prefillFromInitial(
     })
   );
 
-  console.log("Prefill form:", form);
-  console.log("Prefill extraStops:", form.extraStops);
+  // console.log("Prefill form:", form);
+  // console.log("Prefill extraStops:", form.extraStops);
 
   const current = data.states?.find((s) => s.is_current);
   form.isReadOnly = current
@@ -565,12 +566,6 @@ function prefillFromInitial(
   return form;
 }
 
-// export default function PurchaseOrderForm({
-//   mode = "edit",
-//   orderId,
-//   initialData,
-//   onSuccess,
-// }: OrdersCreateFormProps) {
 export default function PurchaseOrderForm<T extends TmsUserType>({
   mode = "edit",
   orderId,
@@ -589,14 +584,10 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     "received",
   ]);
   const { profile } = useAuth();
-  // const profileTimezone = (profile as any)?.tz || "Asia/Jakarta";
   const currentProfileName = useMemo(() => {
     if (profile) return profile.name;
     return undefined;
   }, [profile]);
-
-  console.log("Current Profile Name:", currentProfileName);
-  console.log("Mode: ", mode, " Initial Data:", initialData);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -934,7 +925,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       if (!res.ok) throw new Error(await res.text());
       setIsReadOnly(true);
       onSuccess?.();
-      // router.refresh?.();
       await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
@@ -974,7 +964,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       if (!res.ok) throw new Error(await res.text());
       setIsReadOnly(true);
       onSuccess?.();
-      // router.refresh?.();
       await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
@@ -1010,7 +999,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       if (!res.ok) throw new Error(await res.text());
       setIsReadOnly(true);
       onSuccess?.();
-      // router.refresh?.();
       await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
@@ -1056,7 +1044,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setReason("");
       setIsReadOnly(true);
       onSuccess?.();
-      // router.refresh?.();
       await softReloadDetail();
       openSuccessDialog();
     } catch (e) {
@@ -1072,9 +1059,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     undefined
   );
   
-
-  // const chatAnchorRef = useRef<HTMLDivElement | null>(null);
-
   const layananPreset = [
     "Helm",
     "APAR",
@@ -1154,8 +1138,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   useEffect(() => {
     if (!initialData) return;
 
-    console.log("Initial Data available:", initialData);
-
     const f = prefillFromInitial(initialData);
     setSjPodDownloads(extractSuratJalanDownloads(initialData));
 
@@ -1186,7 +1168,6 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setDropOffAttachment(f.dropOffAttachment ?? null);
     
     setCurrentMainRouteId(f.currentMainRouteId);
-    console.log("CURRENT MAIN F:", f, "CurrentMainRouteID : ", f.currentMainRouteId);
 
     setMuatanNama(f.muatanNama);
     setMuatanDeskripsi(f.muatanDeskripsi);
@@ -1257,10 +1238,8 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         if (!res.ok) throw new Error(await res.text());
         const json = (await res.json()) as OrdersCreateFormProps["initialData"];
         if (json) {
-          console.log("JSON DISINI: ", json);
           const f = prefillFromInitial(json);
           setSjPodDownloads(extractSuratJalanDownloads(json));
-          console.log("f prefillFromInit: ", f);
 
           setFleet(f?.fleet_vehicle);
           setDriver(f?.driver_partner);
@@ -1295,6 +1274,9 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           setDestLatitude(f.dest_latitude);
           setDestLongitude(f.dest_longitude);
           setSetDeliveryNoteUri(f.delivery_note_uri);
+
+          console.log("Current Main Route ID:", f.currentMainRouteId);
+          setCurrentMainRouteId(f.currentMainRouteId);
 
           setPickupAttachment(f.pickupAttachment ?? null);
           setDropOffAttachment(f.dropOffAttachment ?? null);

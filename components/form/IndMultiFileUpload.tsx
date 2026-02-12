@@ -25,14 +25,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
  * Catatan:
  * - Jangan set Content-Type untuk multipart (biarkan browser).
  * - URL attachment dari backend biasanya relative (/web/content/...) -> akan di-resolve pakai origin baseUrl.
- *
- * Tambahan (FIX):
- * - Saat create group baru (groupId awal null), komponen akan PATCH ke:
- *   PATCH /api-tms/purchase-orders/{orderId}/routes/{routeId}/doc-attachment
- *   untuk mengikat groupId ke pickup_attachment_id / drop_off_attachment_id.
- * - Kalau orderId/routeId belum siap saat upload pertama (mis. currentRouteId masih undefined pada render awal),
- *   binding akan di-defer dan diulang otomatis saat orderId/routeId sudah tersedia.
- * - Refresh list punya abort + timeout, supaya UI tidak stuck "Loading..." jika request GET pending.
  */
 
 export type TmsAttachment = {
@@ -57,18 +49,13 @@ export type TmsAttachmentGroup = {
 export type UploadedFileItem = {
   id: number | string;
   name: string;
-  url: string;
+  url: string; // resolved absolute/relative
   mimetype?: string;
   groupId: number | string;
   meta?: Record<string, unknown>;
 };
 
 type SetStateLike<T> = (v: React.SetStateAction<T>) => void;
-
-type RouteDocPayload = Partial<{
-  pickup_attachment_id: number | string;
-  drop_off_attachment_id: number | string;
-}>;
 
 export type IndMultiFileUploadProps = {
   /** UI */
@@ -86,12 +73,16 @@ export type IndMultiFileUploadProps = {
   maxFileSizeMB?: number;
   allowDuplicates?: boolean;
 
-  /** Queue (optional controlled) */
+  /**
+   * Queue (optional controlled)
+   */
   value?: File[];
   defaultValue?: File[];
   onChange?: SetStateLike<File[]>;
 
-  /** Uploaded items (optional controlled) */
+  /**
+   * Uploaded items (optional controlled)
+   */
   uploadedItems?: UploadedFileItem[];
   defaultUploadedItems?: UploadedFileItem[];
   onUploadedItemsChange?: SetStateLike<UploadedFileItem[]>;
@@ -102,15 +93,35 @@ export type IndMultiFileUploadProps = {
   clearQueueAfterUpload?: boolean;
   uploadButtonText?: string;
 
+  /**
+   * ==========================
+   * TMS API configuration
+   * ==========================
+   */
   /** doc_type wajib */
   docType: string;
 
-  /** Binding (route doc-attachment) */
+  /**
+   * (Optional) Jika upload pertama membuat group baru (groupId awal null),
+   * komponen bisa otomatis PATCH ke endpoint route doc-attachment:
+   *   PATCH /api-tms/purchase-orders/{orderId}/routes/{routeId}/doc-attachment
+   * untuk mengikat groupId yang baru dibuat.
+   */
   orderId?: number | string;
   routeId?: number | string;
-  purchaseOrdersUrl?: string;
+
+  /** Optional: id attachment lain dalam 1 route (biar PATCH tidak menghapus sisi lain). */
   routePickupAttachmentId?: number | string | null;
   routeDropOffAttachmentId?: number | string | null;
+
+  /**
+   * Base URL purchase-orders.
+   * - Jika diisi: mis. "https://.../api-tms/purchase-orders" atau "/api-tms/purchase-orders"
+   * - Jika kosong: akan di-derive dari documentAttachmentsUrl.
+   */
+  purchaseOrdersUrl?: string;
+
+  /** Dipanggil setelah PATCH sukses (hanya pada create pertama). */
   onRouteDocAttachmentPatched?: (args: {
     orderId: number | string;
     routeId: number | string;
@@ -118,25 +129,44 @@ export type IndMultiFileUploadProps = {
     groupId: number | string;
   }) => void;
 
-  /** group id (document-attachments/{id}) */
+  /**
+   * id group (document-attachments/{id})
+   * - Kalau sudah ada, komponen auto GET list (loadOnMount)
+   * - Kalau null, akan dibuat saat upload pertama.
+   */
   groupId?: number | string | null;
+
+  /**
+   * Dipanggil ketika groupId berubah (setelah create/upload),
+   * atau ketika refresh list (optional group passed).
+   */
   onGroupIdChange?: (nextId: number | string | null, group?: TmsAttachmentGroup | null) => void;
+
+  /** Dipanggil ketika komponen berhasil load group (GET/POST). */
   onGroupLoaded?: (group: TmsAttachmentGroup) => void;
 
-  /** Base URL document-attachments */
+  /**
+   * Base URL:
+   * contoh: https://odoodev.linitekno.com/api-tms/document-attachments
+   * default: process.env.NEXT_PUBLIC_TMS_DOCUMENT_ATTACHMENTS_URL || "/api-tms/document-attachments"
+   */
   documentAttachmentsUrl?: string;
 
-  /** Extra headers (mis Authorization). Jangan isi Content-Type untuk multipart */
+  /**
+   * Extra headers (mis: Authorization).
+   * Jangan isi "Content-Type" untuk multipart.
+   */
   requestHeaders?: Record<string, string>;
 
-  /** credentials */
+  /**
+   * credentials:
+   * - true: include cookie (default) -> cocok kalau auth via cookie/session
+   * - false: same-origin
+   */
   withCredentials?: boolean;
 
   /** Auto load list ketika groupId tersedia */
   loadOnMount?: boolean;
-
-  /** Network */
-  listTimeoutMs?: number;
 
   /** Callback umum */
   onReject?: (messages: string[]) => void;
@@ -205,30 +235,17 @@ async function readResponseError(res: Response) {
 }
 
 function derivePurchaseOrdersUrl(documentAttachmentsUrl: string) {
+  // Prefer: trim trailing "/document-attachments"
   const trimmed = documentAttachmentsUrl.replace(/\/+$/, "");
   const bySuffix = trimmed.replace(/\/document-attachments$/i, "");
   if (bySuffix !== trimmed) return `${bySuffix}/purchase-orders`;
 
+  // If contains "/api-tms" somewhere, keep up to that
   const m = trimmed.match(/^(.*\/api-tms)(?:\/|$)/i);
   if (m?.[1]) return `${m[1]}/purchase-orders`;
 
+  // Fallback relative
   return `/api-tms/purchase-orders`;
-}
-
-function normNumOrStr(v: number | string): number | string {
-  if (typeof v === "number") return v;
-  const s = String(v).trim();
-  if (/^\d+$/.test(s)) return Number(s);
-  return s;
-}
-
-function normOptionalId(v: unknown): number | string | null {
-  if (v === undefined || v === null) return null;
-  if (typeof v === "number") return Number.isFinite(v) ? v : null;
-  const s = String(v).trim();
-  if (!s) return null;
-  if (/^\d+$/.test(s)) return Number(s);
-  return s;
 }
 
 export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
@@ -268,19 +285,16 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     docType,
     orderId,
     routeId,
-    purchaseOrdersUrl: purchaseOrdersUrlProp,
     routePickupAttachmentId,
     routeDropOffAttachmentId,
-
+    purchaseOrdersUrl: purchaseOrdersUrlProp,
     groupId: groupIdProp,
     onGroupIdChange,
     onGroupLoaded,
-
     documentAttachmentsUrl: documentAttachmentsUrlProp,
     requestHeaders,
     withCredentials = true,
     loadOnMount = true,
-    listTimeoutMs = 15000,
 
     // callbacks
     onReject,
@@ -293,10 +307,28 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     documentAttachmentsUrlProp ??
     (process.env.NEXT_PUBLIC_TMS_DOCUMENT_ATTACHMENTS_URL || "/api-tms/document-attachments");
 
-  /** groupId internal (uncontrolled) */
+  /**
+   * groupId internal (uncontrolled) agar komponen bisa dipakai tanpa state dari parent.
+   * Kalau parent kasih groupIdProp, treat sebagai controlled.
+   */
   const groupIdControlled = groupIdProp !== undefined;
   const [groupIdInternal, setGroupIdInternal] = useState<number | string | null>(groupIdProp ?? null);
   const groupId = groupIdControlled ? (groupIdProp ?? null) : groupIdInternal;
+
+  const pendingRouteBindRef = useRef<number | string | null>(null);
+  const lastRouteBindKeyRef = useRef<string | null>(null);
+  const inflightRouteBindKeyRef = useRef<string | null>(null);
+
+  const normId = useCallback((v: unknown): number | string | null => {
+    if (v === null || v === undefined) return null;
+    if (typeof v === "number") return Number.isFinite(v) ? v : null;
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (!s) return null;
+      return /^\d+$/.test(s) ? Number(s) : s;
+    }
+    return null;
+  }, []);
 
   const setGroupId = useCallback(
     (next: number | string | null, group?: TmsAttachmentGroup | null) => {
@@ -474,6 +506,23 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
    * TMS API calls
    * ===============
    */
+  const fetchGroup = useCallback(
+    async (id: number | string) => {
+      const res = await fetch(`${baseUrl}/${id}`, {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          ...(requestHeaders ?? {}),
+        },
+        credentials: withCredentials ? "include" : "same-origin",
+      });
+
+      if (!res.ok) throw new Error(await readResponseError(res));
+      return (await res.json()) as TmsAttachmentGroup;
+    },
+    [baseUrl, requestHeaders, withCredentials]
+  );
+
   const createGroup = useCallback(
     async (files: File[]) => {
       const fd = new FormData();
@@ -533,210 +582,120 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     [baseUrl, requestHeaders, withCredentials]
   );
 
-  /**
-   * ======================
-   * PATCH route doc-attachment
-   * ======================
-   */
-  const buildRoutePayload = useCallback(
-    (newGroupId: number | string): RouteDocPayload | null => {
-      const gid = normNumOrStr(newGroupId);
-
-      if (docType === "route_purchase_pickup") {
-        const other = normOptionalId(routeDropOffAttachmentId);
-        return other !== null ? { pickup_attachment_id: gid, drop_off_attachment_id: other } : { pickup_attachment_id: gid };
-      }
-      if (docType === "route_purchase_drop_off") {
-        const other = normOptionalId(routePickupAttachmentId);
-        return other !== null ? { pickup_attachment_id: other, drop_off_attachment_id: gid } : { drop_off_attachment_id: gid };
-      }
-      return null;
-    },
-    [docType, routeDropOffAttachmentId, routePickupAttachmentId]
-  );
-
   const patchRouteDocAttachment = useCallback(
     async (newGroupId: number | string) => {
-      const oId = orderId;
-      const rId = routeId;
-      if (oId === undefined || oId === null) return { ok: false, skipped: true } as const;
-      if (rId === undefined || rId === null) return { ok: false, skipped: true } as const;
+      const gid = normId(newGroupId);
+      console.log("patchRouteDocAttachment dipanggil dengan groupId:", gid, { orderId, routeId });
+      if (gid === null) return { ok: false, skipped: true as const };
 
-      const payload = buildRoutePayload(newGroupId);
-      if (!payload) return { ok: false, skipped: true } as const;
+      // selalu simpan yg terakhir harus di-bind
+      pendingRouteBindRef.current = gid;
+
+      console.log("Cek patchRouteDocAttachment...", { gid, orderId, routeId });
+      const oId = normId(orderId);
+      const rId = normId(routeId);
+
+      // kalau belum siap, skip dulu (akan retry saat orderId/routeId terisi)
+      if (oId === null || rId === null) return { ok: false, skipped: true as const };
+
+      // only for these docTypes
+      let payload: Record<string, number | string> | null = null;
+      if (docType === "route_purchase_pickup") {
+        payload = { pickup_attachment_id: gid };
+        const other = normId(routeDropOffAttachmentId);
+        if (other !== null) payload.drop_off_attachment_id = other;
+      } else if (docType === "route_purchase_drop_off") {
+        payload = { drop_off_attachment_id: gid };
+        const other = normId(routePickupAttachmentId);
+        if (other !== null) payload.pickup_attachment_id = other;
+      } else {
+        return { ok: false, skipped: true as const };
+      }
 
       const poBase = (purchaseOrdersUrlProp ?? derivePurchaseOrdersUrl(baseUrl)).replace(/\/+$/, "");
-      const url = `${poBase}/${encodeURIComponent(String(oId))}/routes/${encodeURIComponent(String(rId))}/doc-attachment`;
+      const url = `${poBase}/${encodeURIComponent(String(oId))}/routes/${encodeURIComponent(
+        String(rId)
+      )}/doc-attachment`;
 
-      console.log("Patching route doc-attachment:", url, payload);
+      const key = `${docType}:${String(oId)}:${String(rId)}:${String(gid)}`;
+      if (lastRouteBindKeyRef.current === key) return { ok: true as const };
+      if (inflightRouteBindKeyRef.current === key) return { ok: false, skipped: true as const };
 
-      const res = await fetch(url, {
-        method: "PATCH",
-        headers: {
-          accept: "application/json",
-          "Content-Type": "application/json",
-          ...(requestHeaders ?? {}),
-        },
-        body: JSON.stringify(payload),
-        credentials: withCredentials ? "include" : "same-origin",
-      });
+      inflightRouteBindKeyRef.current = key;
+      try {
+        const res = await fetch(url, {
+          method: "PATCH",
+          headers: {
+            accept: "application/json",
+            "Content-Type": "application/json",
+            ...(requestHeaders ?? {}),
+          },
+          body: JSON.stringify(payload),
+          credentials: withCredentials ? "include" : "same-origin",
+        });
 
-      if (!res.ok) throw new Error(await readResponseError(res));
-      onRouteDocAttachmentPatched?.({ orderId: oId, routeId: rId, docType, groupId: normNumOrStr(newGroupId) });
-      return { ok: true, skipped: false } as const;
+        if (!res.ok) throw new Error(await readResponseError(res));
+
+        lastRouteBindKeyRef.current = key;
+        pendingRouteBindRef.current = null;
+        onRouteDocAttachmentPatched?.({ orderId: oId, routeId: rId, docType, groupId: gid });
+        return { ok: true as const };
+      } finally {
+        // allow retry on error
+        if (inflightRouteBindKeyRef.current === key) inflightRouteBindKeyRef.current = null;
+      }
     },
     [
       baseUrl,
-      buildRoutePayload,
       docType,
+      normId,
       onRouteDocAttachmentPatched,
       orderId,
       purchaseOrdersUrlProp,
       requestHeaders,
+      routeDropOffAttachmentId,
       routeId,
+      routePickupAttachmentId,
       withCredentials,
     ]
   );
 
-  /** Pending bind jika upload terjadi sebelum orderId/routeId ready */
-  const pendingBindRef = useRef<number | string | null>(null);
-  const bindingRef = useRef(false);
-  // Guard agar tidak PATCH berulang untuk kombinasi yang sama
-  const lastBoundKeyRef = useRef<string>("");
-
+  // retry bind otomatis ketika orderId/routeId baru terisi setelah upload pertama
   useEffect(() => {
-    const pending = pendingBindRef.current;
-    if (pending === null || pending === undefined) return;
-    if (bindingRef.current) return;
+    const gid = pendingRouteBindRef.current;
+
+    console.log("Cek retry patchRouteDocAttachment karena orderId/routeId berubah...", { gid, orderId, routeId });
+    
+    if (gid === null) return;
     if (orderId === undefined || orderId === null) return;
     if (routeId === undefined || routeId === null) return;
-
-    bindingRef.current = true;
-    (async () => {
-      try {
-        const r = await patchRouteDocAttachment(pending);
-        if (r.ok) {
-          const key = `${docType}:${String(orderId)}:${String(routeId)}:${String(pending)}`;
-          lastBoundKeyRef.current = key;
-          pendingBindRef.current = null;
-        }
-      } catch (e) {
-        // Jangan bikin UI stuck; cukup tampilkan error sekali.
-        setErr(e instanceof Error ? e.message : "Gagal mengikat attachment ke route.");
-      } finally {
-        bindingRef.current = false;
-      }
-    })();
-  }, [docType, orderId, routeId, patchRouteDocAttachment]);
-
-  // Safety-net: kalau groupId sudah ada (misalnya upload sukses / state parent sudah update),
-  // tapi field pickup_attachment_id / drop_off_attachment_id di route masih kosong,
-  // lakukan bind otomatis sekali (tanpa harus menunggu "creatingNewGroup").
-  useEffect(() => {
-    if (groupId === null || groupId === undefined) return;
-    if (orderId === undefined || orderId === null) return;
-    if (routeId === undefined || routeId === null) return;
-
-    const gid = groupId;
-    const boundKey = `${docType}:${String(orderId)}:${String(routeId)}:${String(gid)}`;
-    if (lastBoundKeyRef.current === boundKey) return;
-    if (bindingRef.current) return;
-
-    // Kalau props route sudah punya id yang sama, tidak perlu patch.
-    const gidNorm = normOptionalId(gid);
-    if (docType === "route_purchase_pickup") {
-      const cur = normOptionalId(routePickupAttachmentId);
-      if (cur !== null && gidNorm !== null && String(cur) === String(gidNorm)) {
-        lastBoundKeyRef.current = boundKey;
-        return;
-      }
-      // Kalau route sudah punya pickup id (walau beda), jangan override diam-diam.
-      if (cur !== null) return;
-    }
-    if (docType === "route_purchase_drop_off") {
-      const cur = normOptionalId(routeDropOffAttachmentId);
-      if (cur !== null && gidNorm !== null && String(cur) === String(gidNorm)) {
-        lastBoundKeyRef.current = boundKey;
-        return;
-      }
-      if (cur !== null) return;
-    }
-
-    bindingRef.current = true;
-    (async () => {
-      try {
-        const r = await patchRouteDocAttachment(gid);
-        if (r.ok) lastBoundKeyRef.current = boundKey;
-      } catch (e) {
-        setErr(e instanceof Error ? e.message : "Gagal mengikat attachment ke route.");
-      } finally {
-        bindingRef.current = false;
-      }
-    })();
-  }, [docType, groupId, orderId, routeDropOffAttachmentId, routeId, routePickupAttachmentId, patchRouteDocAttachment]);
-
-  /**
-   * ==================
-   * LIST/REFRESH (abort + timeout)
-   * ==================
-   */
-  const refreshAbortRef = useRef<AbortController | null>(null);
+    void patchRouteDocAttachment(gid);
+    
+    console.log("Retry patchRouteDocAttachment karena orderId/routeId berubah.");
+  }, [orderId, routeId, patchRouteDocAttachment]);
 
   const refreshList = useCallback(async () => {
     if (!groupId) return;
-
-    // abort request sebelumnya
-    refreshAbortRef.current?.abort();
-    const ac = new AbortController();
-    refreshAbortRef.current = ac;
-    const timer = setTimeout(() => ac.abort(), Math.max(1000, listTimeoutMs));
-
     setLoadingList(true);
     setErr(null);
-
     try {
-      const res = await fetch(`${baseUrl}/${groupId}`, {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          ...(requestHeaders ?? {}),
-        },
-        credentials: withCredentials ? "include" : "same-origin",
-        signal: ac.signal,
-      });
-
-      if (!res.ok) throw new Error(await readResponseError(res));
-      const g = (await res.json()) as TmsAttachmentGroup;
+      const g = await fetchGroup(groupId);
       setGroupInfo(g);
       onGroupLoaded?.(g);
       setUploaded(groupToUploadedItems(g));
     } catch (e) {
-      // AbortError jangan dianggap error
-      const anyErr = e as { name?: string };
-      if (anyErr?.name === "AbortError") {
-        setErr("Request list file timeout / dibatalkan.");
-      } else {
-        setErr(e instanceof Error ? e.message : "Gagal memuat list file.");
-      }
+      setErr(e instanceof Error ? e.message : "Gagal memuat list file.");
     } finally {
-      clearTimeout(timer);
-      if (refreshAbortRef.current === ac) refreshAbortRef.current = null;
       setLoadingList(false);
     }
-  }, [baseUrl, groupId, groupToUploadedItems, listTimeoutMs, onGroupLoaded, requestHeaders, setUploaded, withCredentials]);
+  }, [fetchGroup, groupId, groupToUploadedItems, onGroupLoaded, setUploaded]);
 
+  /** Auto load list when groupId exists */
   useEffect(() => {
     if (!loadOnMount) return;
     if (!groupId) return;
     void refreshList();
   }, [groupId, loadOnMount, refreshList]);
-
-  useEffect(() => {
-    return () => {
-      refreshAbortRef.current?.abort();
-      refreshAbortRef.current = null;
-    };
-  }, []);
 
   /**
    * ===============
@@ -753,10 +712,21 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     try {
       const prevIds = new Set((uploaded ?? []).map((x) => String(x.id)));
       const creatingNewGroup = groupId === null || groupId === undefined;
-
       const g = groupId !== null && groupId !== undefined ? await addFiles(groupId, queue) : await createGroup(queue);
+      
+      console.log("Created new group:", creatingNewGroup, g);
+      console.log("Upload selesai, group:", g);
 
-      // Update state/UI segera
+      let patchWarn: string | null = null;
+      if (creatingNewGroup) {
+        try {
+          console.log("Coba patch route doc-attachment untuk group baru:", g.id);
+          await patchRouteDocAttachment(g.id);
+        } catch (e) {
+          patchWarn = e instanceof Error ? e.message : "Gagal PATCH route doc-attachment.";
+        }
+      }
+
       setGroupInfo(g);
       onGroupLoaded?.(g);
       setGroupId(g.id, g);
@@ -769,21 +739,10 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
 
       if (clearQueueAfterUpload) setQueue([]);
 
-      // Bind ke route hanya ketika create pertama
-      if (creatingNewGroup) {
-        pendingBindRef.current = g.id;
-        try {
-          const r = await patchRouteDocAttachment(g.id);
-          if (r.ok) pendingBindRef.current = null;
-          // kalau skipped (orderId/routeId belum siap) -> akan di-bind oleh useEffect
-        } catch (e) {
-          pendingBindRef.current = null;
-          setErr(
-            `Upload berhasil, tapi gagal mengikat attachment ke route. ${
-              e instanceof Error ? e.message : ""
-            }`.trim()
-          );
-        }
+      if (patchWarn) {
+        setErr(
+          `Upload berhasil, tapi gagal mengikat attachment ke route. ${patchWarn}`
+        );
       }
     } catch (e) {
       onUploadError?.(e);
@@ -843,7 +802,9 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
     [busy, deleteAttachment, disabled, groupId, refreshList]
   );
 
-  /** Drag & drop handlers */
+  /**
+   * Drag & drop handlers
+   */
   const onDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       if (!droppable || disabled) return;
@@ -894,7 +855,9 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
               </span>
             )}
             {groupInfo?.name ? (
-              <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5">{groupInfo.name}</span>
+              <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5">
+                {groupInfo.name}
+              </span>
             ) : null}
           </div>
         </div>
@@ -947,88 +910,106 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         </div>
       </div>
 
+      {/* Error */}
+      {err ? (
+        <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {err}
+        </div>
+      ) : null}
+
       {/* Dropzone */}
       {droppable ? (
         <div
           onDrop={onDrop}
           onDragOver={onDragOver}
-          className="mt-4 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center"
+          className={[
+            "mt-4 rounded-xl border-2 border-dashed p-4",
+            disabled ? "border-slate-200 bg-slate-50" : "border-slate-300 bg-slate-50/40 hover:bg-slate-50",
+          ].join(" ")}
         >
-          <div className="text-lg font-semibold text-slate-700">Drag & drop file di sini</div>
-          <div className="mt-1 text-sm text-slate-500">atau klik “Pilih File”.</div>
+          <div className="text-sm font-semibold text-slate-800">Drag & drop file di sini</div>
+          <div className="mt-1 text-xs text-slate-500">atau klik “Pilih File”.</div>
         </div>
       ) : null}
 
-      {/* Errors */}
-      {err ? (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{err}</div>
-      ) : null}
-
       {/* Queue */}
-      <div className="mt-5">
-        <div className="text-sm font-semibold text-slate-700">Queue</div>
+      <div className="mt-4">
+        <div className="mb-2 text-xs font-semibold text-slate-700">Queue</div>
+
         {queue.length ? (
-          <div className="mt-2 space-y-2">
+          <ul className="space-y-2">
             {queue.map((f, idx) => {
               const k = fileKey(f);
-              const img = showImagePreview && (isImageFile(f) || isImageUrl(f.name));
+              const preview = showImagePreview && isImageFile(f) ? localPreviews[k] : null;
+
               return (
-                <div key={k} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                <li
+                  key={`${k}__${idx}`}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                >
                   <div className="flex min-w-0 items-center gap-3">
-                    {img ? (
+                    {preview ? (
                       <img
-                        src={localPreviews[k]}
+                        src={preview}
                         alt={f.name}
-                        className="h-10 w-10 flex-none rounded-md border border-slate-200 object-cover"
+                        className="h-10 w-10 rounded-md border border-slate-200 object-cover"
                       />
                     ) : (
-                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-xs font-bold text-slate-500">
-                        Q
+                      <div className="flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-600">
+                        FILE
                       </div>
                     )}
+
                     <div className="min-w-0">
                       <div className="truncate text-sm font-semibold text-slate-800">{f.name}</div>
-                      <div className="text-xs text-slate-500">{humanSize(f.size)}</div>
+                      <div className="text-[11px] text-slate-500">{humanSize(f.size)}</div>
                     </div>
                   </div>
+
                   <button
                     type="button"
-                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                    disabled={disabled || busy}
                     onClick={() => removeQueued(idx)}
+                    className="shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    disabled={disabled || busy}
                   >
                     Hapus
                   </button>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         ) : (
-          <div className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-500">
-            Belum ada file di queue.
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500">
+            {emptyPlaceholder ?? "Belum ada file di queue."}
           </div>
         )}
       </div>
 
       {/* Uploaded */}
-      <div className="mt-6">
-        <div className="text-sm font-semibold text-slate-700">{uploadedHeader}</div>
+      <div className="mt-5">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="text-xs font-semibold text-slate-700">{uploadedHeader}</div>
+          {loadingList ? <div className="text-[11px] text-slate-500">Memuat...</div> : null}
+        </div>
 
         {uploaded.length ? (
-          <div className="mt-2 space-y-2">
+          <ul className="space-y-2">
             {uploaded.map((it) => {
-              const img = showImagePreview && isImageUrl(it.url);
+              const canPreview = showImagePreview && isImageUrl(it.url);
               return (
-                <div key={String(it.id)} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                <li
+                  key={String(it.id)}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                >
                   <div className="flex min-w-0 items-center gap-3">
-                    {img ? (
+                    {canPreview ? (
                       <img
                         src={it.url}
                         alt={it.name}
-                        className="h-10 w-10 flex-none rounded-md border border-slate-200 object-cover"
+                        className="h-10 w-10 rounded-md border border-slate-200 object-cover"
                       />
                     ) : (
-                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-xs font-bold text-slate-500">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-600">
                         UP
                       </div>
                     )}
@@ -1037,12 +1018,13 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
                       <a
                         href={it.url}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="block truncate text-sm font-semibold text-slate-800 hover:underline"
+                        title={it.name}
                       >
                         {it.name}
                       </a>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-[11px] text-slate-500">
                         id: {String(it.id)}
                         {it.mimetype ? <span className="ml-2">{it.mimetype}</span> : null}
                       </div>
@@ -1051,19 +1033,20 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
 
                   <button
                     type="button"
-                    className="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
-                    disabled={disabled || busy}
                     onClick={() => void removeUploaded(it)}
+                    className="shrink-0 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                    disabled={disabled || busy || !groupId}
+                    title="DELETE /{id}/attachments/{attachmentId}"
                   >
                     Hapus
                   </button>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         ) : (
-          <div className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-500">
-            {emptyPlaceholder ?? "Belum ada file uploaded."}
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500">
+            Belum ada file uploaded.
           </div>
         )}
       </div>
