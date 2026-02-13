@@ -87,6 +87,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
     },
     ref
   ) => {
+    
     const origin = {
       name: stop.originAddressName,
       street1: stop.originStreet,
@@ -126,7 +127,10 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
 
     const showSidePanels =
       isReadOnly || !!pickupAttachment || !!dropOffAttachment;
-    const sidePanelMode = isReadOnly ? "view" : "edit";
+    // const sidePanelMode = isReadOnly ? "view" : "edit";
+
+      const sidePanelMode = isReadOnly ? "edit" : "create";
+  // const canEditAttachment = panelMode === "edit";
 
     const showOnlyTransporter = userType === "transporter" ? true : false;
 
@@ -139,6 +143,9 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             "grid grid-cols-1 gap-8 lg:grid-cols-2"
           )}
         >
+
+          {/* <span>Address Side PANEL</span> */}
+
           <AddressSidePanel
             title="Origin Address"
             labelPrefix="Origin"

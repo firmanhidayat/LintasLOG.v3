@@ -8,6 +8,7 @@ type ExtraStopWithId = ExtraStop & { uid: string };
 
 type Props = {
   isReadOnly: boolean;
+  orderId?: number | string;
   userType?: string | "";
   multiPickupDrop: boolean;
   setMultiPickupDrop: (v: boolean) => void;
@@ -65,6 +66,7 @@ function blankStop(): ExtraStopWithId {
 
 export default function MultiPickupDropSection({
   isReadOnly,
+  orderId,
   userType,
   multiPickupDrop,
   setMultiPickupDrop,
@@ -192,6 +194,7 @@ export default function MultiPickupDropSection({
 
               <ExtraStopCard
                 isReadOnly={isReadOnly}
+                orderId={orderId}
                 userType={userType}
                 ref={(el) => {
                   if (extraRefs?.current)

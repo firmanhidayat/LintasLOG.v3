@@ -404,6 +404,7 @@ export default function LocationInfoCard({
         {/* ==== Multi Pickup/Drop (dipisah ke komponen) ==== */}
         <MultiPickupDropSection
           userType={userType}
+          orderId={orderId}
           isReadOnly={isReadOnly}
           multiPickupDrop={multiPickupDrop}
           setMultiPickupDrop={setMultiPickupDrop}
