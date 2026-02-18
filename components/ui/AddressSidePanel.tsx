@@ -31,7 +31,7 @@ type AttachmentUI = {
 };
 
 export type AttachmentControl<
-  TGroup extends AttachmentGroupBase = AttachmentGroupBase
+  TGroup extends AttachmentGroupBase = AttachmentGroupBase,
 > = {
   value: TGroup | null;
   onChange?: (v: TGroup | null) => void;
@@ -89,9 +89,8 @@ function guessFileName(uri: string): string | null {
   return last && !/^\d+$/.test(last) ? last : null;
 }
 
-
 export function AddressSidePanel<
-  TGroup extends AttachmentGroupBase = AttachmentGroupBase
+  TGroup extends AttachmentGroupBase = AttachmentGroupBase,
 >({
   title,
   labelPrefix,
@@ -114,7 +113,7 @@ export function AddressSidePanel<
   routeDropOffAttachmentId?: number | string | null;
 }) {
   const isOrigin = labelPrefix === "Origin";
-  
+
   console.log("AddressSidePanel info:", orderId, currentRouteId, info);
 
   const tone = isOrigin
@@ -177,7 +176,9 @@ export function AddressSidePanel<
     ? ensureOdooDownloadUri(resolveUrlMaybe(deliveryNoteRaw))
     : null;
 
-  const deliveryNoteName = deliveryNoteUri ? guessFileName(deliveryNoteUri) : null;
+  const deliveryNoteName = deliveryNoteUri
+    ? guessFileName(deliveryNoteUri)
+    : null;
 
   const downloadBtnClass = [
     "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-semibold shadow-sm transition",
@@ -187,8 +188,16 @@ export function AddressSidePanel<
       : "border-amber-200 text-amber-800 hover:bg-amber-50",
   ].join(" ");
 
+  // const showUploader =
+  //   mode === "edit" && !!attachment?.uploadGroup && !!attachment?.onChange;
+
   const showUploader =
-    mode === "edit" && !!attachment?.uploadGroup && !!attachment?.onChange;
+    // mode === "edit" &&
+    // orderId !== undefined &&
+    // orderId !== null &&
+    // currentRouteId !== undefined &&
+    // currentRouteId !== null;
+    mode === "edit" && orderId != null && currentRouteId != null;
 
   const ui = attachment?.ui;
   const uploadAccept = ui?.accept ?? "application/pdf,image/*";
@@ -197,7 +206,16 @@ export function AddressSidePanel<
   const uploadHint = ui?.hint ?? "PDF/JPG/PNG. Maks. 10 MB per file.";
   const uploadButtonText = ui?.uploadButtonText ?? "Upload";
 
-  console.log("AddressSidePanel render: ", { showUploader, uploadAccept, uploadMaxFileSizeMB, uploadMaxFiles, uploadHint, uploadButtonText, mode, attachment });
+  console.log("AddressSidePanel render: ", {
+    showUploader,
+    uploadAccept,
+    uploadMaxFileSizeMB,
+    uploadMaxFiles,
+    uploadHint,
+    uploadButtonText,
+    mode,
+    attachment,
+  });
 
   return (
     <section className={["rounded-xl border p-4", tone.wrap].join(" ")}>
@@ -290,8 +308,6 @@ export function AddressSidePanel<
             {info.timeValue ? info.timeValue : dash}
           </Row>
         ) : null}
-
-        
       </dl>
 
       {deliveryNoteUri ? (
@@ -348,8 +364,21 @@ export function AddressSidePanel<
             routeId={currentRouteId}
             routePickupAttachmentId={routePickupAttachmentId}
             routeDropOffAttachmentId={routeDropOffAttachmentId}
-            groupId={attachment.value?.id ?? undefined}
-            docType={isOrigin ? "route_purchase_pickup" : "route_purchase_drop_off"}
+            // groupId={attachment.value?.id ?? undefined}
+            // groupId={
+            //   attachment?.value?.id ??
+            //   (isOrigin ? routePickupAttachmentId : routeDropOffAttachmentId) ??
+            //   undefined
+            // }
+
+            groupId={
+              attachment?.value?.id ??
+              (isOrigin ? routePickupAttachmentId : routeDropOffAttachmentId) ??
+              undefined
+            }
+            docType={
+              isOrigin ? "route_purchase_pickup" : "route_purchase_drop_off"
+            }
             label={`${sideLabel} Attachment`}
             accept={uploadAccept}
             maxFileSizeMB={uploadMaxFileSizeMB}

@@ -38,6 +38,10 @@ export type ExtraStop = {
   destLongitude: string;
 
   delivery_note_uri: string;
+
+  // attachment group dari backend route (untuk render list file di AddressSidePanel)
+  pickupAttachment?: OrderAttachmentGroup | null;
+  dropOffAttachment?: OrderAttachmentGroup | null;
 };
 
 type AddressSidePanelAttachment = React.ComponentProps<
@@ -238,6 +242,9 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
           }
         : {}),
     };
+
+    console.log("EXTRA STOP CARD pickupAttachment:", pickupAttachment);
+    console.log("EXTRA STOP CARD currentRouteId: ", stop, stop.id);
 
     return (
       <div ref={ref}>

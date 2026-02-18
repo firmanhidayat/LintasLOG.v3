@@ -1,4 +1,3 @@
-
 import React from "react";
 import { t } from "@/lib/i18n";
 import ExtraStopCard, { ExtraStop } from "./sections/ExtraStopCard";
@@ -10,6 +9,7 @@ type Props = {
   isReadOnly: boolean;
   orderId?: number | string;
   userType?: string | "";
+  mode: "create" | "edit";
   multiPickupDrop: boolean;
   setMultiPickupDrop: (v: boolean) => void;
 
@@ -60,6 +60,8 @@ function blankStop(): ExtraStopWithId {
     destLatitude: "",
     destLongitude: "",
     delivery_note_uri: "",
+    pickupAttachment: null,
+    dropOffAttachment: null,
     uid: genUid(),
   };
 }
@@ -68,6 +70,7 @@ export default function MultiPickupDropSection({
   isReadOnly,
   orderId,
   userType,
+  mode,
   multiPickupDrop,
   setMultiPickupDrop,
   extraStops,
@@ -80,7 +83,7 @@ export default function MultiPickupDropSection({
   lokasiBongkarDisabled,
 }: Props) {
   const toNumOrNull = (
-    v: number | string | null | undefined
+    v: number | string | null | undefined,
   ): number | null => {
     if (v == null) return null;
     if (typeof v === "number") return Number.isFinite(v) ? v : null;
@@ -95,10 +98,10 @@ export default function MultiPickupDropSection({
 
   const updateStop = (
     uid: string,
-    patch: Partial<Omit<ExtraStopWithId, "uid">>
+    patch: Partial<Omit<ExtraStopWithId, "uid">>,
   ) =>
     setExtraStops((prev) =>
-      prev.map((s) => (s.uid === uid ? { ...s, ...patch } : s))
+      prev.map((s) => (s.uid === uid ? { ...s, ...patch } : s)),
     );
 
   const handleAdd = () => {
@@ -124,6 +127,15 @@ export default function MultiPickupDropSection({
     }
   };
 
+  console.log("Rendering MultiPickupDropSection ", {
+    isReadOnly,
+    multiPickupDrop,
+    extraStopsCount: extraStops.length,
+    cityIdMuat,
+    cityIdBongkar,
+    extraStops,
+  });
+
   return (
     <div className="mt-6 space-y-3">
       {/* Header + Toggle + Add control */}
@@ -138,7 +150,7 @@ export default function MultiPickupDropSection({
             className={cn(
               "h-4 w-4 shrink-0 align-middle rounded border-gray-300",
               "input",
-              isReadOnly && "opacity-50 cursor-not-allowed"
+              isReadOnly && "opacity-50 cursor-not-allowed",
             )}
             checked={multiPickupDrop}
             onChange={(e) => setMultiPickupDrop(e.target.checked)}
@@ -162,7 +174,7 @@ export default function MultiPickupDropSection({
                 "rounded-md border px-3 py-1.5 text-sm",
                 extraStops.length >= MAX_EXTRA
                   ? "cursor-not-allowed opacity-50"
-                  : "hover:bg-gray-50"
+                  : "hover:bg-gray-50",
               )}
               title={t("orders.add_extra_stop") ?? "Tambah set"}
             >
@@ -178,7 +190,7 @@ export default function MultiPickupDropSection({
           {extraStops.map((stop, idx) => (
             <div key={stop.uid} className="relative">
               {/* Remove button (only edit mode) */}
-              
+
               {!isReadOnly && (
                 <div className="absolute right-2 top-2 z-10">
                   <button
@@ -194,15 +206,31 @@ export default function MultiPickupDropSection({
 
               <ExtraStopCard
                 isReadOnly={isReadOnly}
-                mode={isReadOnly ? "edit" : "create"}
+                mode={mode}
                 orderId={orderId}
                 userType={userType}
+                // pickupAttachment={stop.pickupAttachment}
+                // setPickupAttachment={(v) =>
+                //   updateStop(stop.uid, { pickupAttachment: v })
+                // }
+                // dropOffAttachment={stop.dropOffAttachment}
+                // setDropOffAttachment={(v) =>
+                //   updateStop(stop.uid, { dropOffAttachment: v })
+                // }
                 ref={(el) => {
                   if (extraRefs?.current)
                     extraRefs.current[stop.uid] = el ?? null;
                 }}
                 idx={idx}
                 stop={stop}
+                pickupAttachment={stop.pickupAttachment ?? null}
+                setPickupAttachment={(v) =>
+                  updateStop(stop.uid, { pickupAttachment: v })
+                }
+                dropOffAttachment={stop.dropOffAttachment ?? null}
+                setDropOffAttachment={(v) =>
+                  updateStop(stop.uid, { dropOffAttachment: v })
+                }
                 onChange={(patch) => updateStop(stop.uid, patch)}
                 error={errors[stop.uid] ?? errors[`extra_${idx}`]}
                 cityIdMuat={muatId}

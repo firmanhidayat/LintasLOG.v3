@@ -79,18 +79,18 @@ type Props = {
   pickupAttachment?: OrderAttachmentGroup | null;
   setPickupAttachment?: (v: OrderAttachmentGroup | null) => void;
   uploadPickupAttachmentGroup?: (
-    files: File[]
+    files: File[],
   ) => Promise<OrderAttachmentGroup>;
   deletePickupAttachmentFile?: (
-    fileId: number
+    fileId: number,
   ) => Promise<OrderAttachmentGroup | null>;
   dropOffAttachment?: OrderAttachmentGroup | null;
   setDropOffAttachment?: (v: OrderAttachmentGroup | null) => void;
   uploadDropOffAttachmentGroup?: (
-    files: File[]
+    files: File[],
   ) => Promise<OrderAttachmentGroup>;
   deleteDropOffAttachmentFile?: (
-    fileId: number
+    fileId: number,
   ) => Promise<OrderAttachmentGroup | null>;
   extraRefs?: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
 };
@@ -154,8 +154,8 @@ export default function LocationInfoCard({
   const lokasiMuatDisabled = !kotaMuat;
   const lokasiBongkarDisabled = !kotaBongkar;
 
-  console.log("orderId in LocationInfoCard:", orderId);
-  console.log("currentRouteId in LocationInfoCard:", currentRouteId);
+  // console.log("orderId in LocationInfoCard:", orderId);
+  // console.log("currentRouteId in LocationInfoCard:", currentRouteId);
 
   const refIf = (k: string) =>
     firstErrorKey === k
@@ -200,11 +200,10 @@ export default function LocationInfoCard({
   };
 
   const panelMode = isReadOnly || mode === "edit" ? "edit" : "create";
-  
+  const canEditAttachment = panelMode === "edit";
+
   console.log("LocationInfoCard mode:", mode);
   console.log("LocationInfoCard isReadOnly:", isReadOnly);
-
-  const canEditAttachment = panelMode === "edit";
 
   type PanelAttachment = React.ComponentProps<
     typeof AddressSidePanel
@@ -224,7 +223,7 @@ export default function LocationInfoCard({
             setPickupAttachment(v as unknown as OrderAttachmentGroup | null),
           uploadGroup: async (files) =>
             (await uploadPickupAttachmentGroup(
-              files
+              files,
             )) as unknown as PanelGroupNonNull,
           deleteFile: async (fileId) =>
             (await deletePickupAttachmentFile(fileId)) as unknown as PanelGroup,
@@ -249,11 +248,11 @@ export default function LocationInfoCard({
             setDropOffAttachment(v as unknown as OrderAttachmentGroup | null),
           uploadGroup: async (files) =>
             (await uploadDropOffAttachmentGroup(
-              files
+              files,
             )) as unknown as PanelGroupNonNull,
           deleteFile: async (fileId) =>
             (await deleteDropOffAttachmentFile(
-              fileId
+              fileId,
             )) as unknown as PanelGroup,
           ui: {
             accept: "application/pdf,image/*",
@@ -274,100 +273,99 @@ export default function LocationInfoCard({
       </CardHeader>
       <CardBody>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          
-            {/* Kolom 1 - Editable */}
-            {/* <div className={cn("space-y-4", isReadOnly && "hidden")}> */}
-            <div className="space-y-4">
-              <div ref={refIf("tglMuat")}>
-                <DateTimePickerTW
-                  label={t("orders.tgl_muat")}
-                  value={tglMuat}
-                  onChange={setTglMuat}
-                  error={errors.tglMuat}
-                  touched={Boolean(errors.tglMuat)}
-                  displayFormat="DD-MM-YYYY"
-                />
-              </div>
-
-              <div ref={refIf("lokMuat")}>
-                <AddressAutocomplete
-                  label={t("orders.lokasi_muat")}
-                  cityId={kotaMuat?.id ?? null}
-                  value={lokMuat}
-                  onChange={setLokMuat}
-                  disabled={lokasiMuatDisabled}
-                />
-                {errors.lokMuat && (
-                  <div className="mt-1 text-xs text-red-600">
-                    {errors.lokMuat}
-                  </div>
-                )}
-              </div>
-
-              <Field.Root value={picMuatNama} onChange={setPicMuatNama}>
-                <Field.Label>{t("orders.pic_muat_name")}</Field.Label>
-                <Field.Input />
-                <Field.Error />
-              </Field.Root>
-
-              <Field.Root
-                type="tel"
-                value={picMuatTelepon}
-                onChange={setPicMuatTelepon}
-                placeholder={t("placeholders.phone")}
-              >
-                <Field.Label>{t("orders.pic_muat_phone")}</Field.Label>
-                <Field.Input />
-                <Field.Error />
-              </Field.Root>
+          {/* Kolom 1 - Editable */}
+          {/* <div className={cn("space-y-4", isReadOnly && "hidden")}> */}
+          <div className="space-y-4">
+            <div ref={refIf("tglMuat")}>
+              <DateTimePickerTW
+                label={t("orders.tgl_muat")}
+                value={tglMuat}
+                onChange={setTglMuat}
+                error={errors.tglMuat}
+                touched={Boolean(errors.tglMuat)}
+                displayFormat="DD-MM-YYYY"
+              />
             </div>
 
-            {/* Kolom 2 - Editable */}
-            {/* <div className={cn("space-y-4", isReadOnly && "hidden")}> */}
-            <div className="space-y-4">
-              <div ref={refIf("tglBongkar")}>
-                <DateTimePickerTW
-                  label={t("orders.tgl_bongkar")}
-                  value={tglBongkar}
-                  onChange={setTglBongkar}
-                  error={errors.tglBongkar}
-                  touched={Boolean(errors.tglBongkar)}
-                  displayFormat="DD-MM-YYYY"
-                />
-              </div>
-
-              <div ref={refIf("lokBongkar")}>
-                <AddressAutocomplete
-                  label={t("orders.lokasi_bongkar")}
-                  cityId={kotaBongkar?.id ?? null}
-                  value={lokBongkar}
-                  onChange={setLokBongkar}
-                  disabled={lokasiBongkarDisabled}
-                />
-                {errors.lokBongkar && (
-                  <div className="mt-1 text-xs text-red-600">
-                    {errors.lokBongkar}
-                  </div>
-                )}
-              </div>
-
-              <Field.Root value={picBongkarNama} onChange={setPicBongkarNama}>
-                <Field.Label>{t("orders.pic_bongkar_name")}</Field.Label>
-                <Field.Input />
-                <Field.Error />
-              </Field.Root>
-
-              <Field.Root
-                type="tel"
-                value={picBongkarTelepon}
-                onChange={setPicBongkarTelepon}
-                placeholder={t("placeholders.phone")}
-              >
-                <Field.Label>{t("orders.pic_bongkar_phone")}</Field.Label>
-                <Field.Input />
-                <Field.Error />
-              </Field.Root>
+            <div ref={refIf("lokMuat")}>
+              <AddressAutocomplete
+                label={t("orders.lokasi_muat")}
+                cityId={kotaMuat?.id ?? null}
+                value={lokMuat}
+                onChange={setLokMuat}
+                disabled={lokasiMuatDisabled}
+              />
+              {errors.lokMuat && (
+                <div className="mt-1 text-xs text-red-600">
+                  {errors.lokMuat}
+                </div>
+              )}
             </div>
+
+            <Field.Root value={picMuatNama} onChange={setPicMuatNama}>
+              <Field.Label>{t("orders.pic_muat_name")}</Field.Label>
+              <Field.Input />
+              <Field.Error />
+            </Field.Root>
+
+            <Field.Root
+              type="tel"
+              value={picMuatTelepon}
+              onChange={setPicMuatTelepon}
+              placeholder={t("placeholders.phone")}
+            >
+              <Field.Label>{t("orders.pic_muat_phone")}</Field.Label>
+              <Field.Input />
+              <Field.Error />
+            </Field.Root>
+          </div>
+
+          {/* Kolom 2 - Editable */}
+          {/* <div className={cn("space-y-4", isReadOnly && "hidden")}> */}
+          <div className="space-y-4">
+            <div ref={refIf("tglBongkar")}>
+              <DateTimePickerTW
+                label={t("orders.tgl_bongkar")}
+                value={tglBongkar}
+                onChange={setTglBongkar}
+                error={errors.tglBongkar}
+                touched={Boolean(errors.tglBongkar)}
+                displayFormat="DD-MM-YYYY"
+              />
+            </div>
+
+            <div ref={refIf("lokBongkar")}>
+              <AddressAutocomplete
+                label={t("orders.lokasi_bongkar")}
+                cityId={kotaBongkar?.id ?? null}
+                value={lokBongkar}
+                onChange={setLokBongkar}
+                disabled={lokasiBongkarDisabled}
+              />
+              {errors.lokBongkar && (
+                <div className="mt-1 text-xs text-red-600">
+                  {errors.lokBongkar}
+                </div>
+              )}
+            </div>
+
+            <Field.Root value={picBongkarNama} onChange={setPicBongkarNama}>
+              <Field.Label>{t("orders.pic_bongkar_name")}</Field.Label>
+              <Field.Input />
+              <Field.Error />
+            </Field.Root>
+
+            <Field.Root
+              type="tel"
+              value={picBongkarTelepon}
+              onChange={setPicBongkarTelepon}
+              placeholder={t("placeholders.phone")}
+            >
+              <Field.Label>{t("orders.pic_bongkar_phone")}</Field.Label>
+              <Field.Input />
+              <Field.Error />
+            </Field.Root>
+          </div>
           {/* Readonly panels */}
           {userType === "transporter" && (
             <>
@@ -406,6 +404,7 @@ export default function LocationInfoCard({
 
         {/* ==== Multi Pickup/Drop (dipisah ke komponen) ==== */}
         <MultiPickupDropSection
+          mode={mode}
           userType={userType}
           orderId={orderId}
           isReadOnly={isReadOnly}

@@ -90,7 +90,7 @@ function normalizeKey(s: unknown): string {
     .replace(/[\s_-]+/g, "");
 }
 function extractApiSteps(
-  d: NonNullable<OrdersCreateFormProps["initialData"]>
+  d: NonNullable<OrdersCreateFormProps["initialData"]>,
 ): StatusStep[] {
   const items = (d.tms_states ?? []) as StatusStep[];
   return items.map((it): StatusStep => {
@@ -120,7 +120,7 @@ const toRecordItem = (v: unknown): RecordItem | null => {
   const idNum = Number(o.id);
   const nameRaw = typeof o.name === "string" ? o.name.trim() : "";
   const fallbackName = String(
-    o.display_name ?? o.label ?? o.license_plate ?? o.plate_no ?? o.code ?? ""
+    o.display_name ?? o.label ?? o.license_plate ?? o.plate_no ?? o.code ?? "",
   );
   const name =
     nameRaw && nameRaw.toLowerCase() !== "false" ? nameRaw : fallbackName;
@@ -253,7 +253,7 @@ function extractSuratJalanDownloads(data: unknown): DownloadableFile[] {
 
   // 3) Terkadang tersimpan di level route
   const routes = safeArray<Record<string, unknown>>(
-    (data as Record<string, unknown>).route_ids
+    (data as Record<string, unknown>).route_ids,
   );
   for (const r of routes) {
     if (!isPlainObject(r)) continue;
@@ -287,8 +287,8 @@ function extractSuratJalanDownloads(data: unknown): DownloadableFile[] {
           o.download_url,
           o.file_url,
           o.public_url,
-          o.attachment_url
-        )
+          o.attachment_url,
+        ),
       ) ||
       ((): string => {
         const datas = pickString(o.datas, o.data, o.base64, o.content_base64);
@@ -308,11 +308,11 @@ function extractSuratJalanDownloads(data: unknown): DownloadableFile[] {
         o.filename,
         o.file_name,
         o.display_name,
-        o.original_name
+        o.original_name,
       ) || `File_${String(o.id ?? "") || String(out.length + 1)}`;
 
     const docType = normalizeDocHint(
-      o.doc_type ?? o.document_type ?? o.type ?? o.category ?? o.tag
+      o.doc_type ?? o.document_type ?? o.type ?? o.category ?? o.tag,
     );
     const nameKey = normalizeDocHint(name);
 
@@ -342,7 +342,7 @@ function extractSuratJalanDownloads(data: unknown): DownloadableFile[] {
 
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>,
-  userTz: string = "Asia/Jakarta"
+  userTz: string = "Asia/Jakarta",
 ) {
   const tz = userTz;
   let claimCount = 0;
@@ -381,7 +381,7 @@ function prefillFromInitial(
     tglBongkar: odooUtcToDatetimeLocalValue(
       data.drop_off_date_planne,
       tz,
-      "17:00"
+      "17:00",
     ),
     lokMuat: null as AddressItem | null,
     lokBongkar: null as AddressItem | null,
@@ -445,7 +445,7 @@ function prefillFromInitial(
 
   const rawRoutes = safeArray<unknown>(
     (data as unknown as Record<string, unknown>).route_ids ??
-      (data as unknown as Record<string, unknown>).routes
+      (data as unknown as Record<string, unknown>).routes,
   );
 
   const routesList: RouteItem[] = rawRoutes
@@ -459,7 +459,7 @@ function prefillFromInitial(
 
   function addrFromRoute(
     r: RouteItem | undefined,
-    which: "origin" | "dest"
+    which: "origin" | "dest",
   ): AddressItem | null {
     if (!r) return null;
     const obj = which === "origin" ? r.origin_address : r.dest_address;
@@ -469,8 +469,9 @@ function prefillFromInitial(
   }
   // const main = routes.find((r) => r.is_main_route);
   const main =
-    routesList.find((r) => isMainRouteFlag((r as unknown as Record<string, unknown>).is_main_route)) ??
-    routesList[0];
+    routesList.find((r) =>
+      isMainRouteFlag((r as unknown as Record<string, unknown>).is_main_route),
+    ) ?? routesList[0];
 
   form.tglMuat =
     odooUtcToDatetimeLocalValue(main?.etd_date ?? null, tz) || form.tglMuat;
@@ -503,8 +504,12 @@ function prefillFromInitial(
   console.log("Main route found for prefill:", main);
   form.currentMainRouteId = main?.id ?? undefined;
 
-  form.pickupAttachment = (main as unknown as { pickup_attachment?: OrderAttachmentGroup | null }).pickup_attachment ?? null;
-  form.dropOffAttachment = (main as unknown as { drop_off_attachment?: OrderAttachmentGroup | null }).drop_off_attachment ?? null;
+  form.pickupAttachment =
+    (main as unknown as { pickup_attachment?: OrderAttachmentGroup | null })
+      .pickup_attachment ?? null;
+  form.dropOffAttachment =
+    (main as unknown as { drop_off_attachment?: OrderAttachmentGroup | null })
+      .drop_off_attachment ?? null;
 
   if (!form.lokMuat)
     form.lokMuat = (data.origin_address as AddressItem) ?? null;
@@ -515,10 +520,10 @@ function prefillFromInitial(
   form.amount_shipping_multi_charge = data.amount_shipping_multi_charge ?? "";
   form.amount_tax = data.amount_tax ?? "";
   form.amount_total = data.amount_total ?? "";
-  
 
   const extras: RouteItem[] = routesList.filter(
-    (r) => !isMainRouteFlag((r as unknown as Record<string, unknown>).is_main_route)
+    (r) =>
+      !isMainRouteFlag((r as unknown as Record<string, unknown>).is_main_route),
   );
 
   // console.log("Found extra routes:", extras.length);
@@ -552,8 +557,14 @@ function prefillFromInitial(
       destZipCode: r.dest_zip ?? "",
       destLatitude: r.dest_latitude ?? "",
       destLongitude: r.dest_longitude ?? "",
+      pickupAttachment:
+        (r as unknown as { pickup_attachment?: OrderAttachmentGroup | null })
+          .pickup_attachment ?? null,
+      dropOffAttachment:
+        (r as unknown as { drop_off_attachment?: OrderAttachmentGroup | null })
+          .drop_off_attachment ?? null,
       delivery_note_uri: r.delivery_note_uri ?? "",
-    })
+    }),
   );
 
   // console.log("Prefill form:", form);
@@ -626,8 +637,10 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const [picMuatTelepon, setPicMuatTelepon] = useState<string>("");
   const [picBongkarNama, setPicBongkarNama] = useState<string>("");
   const [picBongkarTelepon, setPicBongkarTelepon] = useState<string>("");
-  
-  const [currentMainRouteId, setCurrentMainRouteId] = useState<number | undefined>(() => {
+
+  const [currentMainRouteId, setCurrentMainRouteId] = useState<
+    number | undefined
+  >(() => {
     if (!initialData) return undefined;
     try {
       return prefillFromInitial(initialData).currentMainRouteId;
@@ -692,7 +705,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           delivery_note_uri: "",
         },
       ] as ExtraStop[]
-    ).map((s) => ({ ...s, uid: genUid() }))
+    ).map((s) => ({ ...s, uid: genUid() })),
   );
   const [dokumenFiles, setDokumenFiles] = useState<File[]>([]);
   const [sjPodFiles, setSjPodFiles] = useState<File[]>([]);
@@ -717,7 +730,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   const [statusCurrent, setStatusCurrent] = useState<string | undefined>("");
   const [steps, setSteps] = useState<StatusStep[]>([]);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(
-    mode === "edit" && !initialData ? true : false
+    mode === "edit" && !initialData ? true : false,
   );
   const [reasonOpen, setReasonOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
@@ -744,7 +757,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setDlgKind("error");
     setDlgTitle(title || (t("common.failed_save") ?? "Gagal menyimpan"));
     setDlgMsg(
-      <pre className="whitespace-pre-wrap text-xs text-red-700">{msg}</pre>
+      <pre className="whitespace-pre-wrap text-xs text-red-700">{msg}</pre>,
     );
     setDlgOpen(true);
   }
@@ -867,7 +880,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setStatusCurrent(f.states.find((s) => s.is_current)?.key);
       setIsReadOnly(f.isReadOnly);
     },
-    []
+    [],
   );
 
   const softReloadDetail = React.useCallback(async () => {
@@ -903,7 +916,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!effectiveOrderId) {
       openErrorDialog(
         "ID Purchase Order tidak ditemukan.",
-        "Data tidak lengkap"
+        "Data tidak lengkap",
       );
       return;
     }
@@ -938,7 +951,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!effectiveOrderId) {
       openErrorDialog(
         "ID Purchase Order tidak ditemukan.",
-        "Data tidak lengkap"
+        "Data tidak lengkap",
       );
       return;
     }
@@ -977,7 +990,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!effectiveOrderId) {
       openErrorDialog(
         "ID Purchase Order tidak ditemukan.",
-        "Data tidak lengkap"
+        "Data tidak lengkap",
       );
       return;
     }
@@ -1012,7 +1025,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!effectiveOrderId) {
       openErrorDialog(
         "ID Purchase Order tidak ditemukan.",
-        "Data tidak lengkap"
+        "Data tidak lengkap",
       );
       return;
     }
@@ -1056,9 +1069,9 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   const [chatterResModel, setChatterResModel] = useState<string>("");
   const [chatterResId, setChatterResId] = useState<string | number | undefined>(
-    undefined
+    undefined,
   );
-  
+
   const layananPreset = [
     "Helm",
     "APAR",
@@ -1075,7 +1088,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       Object.fromEntries(layananPreset.map((k) => [k, false])) as Record<
         Layanan,
         boolean
-      >
+      >,
   );
   const [layananLainnya, setLayananLainnya] = useState<string>("");
   const [muatanNama, setMuatanNama] = useState<string>("");
@@ -1142,12 +1155,12 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setSjPodDownloads(extractSuratJalanDownloads(initialData));
 
     setChatterResModel(
-      typeof f.res_model === "string" ? f.res_model : String(f.res_model ?? "")
+      typeof f.res_model === "string" ? f.res_model : String(f.res_model ?? ""),
     );
     setChatterResId(
       typeof f.res_id === "string" || typeof f.res_id === "number"
         ? f.res_id
-        : undefined
+        : undefined,
     );
 
     setNamaPenerima(f.namaPenerima);
@@ -1166,7 +1179,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     setSetDeliveryNoteUri(f.delivery_note_uri);
     setPickupAttachment(f.pickupAttachment ?? null);
     setDropOffAttachment(f.dropOffAttachment ?? null);
-    
+
     setCurrentMainRouteId(f.currentMainRouteId);
 
     setMuatanNama(f.muatanNama);
@@ -1296,12 +1309,12 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
           setChatterResModel(
             typeof f.res_model === "string"
               ? f.res_model
-              : String(f.res_model ?? "")
+              : String(f.res_model ?? ""),
           );
           setChatterResId(
             typeof f.res_id === "string" || typeof f.res_id === "number"
               ? f.res_id
-              : undefined
+              : undefined,
           );
 
           if (userType === "transporter") {
@@ -1340,10 +1353,10 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   useEffect(() => {
     if (statusCurrent?.toLowerCase() === "preparation" && effectiveOrderId) {
       setUrlCandidateFleet(
-        buildLookupUrlCandidate(effectiveOrderId, "candidate-fleets")
+        buildLookupUrlCandidate(effectiveOrderId, "candidate-fleets"),
       );
       setUrlCandidateDriver(
-        buildLookupUrlCandidate(effectiveOrderId, "candidate-drivers")
+        buildLookupUrlCandidate(effectiveOrderId, "candidate-drivers"),
       );
     }
   }, [statusCurrent, effectiveOrderId]);
@@ -1360,7 +1373,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   function buildPOrderActionUrl(
     id: string | number,
-    action: "accept" | "reject" | "preparation" | "fleet-and-driver"
+    action: "accept" | "reject" | "preparation" | "fleet-and-driver",
   ): string {
     const base = buildDetailUrl(DETAIL_URL_TPL, id).replace(/\/$/, "");
     return `${base}/${action}`;
@@ -1368,7 +1381,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   function buildLookupUrlCandidate(
     id: string | number,
-    action: "candidate-fleets" | "candidate-drivers"
+    action: "candidate-fleets" | "candidate-drivers",
   ): string {
     const base = buildDetailUrl(DETAIL_URL_TPL, id).replace(/\/$/, "");
     return `${base}/${action}`;
@@ -1434,7 +1447,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
   function pick(
     obj: JsonObject | null | undefined,
     keys: string[],
-    fallback = "-"
+    fallback = "-",
   ): string {
     for (const k of keys) {
       if (!obj) break;
@@ -1515,10 +1528,10 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
   async function deleteRemoteAttachment(
     docAttachmentId: number,
-    attachmentId: number
+    attachmentId: number,
   ) {
     const url = `${DOCUMENT_ATTACHMENTS_URL}/${encodeURIComponent(
-      String(docAttachmentId)
+      String(docAttachmentId),
     )}/attachments/${encodeURIComponent(String(attachmentId))}`;
 
     const res = await fetch(url, {
@@ -1529,13 +1542,13 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(
-        `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`
+        `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`,
       );
     }
   }
 
   async function fetchDocumentAttachmentGroup(
-    groupId: number
+    groupId: number,
   ): Promise<DocumentAttachmentsResponse> {
     const res = await fetch(`${DOCUMENT_ATTACHMENTS_URL}/${groupId}`, {
       method: "GET",
@@ -1545,7 +1558,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     if (!res.ok) {
       const t = await res.text().catch(() => "");
       throw new Error(
-        `Gagal mengambil attachment group (HTTP ${res.status}). ${t}`.trim()
+        `Gagal mengambil attachment group (HTTP ${res.status}). ${t}`.trim(),
       );
     }
     return (await res.json()) as DocumentAttachmentsResponse;
@@ -1560,7 +1573,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         | typeof DOC_ATTACHMENT_PICKUP_TYPE
         | typeof DOC_ATTACHMENT_DROP_OFF_TYPE;
       groupId?: number | null;
-    }
+    },
   ): Promise<DocumentAttachmentsResponse> {
     const groupId = opts.groupId ?? null;
 
@@ -1570,7 +1583,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
     const url = groupId
       ? `${DOCUMENT_ATTACHMENTS_URL}/${groupId}`
       : `${DOCUMENT_ATTACHMENTS_URL}?doc_type=${encodeURIComponent(
-          opts.docType
+          opts.docType,
         )}`;
 
     const res = await fetch(url, {
@@ -1596,7 +1609,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
     const maybe = json as Partial<DocumentAttachmentsResponse> | null;
     const finalGroupId =
-      typeof maybe?.id === "number" ? maybe.id : groupId ?? null;
+      typeof maybe?.id === "number" ? maybe.id : (groupId ?? null);
 
     if (!finalGroupId) {
       throw new Error("Upload berhasil tetapi tidak mendapatkan group id.");
@@ -1624,19 +1637,19 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setPickupAttachment(g);
       return g;
     },
-    [pickupAttachment?.id]
+    [pickupAttachment?.id],
   );
 
   const uploadDropOffAttachmentGroup = useCallback(
     async (files: File[]) => {
       const g = await uploadDocumentsForDocTypeGroup(files, {
-        docType:  DOC_ATTACHMENT_DROP_OFF_TYPE,
+        docType: DOC_ATTACHMENT_DROP_OFF_TYPE,
         groupId: dropOffAttachment?.id ?? null,
       });
       setDropOffAttachment(g);
       return g;
     },
-    [dropOffAttachment?.id]
+    [dropOffAttachment?.id],
   );
 
   const deletePickupAttachmentFile = useCallback(
@@ -1650,7 +1663,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         ? {
             ...pickupAttachment,
             attachments: (pickupAttachment.attachments ?? []).filter(
-              (a) => a.id !== attachmentId
+              (a) => a.id !== attachmentId,
             ),
           }
         : null;
@@ -1658,7 +1671,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setPickupAttachment(next);
       return next;
     },
-    [pickupAttachment]
+    [pickupAttachment],
   );
 
   const deleteDropOffAttachmentFile = useCallback(
@@ -1672,7 +1685,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
         ? {
             ...dropOffAttachment,
             attachments: (dropOffAttachment.attachments ?? []).filter(
-              (a) => a.id !== attachmentId
+              (a) => a.id !== attachmentId,
             ),
           }
         : null;
@@ -1680,7 +1693,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
       setDropOffAttachment(next);
       return next;
     },
-    [dropOffAttachment]
+    [dropOffAttachment],
   );
   console.log(statusCurrent);
   console.log("chatterResModel:", chatterResModel);
@@ -1905,7 +1918,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
 
               {mode === "edit" &&
                 AUTOSET_STATUSES.has(
-                  (statusCurrent ?? "").trim().toLowerCase()
+                  (statusCurrent ?? "").trim().toLowerCase(),
                 ) && (
                   <Card className="bg-primary/60">
                     <CardHeader>
@@ -2069,10 +2082,9 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                     </span>
                   )}
 
-
                   {canShowClaims &&
                     AUTOSET_TMS_STATE_FOR_BTNCLAIM.has(
-                      (statusCurrent ?? "").trim().toLowerCase()
+                      (statusCurrent ?? "").trim().toLowerCase(),
                     ) && (
                       <Button
                         type="button"
@@ -2114,7 +2126,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
                       variant="solid"
                     >
                       {acceptLoading
-                        ? t("common.sending") ?? "Mengirim…"
+                        ? (t("common.sending") ?? "Mengirim…")
                         : t("common.accept")}
                     </Button>
                   </div>
@@ -2183,7 +2195,7 @@ export default function PurchaseOrderForm<T extends TmsUserType>({
               onClick={handleReject}
               disabled={rejectLoading || !reason.trim()}
             >
-              {rejectLoading ? t("common.sending") ?? "Mengirim…" : "Ya"}
+              {rejectLoading ? (t("common.sending") ?? "Mengirim…") : "Ya"}
             </Button>
             <Button
               variant="outline"
