@@ -194,6 +194,7 @@ export default function MultiPickupDropSection({
 
               <ExtraStopCard
                 isReadOnly={isReadOnly}
+                mode={isReadOnly ? "edit" : "create"}
                 orderId={orderId}
                 userType={userType}
                 ref={(el) => {

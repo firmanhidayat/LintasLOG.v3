@@ -12,7 +12,6 @@ import type {
 } from "@/types/orders";
 import MultiPickupDropSection from "../MultiPickupDropSection";
 import type { ExtraStop } from "./ExtraStopCard";
-// import { cn } from "@/lib/cn";
 import { AddressSidePanel } from "@/components/ui/AddressSidePanel";
 import { fmtDate } from "@/lib/helpers";
 import { Field } from "@/components/form/FieldInput";
@@ -201,6 +200,10 @@ export default function LocationInfoCard({
   };
 
   const panelMode = isReadOnly || mode === "edit" ? "edit" : "create";
+  
+  console.log("LocationInfoCard mode:", mode);
+  console.log("LocationInfoCard isReadOnly:", isReadOnly);
+
   const canEditAttachment = panelMode === "edit";
 
   type PanelAttachment = React.ComponentProps<
