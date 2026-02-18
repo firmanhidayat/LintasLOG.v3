@@ -842,7 +842,7 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
           <div className="mt-1 text-xs text-slate-500">{hint}</div>
 
           <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
-            <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5">
+            {/* <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5">
               doc_type: <b>{docType}</b>
             </span>
             {groupId ? (
@@ -853,7 +853,7 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
               <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-800">
                 id belum ada (dibuat saat upload)
               </span>
-            )}
+            )} */}
             {groupInfo?.name ? (
               <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5">
                 {groupInfo.name}
