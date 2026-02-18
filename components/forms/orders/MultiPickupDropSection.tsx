@@ -139,50 +139,54 @@ export default function MultiPickupDropSection({
   return (
     <div className="mt-6 space-y-3">
       {/* Header + Toggle + Add control */}
-      <div className="flex items-center justify-between">
-        <label
-          className="inline-flex items-center gap-2 cursor-pointer select-none"
-          aria-disabled={isReadOnly}
-        >
-          <input
-            type="checkbox"
-            disabled={isReadOnly}
-            className={cn(
-              "h-4 w-4 shrink-0 align-middle rounded border-gray-300",
-              "input",
-              isReadOnly && "opacity-50 cursor-not-allowed",
-            )}
-            checked={multiPickupDrop}
-            onChange={(e) => setMultiPickupDrop(e.target.checked)}
-          />
-          <span className="text-sm leading-none whitespace-nowrap">
-            {t("orders.multi_pickdrop") ?? "Multi Pickup/Drop"}
-          </span>
-        </label>
-
-        {/* Add button only when editing & feature enabled */}
-        {!isReadOnly && multiPickupDrop && (
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-600">
-              {extraStops.length}/{MAX_EXTRA}
-            </span>
-            <button
-              type="button"
-              onClick={handleAdd}
-              disabled={extraStops.length >= MAX_EXTRA}
-              className={cn(
-                "rounded-md border px-3 py-1.5 text-sm",
-                extraStops.length >= MAX_EXTRA
-                  ? "cursor-not-allowed opacity-50"
-                  : "hover:bg-gray-50",
-              )}
-              title={t("orders.add_extra_stop") ?? "Tambah set"}
+      {userType === "shipper" && (
+        <>
+          <div className="flex items-center justify-between">
+            <label
+              className="inline-flex items-center gap-2 cursor-pointer select-none"
+              aria-disabled={isReadOnly}
             >
-              {t("common.add") ?? "Tambah"}
-            </button>
+              <input
+                type="checkbox"
+                disabled={isReadOnly}
+                className={cn(
+                  "h-4 w-4 shrink-0 align-middle rounded border-gray-300",
+                  "input",
+                  isReadOnly && "opacity-50 cursor-not-allowed",
+                )}
+                checked={multiPickupDrop}
+                onChange={(e) => setMultiPickupDrop(e.target.checked)}
+              />
+              <span className="text-sm leading-none whitespace-nowrap">
+                {t("orders.multi_pickdrop") ?? "Multi Pickup/Drop"}
+              </span>
+            </label>
+
+            {/* Add button only when editing & feature enabled */}
+            {!isReadOnly && multiPickupDrop && (
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-600">
+                  {extraStops.length}/{MAX_EXTRA}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  disabled={extraStops.length >= MAX_EXTRA}
+                  className={cn(
+                    "rounded-md border px-3 py-1.5 text-sm",
+                    extraStops.length >= MAX_EXTRA
+                      ? "cursor-not-allowed opacity-50"
+                      : "hover:bg-gray-50",
+                  )}
+                  title={t("orders.add_extra_stop") ?? "Tambah set"}
+                >
+                  {t("common.add") ?? "Tambah"}
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* List extra stops */}
       {multiPickupDrop && (
@@ -191,17 +195,21 @@ export default function MultiPickupDropSection({
             <div key={stop.uid} className="relative">
               {/* Remove button (only edit mode) */}
 
-              {!isReadOnly && (
-                <div className="absolute right-2 top-2 z-10">
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(stop.uid)}
-                    className="rounded-md border border-red-300 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                    title={t("common.remove") ?? "Hapus"}
-                  >
-                    {t("common.remove") ?? "Hapus"}
-                  </button>
-                </div>
+              {userType === "shipper" && (
+                <>
+                  {!isReadOnly && (
+                    <div className="absolute right-2 top-2 z-10">
+                      <button
+                        type="button"
+                        onClick={() => handleRemove(stop.uid)}
+                        className="rounded-md border border-red-300 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                        title={t("common.remove") ?? "Hapus"}
+                      >
+                        {t("common.remove") ?? "Hapus"}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
 
               <ExtraStopCard
