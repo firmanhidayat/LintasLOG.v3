@@ -214,6 +214,8 @@ export function ChatterPanel({
       setSending(true);
       setErr(null);
 
+      // console.log("Sending message to", url, "with body:", msg);
+
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -248,11 +250,11 @@ export function ChatterPanel({
   }, [load]);
 
   // Optional: light auto-refresh every 20s when enabled and usable
-  useEffect(() => {
-    if (!canUse) return;
-    const id = window.setInterval(() => load(), 20000);
-    return () => window.clearInterval(id);
-  }, [canUse, load]);
+  // useEffect(() => {
+  //   if (!canUse) return;
+  //   const id = window.setInterval(() => load(), 20000);
+  //   return () => window.clearInterval(id);
+  // }, [canUse, load]);
 
   const isMine = (author?: string) => {
     if (!author || !currentAuthorName) return false;

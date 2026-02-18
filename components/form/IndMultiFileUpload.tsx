@@ -995,7 +995,11 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
         {uploaded.length ? (
           <ul className="space-y-2">
             {uploaded.map((it) => {
-              const canPreview = showImagePreview && isImageUrl(it.url);
+              // const canPreview = showImagePreview && isImageUrl(it.url);
+              // console.log("Evaluasi isImageUrl(it.url) :", isImageUrl(it.url));
+              // console.log("Render uploaded item:", it, { canPreview });
+              const canPreview = showImagePreview;
+
               return (
                 <li
                   key={String(it.id)}
@@ -1025,7 +1029,7 @@ export default function IndMultiFileUpload(props: IndMultiFileUploadProps) {
                         {it.name}
                       </a>
                       <div className="text-[11px] text-slate-500">
-                        id: {String(it.id)}
+                        {/* id: {String(it.id)} */}
                         {it.mimetype ? <span className="ml-2">{it.mimetype}</span> : null}
                       </div>
                     </div>

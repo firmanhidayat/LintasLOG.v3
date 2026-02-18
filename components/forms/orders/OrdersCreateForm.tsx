@@ -2306,34 +2306,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
                     {t("orders.duplicate.title")}
                   </Button>
 
-                  {/* {canShowChat && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setChatOpen(true);
-                        setHasChatImpulse(false); // buka chat = anggap sudah dibaca
-                      }}
-                      className={`relative pr-8 ${
-                        hasChatImpulse ? "motion-safe:animate-pulse" : ""
-                      }`}
-                      aria-label={
-                        t("orders.chat_broadcast") ?? "Chat / Broadcast Message"
-                      }
-                      title={
-                        t("orders.chat_broadcast") ?? "Chat / Broadcast Message"
-                      }
-                    >
-                      {t("orders.chat_broadcast") ?? "Chat / Broadcast Message"}
-                      {hasChatImpulse && (
-                        <span className="pointer-events-none absolute right-2 top-2 inline-flex">
-                          <span className="motion-safe:animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
-                        </span>
-                      )}
-                    </Button>
-                  )} */}
-
                   {canShowListReviewClaims && (
                     <Button
                       type="button"

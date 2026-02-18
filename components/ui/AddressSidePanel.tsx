@@ -206,17 +206,6 @@ export function AddressSidePanel<
   const uploadHint = ui?.hint ?? "PDF/JPG/PNG. Maks. 10 MB per file.";
   const uploadButtonText = ui?.uploadButtonText ?? "Upload";
 
-  // console.log("AddressSidePanel render: ", {
-  //   showUploader,
-  //   uploadAccept,
-  //   uploadMaxFileSizeMB,
-  //   uploadMaxFiles,
-  //   uploadHint,
-  //   uploadButtonText,
-  //   mode,
-  //   attachment,
-  // });
-
   return (
     <section className={["rounded-xl border p-4", tone.wrap].join(" ")}>
       {/* Header */}
