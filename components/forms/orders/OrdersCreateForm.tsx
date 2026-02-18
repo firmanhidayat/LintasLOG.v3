@@ -97,55 +97,6 @@ export function toRecordItem(x: unknown): RecordItem {
   return { id: "", name: "" };
 }
 
-// async function fetchCargoTypeById(id?: IdLike): Promise<RecordItem | null> {
-//   if (id == null || id === "") return null;
-//   if (!CARGO_TYPES_URL) {
-//     // fallback minimal tanpa endpoint
-//     return { id, name: `#${id}` };
-//   }
-//   try {
-//     const res = await fetch(
-//       `${CARGO_TYPES_URL.replace(/\/$/, "")}/${encodeURIComponent(String(id))}`,
-//       {
-//         headers: { "Accept-Language": getLang() },
-//         credentials: "include",
-//       }
-//     );
-//     if (!res.ok) return { id, name: `#${id}` };
-//     const data = await res.json();
-//     return toRecordItem(data);
-//   } catch {
-//     return { id, name: `#${id}` };
-//   }
-// }
-// function useCargoTypePrefill(initialId?: IdLike) {
-//   const [value, setValue] = useState<RecordItem | null>(null);
-//   const [loading, setLoading] = useState(false);
-
-//   console.log("useCargoTypePrefill: id = ", initialId);
-//   useEffect(() => {
-//     let alive = true;
-//     (async () => {
-//       if (initialId == null) {
-//         setValue(null);
-//         return;
-//       }
-//       setLoading(true);
-//       try {
-//         const item = await fetchCargoTypeById(initialId);
-//         if (alive) setValue(item);
-//       } finally {
-//         if (alive) setLoading(false);
-//       }
-//     })();
-//     return () => {
-//       alive = false;
-//     };
-//   }, [initialId]);
-//   return { value, setValue, loading };
-// }
-// ===========================================================
-
 // === Chat impulse hook (no top-level hooks usage violations) ===
 type ChatImpulseDetail = { active?: boolean; unread?: number };
 
@@ -753,8 +704,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   }, [orderId, qsId]);
 
   const { profile } = useAuth();
-  console.log("OrdersCreateForm profile:", profile);
-  console.log("OrdersCreateForm userType:", userType);
+  // console.log("OrdersCreateForm profile:", profile);
+  // console.log("OrdersCreateForm userType:", userType);
 
   const { ready: i18nReady } = useI18nReady();
   const { hasChatImpulse, setHasChatImpulse } = useChatImpulseChannel();
@@ -1035,9 +986,9 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   const [cargoQTY, setCargoQTY] = useState<number>();
 
   useEffect(() => {
-    console.log("initialData changed:", initialData);
+    // console.log("initialData changed:", initialData);
     if (!initialData) return;
-    console.log("Prefilling form from initialData:", initialData);
+    // console.log("Prefilling form from initialData:", initialData);
 
     const f = prefillFromInitial(initialData, profileTimezone);
     setChatterResModel(
@@ -1055,7 +1006,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     setKotaMuat(f.kotaMuat);
     setKotaBongkar(f.kotaBongkar);
 
-    console.log(" PROFILE TZ :: ", profile?.tz);
+    // console.log(" PROFILE TZ :: ", profile?.tz);
 
     setTglMuat(f.tglMuat);
     setTglBongkar(f.tglBongkar);
@@ -1126,20 +1077,20 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     setReviewClaimIdsCount(Number(f.reviewed_claim_ids_count ?? 0));
     // }
 
-    console.log("f data: ", f);
-    console.log("initialData.states:", initialData.states);
-    console.log("extracted steps:", extractApiSteps(initialData));
-    console.log("prefilled steps:", f.states);
+    // console.log("f data: ", f);
+    // console.log("initialData.states:", initialData.states);
+    // console.log("extracted steps:", extractApiSteps(initialData));
+    // console.log("prefilled steps:", f.states);
 
     setSteps(f.states);
     setStatusCurrent(f.states.find((s) => s.is_current)?.key);
 
-    console.log(
-      "prefilled current step:",
-      f.states.find((s) => s.is_current)
-    );
+    // console.log(
+    //   "prefilled current step:",
+    //   f.states.find((s) => s.is_current)
+    // );
 
-    console.log("Current Status after setStatusCurrent :", statusCurrent);
+    // console.log("Current Status after setStatusCurrent :", statusCurrent);
     setLoadingDetail(false);
   }, [initialData]);
 
@@ -1235,7 +1186,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
 
   const handleRemovePackingList = useCallback(
     async (item: ExistingFileItem) => {
-      console.log("handleRemovePackingList ", item);
+      // console.log("handleRemovePackingList ", item);
       if (!item.groupId) {
         setExistingPackingList((prev) =>
           prev.filter((it) => it.id !== item.id)
@@ -1245,7 +1196,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       try {
         setExistingPackingList((prev) => prev.filter((i) => i.id !== item.id));
         await deleteRemoteAttachment(item.groupId, item.id);
-        console.log("Removing packing list attachment:", item);
+        // console.log("Removing packing list attachment:", item);
       } catch (error) {
         console.error("Failed to remove packing list:", error);
         setExistingPackingList((prev) => [...prev, item]);
