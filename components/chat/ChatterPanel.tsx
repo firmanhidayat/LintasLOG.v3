@@ -213,9 +213,6 @@ export function ChatterPanel({
     try {
       setSending(true);
       setErr(null);
-
-      // console.log("Sending message to", url, "with body:", msg);
-
       const res = await fetch(url, {
         method: "POST",
         headers: {

@@ -151,11 +151,8 @@ export default function LocationInfoCard({
   firstErrorRef,
   extraRefs,
 }: Props) {
-  const lokasiMuatDisabled = !kotaMuat;
-  const lokasiBongkarDisabled = !kotaBongkar;
-
-  // console.log("orderId in LocationInfoCard:", orderId);
-  // console.log("currentRouteId in LocationInfoCard:", currentRouteId);
+  // const lokasiMuatDisabled = !kotaMuat;
+  // const lokasiBongkarDisabled = !kotaBongkar;
 
   const refIf = (k: string) =>
     firstErrorKey === k
@@ -202,8 +199,10 @@ export default function LocationInfoCard({
   const panelMode = isReadOnly || mode === "edit" ? "edit" : "create";
   const canEditAttachment = panelMode === "edit";
 
-  // console.log("LocationInfoCard mode:", mode);
-  // console.log("LocationInfoCard isReadOnly:", isReadOnly);
+  const lokasiMuatDisabled = isReadOnly || !kotaMuat;
+  const lokasiBongkarDisabled = isReadOnly || !kotaBongkar;
+
+  console.log("LocationInfoCard isReadOnly:", isReadOnly);
 
   type PanelAttachment = React.ComponentProps<
     typeof AddressSidePanel
@@ -264,7 +263,6 @@ export default function LocationInfoCard({
       : {}),
   };
 
-
   type AttachmentItemLite = {
     id?: number | string;
     name?: string;
@@ -285,8 +283,7 @@ export default function LocationInfoCard({
         const url = o["url"];
         const mimetype = o["mimetype"];
         return {
-          id:
-            typeof id === "number" || typeof id === "string" ? id : undefined,
+          id: typeof id === "number" || typeof id === "string" ? id : undefined,
           name: typeof name === "string" ? name : undefined,
           url: typeof url === "string" ? url : undefined,
           mimetype: typeof mimetype === "string" ? mimetype : undefined,
@@ -359,6 +356,7 @@ export default function LocationInfoCard({
               <div className="space-y-4">
                 <div ref={refIf("tglMuat")}>
                   <DateTimePickerTW
+                    disabled={isReadOnly}
                     label={t("orders.tgl_muat")}
                     value={tglMuat}
                     onChange={setTglMuat}
@@ -383,13 +381,18 @@ export default function LocationInfoCard({
                   )}
                 </div>
 
-                <Field.Root value={picMuatNama} onChange={setPicMuatNama}>
+                <Field.Root
+                  value={picMuatNama}
+                  onChange={setPicMuatNama}
+                  disabled={isReadOnly}
+                >
                   <Field.Label>{t("orders.pic_muat_name")}</Field.Label>
                   <Field.Input />
                   <Field.Error />
                 </Field.Root>
 
                 <Field.Root
+                  disabled={isReadOnly}
                   type="tel"
                   value={picMuatTelepon}
                   onChange={setPicMuatTelepon}
@@ -406,6 +409,7 @@ export default function LocationInfoCard({
               <div className="space-y-4">
                 <div ref={refIf("tglBongkar")}>
                   <DateTimePickerTW
+                    disabled={isReadOnly}
                     label={t("orders.tgl_bongkar")}
                     value={tglBongkar}
                     onChange={setTglBongkar}
@@ -430,13 +434,18 @@ export default function LocationInfoCard({
                   )}
                 </div>
 
-                <Field.Root value={picBongkarNama} onChange={setPicBongkarNama}>
+                <Field.Root
+                  value={picBongkarNama}
+                  onChange={setPicBongkarNama}
+                  disabled={isReadOnly}
+                >
                   <Field.Label>{t("orders.pic_bongkar_name")}</Field.Label>
                   <Field.Input />
                   <Field.Error />
                 </Field.Root>
 
                 <Field.Root
+                  disabled={isReadOnly}
                   type="tel"
                   value={picBongkarTelepon}
                   onChange={setPicBongkarTelepon}
@@ -527,434 +536,3 @@ export default function LocationInfoCard({
     </Card>
   );
 }
-
-// "use client";
-
-// import React from "react";
-// import { t } from "@/lib/i18n";
-// import { Card, CardHeader, CardBody } from "@/components/ui/Card";
-// import DateTimePickerTW from "@/components/form/DateTimePickerTW";
-// import AddressAutocomplete from "@/components/forms/orders/AddressAutocomplete";
-// import type {
-//   AddressItem,
-//   CityItem,
-//   OrderAttachmentGroup,
-// } from "@/types/orders";
-// import MultiPickupDropSection from "../MultiPickupDropSection";
-// import type { ExtraStop } from "./ExtraStopCard";
-// import { AddressSidePanel } from "@/components/ui/AddressSidePanel";
-// import { fmtDate } from "@/lib/helpers";
-// import { Field } from "@/components/form/FieldInput";
-
-// type ExtraStopWithId = ExtraStop & { uid: string };
-
-// type DivRef =
-//   | React.RefObject<HTMLDivElement>
-//   | React.Ref<HTMLDivElement>
-//   | null;
-
-// type Props = {
-//   isReadOnly: boolean;
-//   orderId?: number | string;
-//   currentRouteId?: number | string;
-//   userType?: string | "";
-//   tglMuat: string;
-//   setTglMuat: (v: string) => void;
-//   tglBongkar: string;
-//   setTglBongkar: (v: string) => void;
-
-//   kotaMuat: CityItem | null;
-//   kotaBongkar: CityItem | null;
-//   lokMuat: AddressItem | null;
-//   setLokMuat: (a: AddressItem | null) => void;
-//   lokBongkar: AddressItem | null;
-//   setLokBongkar: (a: AddressItem | null) => void;
-
-//   picMuatNama: string;
-//   setPicMuatNama: (v: string) => void;
-//   picMuatTelepon: string;
-//   setPicMuatTelepon: (v: string) => void;
-//   picBongkarNama: string;
-//   setPicBongkarNama: (v: string) => void;
-//   picBongkarTelepon: string;
-//   setPicBongkarTelepon: (v: string) => void;
-
-//   originAddressName: string;
-//   originStreet: string;
-//   originStreet2: string;
-//   originDistrictName: string;
-//   originZipCode: string;
-//   originLatitude: string;
-//   originLongitude: string;
-
-//   destAddressName: string;
-//   destStreet: string;
-//   destStreet2: string;
-//   destDistrictName: string;
-//   destZipCode: string;
-//   destLatitude: string;
-//   destLongitude: string;
-//   deliveryNoteUri: string;
-
-//   multiPickupDrop: boolean;
-//   setMultiPickupDrop: (v: boolean) => void;
-//   extraStops: ExtraStopWithId[];
-//   setExtraStops: (fn: (prev: ExtraStopWithId[]) => ExtraStopWithId[]) => void;
-
-//   errors: Record<string, string>;
-//   firstErrorKey?: string;
-//   firstErrorRef?: DivRef;
-
-//   mode: "create" | "edit";
-//   pickupAttachment?: OrderAttachmentGroup | null;
-//   setPickupAttachment?: (v: OrderAttachmentGroup | null) => void;
-//   uploadPickupAttachmentGroup?: (
-//     files: File[],
-//   ) => Promise<OrderAttachmentGroup>;
-//   deletePickupAttachmentFile?: (
-//     fileId: number,
-//   ) => Promise<OrderAttachmentGroup | null>;
-//   dropOffAttachment?: OrderAttachmentGroup | null;
-//   setDropOffAttachment?: (v: OrderAttachmentGroup | null) => void;
-//   uploadDropOffAttachmentGroup?: (
-//     files: File[],
-//   ) => Promise<OrderAttachmentGroup>;
-//   deleteDropOffAttachmentFile?: (
-//     fileId: number,
-//   ) => Promise<OrderAttachmentGroup | null>;
-//   extraRefs?: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
-// };
-
-// export default function LocationInfoCard({
-//   isReadOnly,
-//   orderId,
-//   currentRouteId,
-//   userType,
-//   tglMuat,
-//   setTglMuat,
-//   tglBongkar,
-//   setTglBongkar,
-//   kotaMuat,
-//   kotaBongkar,
-//   lokMuat,
-//   setLokMuat,
-//   lokBongkar,
-//   setLokBongkar,
-//   picMuatNama,
-//   setPicMuatNama,
-//   picMuatTelepon,
-//   setPicMuatTelepon,
-//   picBongkarNama,
-//   setPicBongkarNama,
-//   picBongkarTelepon,
-//   setPicBongkarTelepon,
-//   originAddressName,
-//   originStreet,
-//   originStreet2,
-//   originDistrictName,
-//   originZipCode,
-//   originLatitude,
-//   originLongitude,
-//   destAddressName,
-//   destStreet,
-//   destStreet2,
-//   destDistrictName,
-//   destZipCode,
-//   destLatitude,
-//   destLongitude,
-//   deliveryNoteUri,
-//   mode = "create",
-//   pickupAttachment,
-//   setPickupAttachment,
-//   uploadPickupAttachmentGroup,
-//   deletePickupAttachmentFile,
-//   dropOffAttachment,
-//   setDropOffAttachment,
-//   uploadDropOffAttachmentGroup,
-//   deleteDropOffAttachmentFile,
-//   multiPickupDrop,
-//   setMultiPickupDrop,
-//   extraStops,
-//   setExtraStops,
-//   errors,
-//   firstErrorKey,
-//   firstErrorRef,
-//   extraRefs,
-// }: Props) {
-//   const lokasiMuatDisabled = !kotaMuat;
-//   const lokasiBongkarDisabled = !kotaBongkar;
-
-//   // console.log("orderId in LocationInfoCard:", orderId);
-//   // console.log("currentRouteId in LocationInfoCard:", currentRouteId);
-
-//   const refIf = (k: string) =>
-//     firstErrorKey === k
-//       ? (firstErrorRef as React.Ref<HTMLDivElement>)
-//       : undefined;
-
-//   const origin = {
-//     name: originAddressName,
-//     street1: originStreet,
-//     street2: originStreet2,
-//     districtLine: originDistrictName,
-//     province: "",
-//     postCode: originZipCode,
-//     mobile: "-",
-//     email: "-",
-//     lat: originLatitude,
-//     lng: originLongitude,
-//     picName: picMuatNama,
-//     picPhone: picMuatTelepon,
-//     timeLabel: "ETD",
-//     timeValue: fmtDate(tglMuat),
-//     pickup_attachment_id: pickupAttachment?.id ?? null,
-//   };
-
-//   const destination = {
-//     name: destAddressName,
-//     street1: destStreet,
-//     street2: destStreet2,
-//     districtLine: destDistrictName,
-//     province: "",
-//     postCode: destZipCode,
-//     mobile: "-",
-//     email: "-",
-//     lat: destLatitude,
-//     lng: destLongitude,
-//     picName: picBongkarNama,
-//     picPhone: picBongkarTelepon,
-//     timeLabel: "ETA",
-//     timeValue: fmtDate(tglBongkar),
-//     delivery_note_uri: deliveryNoteUri,
-//     drop_off_attachment_id: dropOffAttachment?.id ?? null,
-//   };
-
-//   const panelMode = isReadOnly || mode === "edit" ? "edit" : "create";
-//   const canEditAttachment = panelMode === "edit";
-
-//   // console.log("LocationInfoCard mode:", mode);
-//   // console.log("LocationInfoCard isReadOnly:", isReadOnly);
-
-//   type PanelAttachment = React.ComponentProps<
-//     typeof AddressSidePanel
-//   >["attachment"];
-//   type PanelControl = NonNullable<PanelAttachment>;
-//   type PanelGroup = PanelControl["value"];
-//   type PanelGroupNonNull = Exclude<PanelGroup, null | undefined>;
-
-//   const pickupAttachmentControl: PanelAttachment = {
-//     value: (pickupAttachment ?? null) as PanelGroup,
-//     ...(canEditAttachment &&
-//     !!setPickupAttachment &&
-//     !!uploadPickupAttachmentGroup &&
-//     !!deletePickupAttachmentFile
-//       ? {
-//           onChange: (v) =>
-//             setPickupAttachment(v as unknown as OrderAttachmentGroup | null),
-//           uploadGroup: async (files) =>
-//             (await uploadPickupAttachmentGroup(
-//               files,
-//             )) as unknown as PanelGroupNonNull,
-//           deleteFile: async (fileId) =>
-//             (await deletePickupAttachmentFile(fileId)) as unknown as PanelGroup,
-//           ui: {
-//             accept: "application/pdf,image/*",
-//             maxFileSizeMB: 10,
-//             uploadButtonText: "Upload",
-//             hint: "PDF/JPG/PNG. Maks. 10 MB per file.",
-//           },
-//         }
-//       : {}),
-//   };
-
-//   const dropOffAttachmentControl: PanelAttachment = {
-//     value: (dropOffAttachment ?? null) as PanelGroup,
-//     ...(canEditAttachment &&
-//     !!setDropOffAttachment &&
-//     !!uploadDropOffAttachmentGroup &&
-//     !!deleteDropOffAttachmentFile
-//       ? {
-//           onChange: (v) =>
-//             setDropOffAttachment(v as unknown as OrderAttachmentGroup | null),
-//           uploadGroup: async (files) =>
-//             (await uploadDropOffAttachmentGroup(
-//               files,
-//             )) as unknown as PanelGroupNonNull,
-//           deleteFile: async (fileId) =>
-//             (await deleteDropOffAttachmentFile(
-//               fileId,
-//             )) as unknown as PanelGroup,
-//           ui: {
-//             accept: "application/pdf,image/*",
-//             maxFileSizeMB: 10,
-//             uploadButtonText: "Upload",
-//             hint: "PDF/JPG/PNG. Maks. 10 MB per file.",
-//           },
-//         }
-//       : {}),
-//   };
-
-//   return (
-//     <Card>
-//       <CardHeader>
-//         <h4 className="text-3xl font-semibold text-gray-800">
-//           {t("orders.info_lokasi")}
-//         </h4>
-//       </CardHeader>
-//       <CardBody>
-//         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-//           {/* Kolom 1 - Editable */}
-//           {/* <div className={cn("space-y-4", isReadOnly && "hidden")}> */}
-//           {userType === "shipper" && (
-//             <>
-//               <div className="space-y-4">
-//                 <div ref={refIf("tglMuat")}>
-//                   <DateTimePickerTW
-//                     label={t("orders.tgl_muat")}
-//                     value={tglMuat}
-//                     onChange={setTglMuat}
-//                     error={errors.tglMuat}
-//                     touched={Boolean(errors.tglMuat)}
-//                     displayFormat="DD-MM-YYYY"
-//                   />
-//                 </div>
-
-//                 <div ref={refIf("lokMuat")}>
-//                   <AddressAutocomplete
-//                     label={t("orders.lokasi_muat")}
-//                     cityId={kotaMuat?.id ?? null}
-//                     value={lokMuat}
-//                     onChange={setLokMuat}
-//                     disabled={lokasiMuatDisabled}
-//                   />
-//                   {errors.lokMuat && (
-//                     <div className="mt-1 text-xs text-red-600">
-//                       {errors.lokMuat}
-//                     </div>
-//                   )}
-//                 </div>
-
-//                 <Field.Root value={picMuatNama} onChange={setPicMuatNama}>
-//                   <Field.Label>{t("orders.pic_muat_name")}</Field.Label>
-//                   <Field.Input />
-//                   <Field.Error />
-//                 </Field.Root>
-
-//                 <Field.Root
-//                   type="tel"
-//                   value={picMuatTelepon}
-//                   onChange={setPicMuatTelepon}
-//                   placeholder={t("placeholders.phone")}
-//                 >
-//                   <Field.Label>{t("orders.pic_muat_phone")}</Field.Label>
-//                   <Field.Input />
-//                   <Field.Error />
-//                 </Field.Root>
-//               </div>
-
-//               {/* Kolom 2 - Editable */}
-//               {/* <div className={cn("space-y-4", isReadOnly && "hidden")}> */}
-//               <div className="space-y-4">
-//                 <div ref={refIf("tglBongkar")}>
-//                   <DateTimePickerTW
-//                     label={t("orders.tgl_bongkar")}
-//                     value={tglBongkar}
-//                     onChange={setTglBongkar}
-//                     error={errors.tglBongkar}
-//                     touched={Boolean(errors.tglBongkar)}
-//                     displayFormat="DD-MM-YYYY"
-//                   />
-//                 </div>
-
-//                 <div ref={refIf("lokBongkar")}>
-//                   <AddressAutocomplete
-//                     label={t("orders.lokasi_bongkar")}
-//                     cityId={kotaBongkar?.id ?? null}
-//                     value={lokBongkar}
-//                     onChange={setLokBongkar}
-//                     disabled={lokasiBongkarDisabled}
-//                   />
-//                   {errors.lokBongkar && (
-//                     <div className="mt-1 text-xs text-red-600">
-//                       {errors.lokBongkar}
-//                     </div>
-//                   )}
-//                 </div>
-
-//                 <Field.Root value={picBongkarNama} onChange={setPicBongkarNama}>
-//                   <Field.Label>{t("orders.pic_bongkar_name")}</Field.Label>
-//                   <Field.Input />
-//                   <Field.Error />
-//                 </Field.Root>
-
-//                 <Field.Root
-//                   type="tel"
-//                   value={picBongkarTelepon}
-//                   onChange={setPicBongkarTelepon}
-//                   placeholder={t("placeholders.phone")}
-//                 >
-//                   <Field.Label>{t("orders.pic_bongkar_phone")}</Field.Label>
-//                   <Field.Input />
-//                   <Field.Error />
-//                 </Field.Root>
-//               </div>
-//             </>
-//           )}
-
-//           {/* Readonly panels */}
-//           {userType === "transporter" && (
-//             <>
-//               {/* <div className={cn("space-y-4", !showSidePanels && "hidden")}> */}
-//               <div className="space-y-4">
-//                 <AddressSidePanel
-//                   title="Origin Address"
-//                   labelPrefix="Origin"
-//                   orderId={orderId}
-//                   currentRouteId={currentRouteId}
-//                   info={origin}
-//                   mode={panelMode}
-//                   attachment={pickupAttachmentControl}
-//                   routePickupAttachmentId={pickupAttachment?.id ?? null}
-//                   routeDropOffAttachmentId={dropOffAttachment?.id ?? null}
-//                 />
-//               </div>
-
-//               {/* <div className={cn("space-y-4", !showSidePanels && "hidden")}> */}
-//               <div className="space-y-4">
-//                 <AddressSidePanel
-//                   title="Destination Address"
-//                   labelPrefix="Destination"
-//                   orderId={orderId}
-//                   currentRouteId={currentRouteId}
-//                   info={destination}
-//                   mode={panelMode}
-//                   attachment={dropOffAttachmentControl}
-//                   routePickupAttachmentId={pickupAttachment?.id ?? null}
-//                   routeDropOffAttachmentId={dropOffAttachment?.id ?? null}
-//                 />
-//               </div>
-//             </>
-//           )}
-//         </div>
-
-//         {/* ==== Multi Pickup/Drop (dipisah ke komponen) ==== */}
-//         <MultiPickupDropSection
-//           mode={mode}
-//           userType={userType}
-//           orderId={orderId}
-//           isReadOnly={isReadOnly}
-//           multiPickupDrop={multiPickupDrop}
-//           setMultiPickupDrop={setMultiPickupDrop}
-//           extraStops={extraStops}
-//           setExtraStops={setExtraStops}
-//           errors={errors}
-//           extraRefs={extraRefs}
-//           cityIdMuat={kotaMuat?.id ?? null}
-//           cityIdBongkar={kotaBongkar?.id ?? null}
-//           lokasiMuatDisabled={lokasiMuatDisabled}
-//           lokasiBongkarDisabled={lokasiBongkarDisabled}
-//         />
-//       </CardBody>
-//     </Card>
-//   );
-// }

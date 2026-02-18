@@ -22,6 +22,7 @@ type Props = {
    */
   autoDefaultNow?: boolean; // default true
   timeZone?: string; // "Asia/Jakarta" / "UTC" / "+07:00"
+  disabled?: boolean;
 };
 
 const is24h = (() => {
@@ -101,6 +102,7 @@ export default function DateTimePickerTW({
   showTime = true,
   autoDefaultNow = true,
   timeZone,
+  disabled = false,
 }: Props) {
   const { date, time } = splitIsoLocal(value);
 
@@ -147,6 +149,7 @@ export default function DateTimePickerTW({
       <div className="flex items-stretch rounded-md border-1 outline-none ">
         <div className="min-w-0 flex-1">
           <Datepicker
+            disabled={disabled}
             value={dateVal}
             onChange={(v) => {
               const d =

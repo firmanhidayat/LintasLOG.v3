@@ -87,8 +87,8 @@ export function toRecordItem(x: unknown): RecordItem {
     const name: string = isStr(nameRaw)
       ? nameRaw
       : isId(idRaw)
-      ? String(idRaw)
-      : "";
+        ? String(idRaw)
+        : "";
 
     return { id, name };
   }
@@ -205,10 +205,10 @@ function ConfirmSubmitDialog({
         </h4>
         <p className="text-sm text-gray-700">
           {mode === "create"
-            ? t("orders.confirm_submit_text") ??
-              "Pastikan semua informasi sudah benar sebelum submit. Lanjutkan?"
-            : t("orders.confirm_update_text") ??
-              "Perbarui data order sesuai perubahan yang sudah Anda buat. Lanjutkan?"}
+            ? (t("orders.confirm_submit_text") ??
+              "Pastikan semua informasi sudah benar sebelum submit. Lanjutkan?")
+            : (t("orders.confirm_update_text") ??
+              "Perbarui data order sesuai perubahan yang sudah Anda buat. Lanjutkan?")}
         </p>
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button variant="outline" onClick={onCancel} disabled={loading}>
@@ -216,8 +216,8 @@ function ConfirmSubmitDialog({
           </Button>
           <Button variant="primary" onClick={onConfirm} disabled={loading}>
             {loading
-              ? t("common.sending") ?? "Mengirim…"
-              : t("common.yes") ?? "Ya"}
+              ? (t("common.sending") ?? "Mengirim…")
+              : (t("common.yes") ?? "Ya")}
           </Button>
         </div>
       </div>
@@ -320,7 +320,7 @@ type RouteItem = NonNullable<
 
 function addrFromRoute(
   r: RouteItem | undefined,
-  which: "origin" | "dest"
+  which: "origin" | "dest",
 ): AddressItem | null {
   if (!r) return null;
   const obj = which === "origin" ? r.origin_address : r.dest_address;
@@ -337,7 +337,7 @@ function normalizeKey(s: unknown): string {
 }
 
 function extractApiSteps(
-  d: NonNullable<OrdersCreateFormProps["initialData"]>
+  d: NonNullable<OrdersCreateFormProps["initialData"]>,
 ): StatusStep[] {
   const items = (d.states ?? []) as StatusStep[];
 
@@ -352,7 +352,7 @@ function extractApiSteps(
 }
 
 function toExistingFileItems(
-  attachment: OrderAttachmentGroup | OrderAttachmentItem[] | null | undefined
+  attachment: OrderAttachmentGroup | OrderAttachmentItem[] | null | undefined,
 ): ExistingFileItem[] {
   if (!attachment) return [];
   if (Array.isArray(attachment)) {
@@ -374,7 +374,7 @@ function toExistingFileItems(
 
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>,
-  userTz: string = "Asia/Jakarta"
+  userTz: string = "Asia/Jakarta",
 ) {
   const tz = userTz;
 
@@ -414,7 +414,7 @@ function prefillFromInitial(
     tglBongkar: odooUtcToDatetimeLocalValue(
       data.drop_off_date_planne,
       tz,
-      "17:00"
+      "17:00",
     ),
 
     lokMuat: null as AddressItem | null,
@@ -487,20 +487,12 @@ function prefillFromInitial(
     original_res_model: data.original_res_model,
   };
 
-  console.log("data:", data);
-  console.log("form before:", form);
-
   const routes: RouteItem[] = Array.isArray(data.route_ids)
     ? (data.route_ids as RouteItem[])
     : ([] as RouteItem[]);
 
-  console.log("routes:", routes);
-  // const main = routes.find((r) => r.is_main_route);
   const main = routes.flat().find((r) => r.is_main_route === true);
-
-  console.log("main route:", main);
   form.mainRouteId = typeof main?.id === "number" ? main.id : null;
-
   const etdLocal = odooUtcToDatetimeLocalValue(main?.etd_date ?? null, tz);
   const etaLocal = odooUtcToDatetimeLocalValue(main?.eta_date ?? null, tz);
 
@@ -543,8 +535,6 @@ function prefillFromInitial(
   // const extras: RouteItem[] = routes.filter((r) => !r.is_main_route);
   const extras: RouteItem[] = routes.flat().filter((r) => !r.is_main_route);
 
-  console.log("extra routes:", extras);
-
   form.extraStops = extras.map(
     (r): ExtraStop => ({
       id: r.id,
@@ -554,8 +544,6 @@ function prefillFromInitial(
       originPicPhone: r.origin_pic_phone ?? "",
       destPicName: r.dest_pic_name ?? "",
       destPicPhone: r.dest_pic_phone ?? "",
-      // tglETDMuat: apiToLocalIsoMinute(r.etd_date) ?? r.etd_date ?? "",
-      // tglETABongkar: apiToLocalIsoMinute(r.eta_date) ?? r.eta_date ?? "",
 
       tglETDMuat: odooUtcToDatetimeLocalValue(r.etd_date, tz),
       tglETABongkar: odooUtcToDatetimeLocalValue(r.eta_date, tz),
@@ -576,23 +564,24 @@ function prefillFromInitial(
       destLatitude: r.dest_latitude ?? "",
       destLongitude: r.dest_longitude ?? "",
       delivery_note_uri: r.delivery_note_uri ?? "",
-    })
+    }),
   );
 
   const current = data.states?.find((s) => s.is_current);
-
-  console.log("current state:", current);
-
+  
   form.isReadOnly = current
     ? !["draft", "pending"].includes(current.key)
     : false;
+
+  console.log("current state:", current);
+  console.log("form.isReadOnly:", form.isReadOnly);
 
   form.existingPackingList = toExistingFileItems(
     data.packing_list_attachment as
       | OrderAttachmentGroup
       | OrderAttachmentItem[]
       | null
-      | undefined
+      | undefined,
   );
 
   form.existingDeliveryNotes = toExistingFileItems(
@@ -600,7 +589,7 @@ function prefillFromInitial(
       | OrderAttachmentGroup
       | OrderAttachmentItem[]
       | null
-      | undefined
+      | undefined,
   );
 
   const pl = data.packing_list_attachment as
@@ -704,8 +693,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   }, [orderId, qsId]);
 
   const { profile } = useAuth();
-  // console.log("OrdersCreateForm profile:", profile);
-  // console.log("OrdersCreateForm userType:", userType);
 
   const { ready: i18nReady } = useI18nReady();
   const { hasChatImpulse, setHasChatImpulse } = useChatImpulseChannel();
@@ -815,7 +802,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
           destLongitude: "",
         },
       ] as ExtraStop[]
-    ).map((s) => ({ ...s, uid: genUid() }))
+    ).map((s) => ({ ...s, uid: genUid() })),
   );
 
   // Upload lists (MultiFileUpload controlled)
@@ -898,7 +885,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
 
   // ===================== Prefill untuk Edit =====================
   const [loadingDetail, setLoadingDetail] = useState<boolean>(
-    mode === "edit" && !initialData ? true : false
+    mode === "edit" && !initialData ? true : false,
   );
 
   // const [chatOpen, setChatOpen] = useState(false);
@@ -941,7 +928,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     setDlgKind("error");
     setDlgTitle(title || (t("common.failed_save") ?? "Gagal menyimpan"));
     setDlgMsg(
-      <pre className="whitespace-pre-wrap text-xs text-red-700">{msg}</pre>
+      <pre className="whitespace-pre-wrap text-xs text-red-700">{msg}</pre>,
     );
     setDlgOpen(true);
   }
@@ -976,7 +963,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       Object.fromEntries(layananPreset.map((k) => [k, false])) as Record<
         Layanan,
         boolean
-      >
+      >,
   );
   const [layananLainnya, setLayananLainnya] = useState<string>("");
   const [muatanNama, setMuatanNama] = useState<string>("");
@@ -986,18 +973,15 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   const [cargoQTY, setCargoQTY] = useState<number>();
 
   useEffect(() => {
-    // console.log("initialData changed:", initialData);
     if (!initialData) return;
-    // console.log("Prefilling form from initialData:", initialData);
-
     const f = prefillFromInitial(initialData, profileTimezone);
     setChatterResModel(
-      typeof f.res_model === "string" ? f.res_model : String(f.res_model ?? "")
+      typeof f.res_model === "string" ? f.res_model : String(f.res_model ?? ""),
     );
     setChatterResId(
       typeof f.res_id === "string" || typeof f.res_id === "number"
         ? f.res_id
-        : undefined
+        : undefined,
     );
     setMainRouteId(f.mainRouteId);
     setNamaPenerima(f.namaPenerima);
@@ -1005,8 +989,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     setArmada(f.armada);
     setKotaMuat(f.kotaMuat);
     setKotaBongkar(f.kotaBongkar);
-
-    // console.log(" PROFILE TZ :: ", profile?.tz);
 
     setTglMuat(f.tglMuat);
     setTglBongkar(f.tglBongkar);
@@ -1030,7 +1012,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
             id: String(f.cargo_type_id),
             name: f.cargo_type?.name ?? f.cargo_type?.name ?? "",
           }
-        : null
+        : null,
     );
     setCargoCBM(f.cargoCBM);
     setCargoQTY(f.cargoQTY);
@@ -1077,29 +1059,17 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     setReviewClaimIdsCount(Number(f.reviewed_claim_ids_count ?? 0));
     // }
 
-    // console.log("f data: ", f);
-    // console.log("initialData.states:", initialData.states);
-    // console.log("extracted steps:", extractApiSteps(initialData));
-    // console.log("prefilled steps:", f.states);
-
     setSteps(f.states);
     setStatusCurrent(f.states.find((s) => s.is_current)?.key);
-
-    // console.log(
-    //   "prefilled current step:",
-    //   f.states.find((s) => s.is_current)
-    // );
-
-    // console.log("Current Status after setStatusCurrent :", statusCurrent);
     setLoadingDetail(false);
   }, [initialData]);
 
   async function deleteRemoteAttachment(
     docAttachmentId: number,
-    attachmentId: number
+    attachmentId: number,
   ) {
     const url = `${DOCUMENT_ATTACHMENTS_URL}/${encodeURIComponent(
-      String(docAttachmentId)
+      String(docAttachmentId),
     )}/attachments/${encodeURIComponent(String(attachmentId))}`;
 
     const res = await fetch(url, {
@@ -1110,7 +1080,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(
-        `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`
+        `Failed to delete attachment (${res.status} ${res.statusText}) ${text}`,
       );
     }
   }
@@ -1125,7 +1095,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       setPickupAttachment(g);
       return g;
     },
-    [pickupAttachment?.id]
+    [pickupAttachment?.id],
   );
 
   const uploadDropOffAttachmentGroup = useCallback(
@@ -1137,7 +1107,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       setDropOffAttachment(g);
       return g;
     },
-    [dropOffAttachment?.id]
+    [dropOffAttachment?.id],
   );
 
   const deletePickupAttachmentFile = useCallback(
@@ -1151,7 +1121,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
         ? {
             ...pickupAttachment,
             attachments: (pickupAttachment.attachments ?? []).filter(
-              (a) => a.id !== attachmentId
+              (a) => a.id !== attachmentId,
             ),
           }
         : null;
@@ -1159,7 +1129,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       setPickupAttachment(next);
       return next;
     },
-    [pickupAttachment]
+    [pickupAttachment],
   );
 
   const deleteDropOffAttachmentFile = useCallback(
@@ -1173,7 +1143,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
         ? {
             ...dropOffAttachment,
             attachments: (dropOffAttachment.attachments ?? []).filter(
-              (a) => a.id !== attachmentId
+              (a) => a.id !== attachmentId,
             ),
           }
         : null;
@@ -1181,52 +1151,48 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       setDropOffAttachment(next);
       return next;
     },
-    [dropOffAttachment]
+    [dropOffAttachment],
   );
 
   const handleRemovePackingList = useCallback(
     async (item: ExistingFileItem) => {
-      // console.log("handleRemovePackingList ", item);
       if (!item.groupId) {
         setExistingPackingList((prev) =>
-          prev.filter((it) => it.id !== item.id)
+          prev.filter((it) => it.id !== item.id),
         );
         return;
       }
       try {
         setExistingPackingList((prev) => prev.filter((i) => i.id !== item.id));
         await deleteRemoteAttachment(item.groupId, item.id);
-        // console.log("Removing packing list attachment:", item);
       } catch (error) {
         console.error("Failed to remove packing list:", error);
         setExistingPackingList((prev) => [...prev, item]);
       }
     },
-    []
+    [],
   );
 
   const handleRemoveDeliveryNote = useCallback(
     async (item: ExistingFileItem) => {
-      console.log("handleRemoveDeliveryNote ", item);
       if (!item.groupId) {
         setExistingDeliveryNotes((prev) =>
-          prev.filter((it) => it.id !== item.id)
+          prev.filter((it) => it.id !== item.id),
         );
         return;
       }
 
       try {
         setExistingDeliveryNotes((prev) =>
-          prev.filter((i) => i.id !== item.id)
+          prev.filter((i) => i.id !== item.id),
         );
         await deleteRemoteAttachment(item.groupId, item.id);
-        console.log("Removing delivery note attachment:", item);
       } catch (error) {
         console.error("Failed to remove delivery note:", error);
         setExistingDeliveryNotes((prev) => [...prev, item]);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -1239,11 +1205,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       setLoadingDetail(false);
       return;
     }
-
     const url = buildDetailUrl(DETAIL_URL_TPL, effectiveOrderId);
-
-    console.log("Fetching order detail for prefill from URL:", url);
-
     const abort = new AbortController();
     (async () => {
       try {
@@ -1261,23 +1223,16 @@ export default function OrdersCreateForm<T extends TmsUserType>({
         const json = (await res.json()) as OrdersCreateFormProps["initialData"];
 
         if (json) {
-          console.log("Fetched order detail for prefill:", json);
-          console.log(" PROFILE TZ :: ", profile?.tz);
-          console.log("profileTimezone:", profileTimezone);
-
           const f = prefillFromInitial(json, profileTimezone);
-
-          console.log("Prefilled data from fetched detail:", f);
-
           setChatterResModel(
             typeof f.res_model === "string"
               ? f.res_model
-              : String(f.res_model ?? "")
+              : String(f.res_model ?? ""),
           );
           setChatterResId(
             typeof f.res_id === "string" || typeof f.res_id === "number"
               ? f.res_id
-              : undefined
+              : undefined,
           );
           setMainRouteId(f.mainRouteId);
           setNamaPenerima(f.namaPenerima);
@@ -1350,8 +1305,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
           setPackingListAttachmentName(f.packingListAttachmentName);
           setDeliveryNoteAttachmentName(f.deliveryNoteAttachmentName);
 
-    setPickupAttachment(f.pickupAttachment ?? null);
-    setDropOffAttachment(f.dropOffAttachment ?? null);
+          setPickupAttachment(f.pickupAttachment ?? null);
+          setDropOffAttachment(f.dropOffAttachment ?? null);
 
           setReviewClaimIdsCount(Number(f?.reviewed_claim_ids_count ?? 0));
 
@@ -1375,7 +1330,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
         | typeof DOC_ATTACHMENT_PACKING_LIST_TYPE
         | typeof DOC_ATTACHMENT_DELIVERY_NOTE_TYPE;
       groupId?: number | null;
-    }
+    },
   ): Promise<number | null> {
     if (!files.length) return opts.groupId ?? null;
     const { docType, groupId } = opts;
@@ -1403,10 +1358,10 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       } catch {}
       const baseMsg =
         docType === DOC_ATTACHMENT_PACKING_LIST_TYPE
-          ? t("orders.upload_packing_list_failed") ??
-            "Upload dokumen Packing List gagal."
-          : t("orders.upload_delivery_note_failed") ??
-            "Upload dokumen Surat Jalan / POD gagal.";
+          ? (t("orders.upload_packing_list_failed") ??
+            "Upload dokumen Packing List gagal.")
+          : (t("orders.upload_delivery_note_failed") ??
+            "Upload dokumen Surat Jalan / POD gagal.");
       const msg = text ? `${baseMsg} ${text}` : baseMsg;
       throw new Error(msg);
     }
@@ -1423,7 +1378,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   }
 
   async function fetchDocumentAttachmentGroup(
-    groupId: number
+    groupId: number,
   ): Promise<DocumentAttachmentsResponse> {
     const res = await fetch(`${DOCUMENT_ATTACHMENTS_URL}/${groupId}`, {
       method: "GET",
@@ -1433,7 +1388,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     if (!res.ok) {
       const t = await res.text().catch(() => "");
       throw new Error(
-        `Gagal mengambil attachment group (HTTP ${res.status}). ${t}`.trim()
+        `Gagal mengambil attachment group (HTTP ${res.status}). ${t}`.trim(),
       );
     }
     return (await res.json()) as DocumentAttachmentsResponse;
@@ -1448,7 +1403,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
         | typeof DOC_ATTACHMENT_PICKUP_TYPE
         | typeof DOC_ATTACHMENT_DROP_OFF_TYPE;
       groupId?: number | null;
-    }
+    },
   ): Promise<DocumentAttachmentsResponse> {
     const groupId = opts.groupId ?? null;
 
@@ -1458,7 +1413,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     const url = groupId
       ? `${DOCUMENT_ATTACHMENTS_URL}/${groupId}`
       : `${DOCUMENT_ATTACHMENTS_URL}?doc_type=${encodeURIComponent(
-          opts.docType
+          opts.docType,
         )}`;
 
     const res = await fetch(url, {
@@ -1484,7 +1439,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
 
     const maybe = json as Partial<DocumentAttachmentsResponse> | null;
     const finalGroupId =
-      typeof maybe?.id === "number" ? maybe.id : groupId ?? null;
+      typeof maybe?.id === "number" ? maybe.id : (groupId ?? null);
 
     if (!finalGroupId) {
       throw new Error("Upload berhasil tetapi tidak mendapatkan group id.");
@@ -1604,19 +1559,19 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   const canSubmit = useMemo(() => {
     return Boolean(
       jenisOrder?.id &&
-        armada &&
-        namaPenerima &&
-        kotaMuat?.id &&
-        kotaBongkar?.id &&
-        lokMuat?.id &&
-        lokBongkar?.id &&
-        tglMuat &&
-        tglBongkar &&
-        // muatanNama &&
-        // muatanDeskripsi &&
-        jenisMuatan &&
-        cargoCBM &&
-        cargoQTY
+      armada &&
+      namaPenerima &&
+      kotaMuat?.id &&
+      kotaBongkar?.id &&
+      lokMuat?.id &&
+      lokBongkar?.id &&
+      tglMuat &&
+      tglBongkar &&
+      // muatanNama &&
+      // muatanDeskripsi &&
+      jenisMuatan &&
+      cargoCBM &&
+      cargoQTY,
     );
   }, [
     jenisOrder,
@@ -1639,9 +1594,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     packingListAttachmentId?: number;
     deliveryNoteAttachmentId?: number;
   }): ApiPayload {
-    console.log("[buildApiPayload] :  tglMuat ", tglMuat);
-    console.log("[buildApiPayload] : tglBongkar ", tglBongkar);
-
     const mainRoute = {
       ...(mode === "edit" && mainRouteId ? { id: mainRouteId } : {}),
       is_main_route: true,
@@ -1672,7 +1624,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
             etd_date: userLocalToOdooUtc(s.tglETDMuat ?? "", profileTimezone),
             eta_date: userLocalToOdooUtc(
               s.tglETABongkar ?? "",
-              profileTimezone
+              profileTimezone,
             ),
           }))
       : [];
@@ -1749,7 +1701,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       setRespIsSuccess(false);
       setRespTitle(t("common.error") ?? "Error");
       setRespMessage(
-        "Edit mode butuh id dan endpoint update () atau fallback ke ()/{id}."
+        "Edit mode butuh id dan endpoint update () atau fallback ke ()/{id}.",
       );
       setRespOpen(true);
       return;
@@ -1773,8 +1725,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
         setRespMessage(
           err instanceof Error
             ? err.message
-            : t("orders.upload_failed") ??
-                "Upload dokumen gagal. Silakan periksa file dan coba lagi."
+            : (t("orders.upload_failed") ??
+                "Upload dokumen gagal. Silakan periksa file dan coba lagi."),
         );
         setRespOpen(true);
         return;
@@ -1782,7 +1734,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
 
       // === 2) Build payload order + attachment_id bila ada ===
       const apiPayload = buildApiPayload(attachIds ?? undefined);
-      console.log("[OrderSubmit] payload:", apiPayload);
 
       const method = mode === "create" ? "POST" : "PUT";
       let url = POST_ORDER_URL;
@@ -1794,9 +1745,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
           url = `${POST_ORDER_URL.replace(/\/$/, "")}/${effectiveOrderId}`;
         }
       }
-
-      console.log(`[OrderSubmit] ${method} ${url}`, apiPayload);
-
       const res = await fetch(url, {
         method,
         headers: {
@@ -1840,7 +1788,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
         setRespIsSuccess(true);
         setRespTitle(t("common.success") ?? "Berhasil");
         setRespMessage(
-          t("orders.update_success") ?? "Order berhasil diperbarui."
+          t("orders.update_success") ?? "Order berhasil diperbarui.",
         );
         setRespOpen(true);
         return;
@@ -1892,7 +1840,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       setRespIsSuccess(false);
       setRespTitle(t("common.network_error") ?? "Network Error");
       setRespMessage(
-        t("common.network_error") ?? "Terjadi kesalahan jaringan. Coba lagi."
+        t("common.network_error") ?? "Terjadi kesalahan jaringan. Coba lagi.",
       );
       setRespOpen(true);
     } finally {
@@ -1903,7 +1851,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
 
   function confirmAndSubmit() {
     const eobj = validate();
-    console.log("confirmAndSubmit, validation errors:", eobj);
     if (Object.keys(eobj).length > 0) {
       setConfirmOpen(false);
       return;
@@ -1914,7 +1861,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const eobj = validate();
-    console.log("handleSubmit, validation errors:", eobj);
     if (Object.keys(eobj).length > 0) {
       requestAnimationFrame(() => {
         if (firstErrorRef.current) {
@@ -1923,7 +1869,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
             block: "center",
           });
           const el = firstErrorRef.current.querySelector(
-            "input,select,textarea,[role='combobox']"
+            "input,select,textarea,[role='combobox']",
           ) as HTMLElement | null;
           el?.focus();
         } else {
@@ -1951,7 +1897,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     if (!effectiveOrderId) return;
     const DONE_POST_URL = `${POST_ORDER_URL}/${effectiveOrderId}/done`;
     try {
-      console.log("Marking order as done:", DONE_POST_URL);
       const res = await fetch(DONE_POST_URL, {
         method: "POST",
         headers: {
@@ -1968,7 +1913,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
         const text = await res.text().catch(() => "");
         openErrorDialog(
           text || `Failed to done (${res.status} ${res.statusText})`,
-          "Failed to done"
+          "Failed to done",
         );
         return;
       }
@@ -2005,7 +1950,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
         const text = await res.text().catch(() => "");
         openErrorDialog(
           text || `Failed to duplicate (${res.status} ${res.statusText})`,
-          "Failed to duplicate"
+          "Failed to duplicate",
         );
         return;
       }
@@ -2037,7 +1982,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   /* =================== Chatter: res_model/res_id (sync) ================== */
   const [chatterResModel, setChatterResModel] = useState<string>("");
   const [chatterResId, setChatterResId] = useState<string | number | undefined>(
-    undefined
+    undefined,
   );
   /* ======================================================================= */
 
@@ -2047,7 +1992,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   // === Result Dialog for Chat ===
   const [chatDlgOpen, setChatDlgOpen] = useState(false);
   const [chatDlgKind, setChatDlgKind] = useState<"success" | "error">(
-    "success"
+    "success",
   );
   const [chatDlgTitle, setChatDlgTitle] = useState("");
   const [chatDlgMsg, setChatDlgMsg] = useState<React.ReactNode>("");
@@ -2336,10 +2281,10 @@ export default function OrdersCreateForm<T extends TmsUserType>({
                     variant="solid"
                   >
                     {submitLoading
-                      ? t("common.sending") ?? "Mengirim…"
+                      ? (t("common.sending") ?? "Mengirim…")
                       : mode === "edit"
-                      ? t("common.update") ?? "Update"
-                      : t("common.save") ?? "Save"}
+                        ? (t("common.update") ?? "Update")
+                        : (t("common.save") ?? "Save")}
                   </Button>
                 </div>
               </div>
@@ -2422,9 +2367,9 @@ export default function OrdersCreateForm<T extends TmsUserType>({
                   idStr
                     ? safeJoin(
                         APP_BASE_PATH,
-                        `/orders/details/?id=${encodeURIComponent(idStr)}`
+                        `/orders/details/?id=${encodeURIComponent(idStr)}`,
                       )
-                    : safeJoin(APP_BASE_PATH, "/orders")
+                    : safeJoin(APP_BASE_PATH, "/orders"),
                 );
               } else {
                 router.push(safeJoin(APP_BASE_PATH, "/orders"));
@@ -2458,22 +2403,12 @@ export default function OrdersCreateForm<T extends TmsUserType>({
           message={dlgMsg}
           onClose={() => {
             setDlgOpen(false);
-
-            console.log(
-              "Dialog closed, kind=",
-              dlgKind,
-              " lastCreatedId=",
-              lastCreatedId
-            );
-            console.log("reloadSelfAfterDlg=", reloadSelfAfterDlg);
-            console.log("effectiveOrderId=", effectiveOrderId);
-
             if (reloadSelfAfterDlg) {
               setReloadSelfAfterDlg(false);
               router.push(
                 `/orders/details/?id=${encodeURIComponent(
-                  String(effectiveOrderId)
-                )}`
+                  String(effectiveOrderId),
+                )}`,
               );
               // window.location.reload(); // reload page dirinya sendiri OKEH!! kadang gak jalan
               return;
@@ -2482,8 +2417,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
             if (dlgKind === "success" && lastCreatedId) {
               router.push(
                 `/orders/details/?id=${encodeURIComponent(
-                  String(lastCreatedId)
-                )}`
+                  String(lastCreatedId),
+                )}`,
               );
             }
           }}
