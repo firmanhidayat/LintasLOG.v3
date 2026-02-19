@@ -127,14 +127,14 @@ export default function MultiPickupDropSection({
     }
   };
 
-  // console.log("Rendering MultiPickupDropSection ", {
-  //   isReadOnly,
-  //   multiPickupDrop,
-  //   extraStopsCount: extraStops.length,
-  //   cityIdMuat,
-  //   cityIdBongkar,
-  //   extraStops,
-  // });
+  console.log("Rendering MultiPickupDropSection ", {
+    isReadOnly,
+    multiPickupDrop,
+    extraStopsCount: extraStops.length,
+    cityIdMuat,
+    cityIdBongkar,
+    extraStops,
+  });
 
   return (
     <div className="mt-6 space-y-3">

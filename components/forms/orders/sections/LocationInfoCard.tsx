@@ -203,6 +203,7 @@ export default function LocationInfoCard({
   const lokasiBongkarDisabled = isReadOnly || !kotaBongkar;
 
   console.log("LocationInfoCard isReadOnly:", isReadOnly);
+  console.log("LocationInfoCard extraStops:", extraStops);
 
   type PanelAttachment = React.ComponentProps<
     typeof AddressSidePanel

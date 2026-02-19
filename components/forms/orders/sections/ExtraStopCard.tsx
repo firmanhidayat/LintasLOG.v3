@@ -133,6 +133,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       timeLabel: "ETD",
       timeValue: fmtDate(stop.tglETDMuat),
       pickup_attachment_id: pickupAttachment?.id ?? null,
+      pickupAttachment: pickupAttachment,
     };
 
     const destination = {
@@ -152,10 +153,13 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
       timeValue: fmtDate(stop.tglETABongkar),
       delivery_note_uri: stop.delivery_note_uri,
       drop_off_attachment_id: dropOffAttachment?.id ?? null,
+      dropOffAttachment: dropOffAttachment,
     };
 
-    console.log("render ExtraStopCard", {isReadOnly, userType});
-    
+    console.log("render ExtraStopCard", { isReadOnly, userType });
+    console.log("origin", origin);
+    console.log("destination", destination);
+
     const isTransporter = userType === "transporter";
 
     // Tampilkan panel jika:
@@ -181,6 +185,8 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
 
     const panelMode = isReadOnly || mode === "edit" ? "edit" : "create";
     const canEditAttachment = panelMode === "edit";
+
+    console.log("Data Stop on ExtraStopCard : ",stop);
 
     type PanelAttachment = React.ComponentProps<
       typeof AddressSidePanel
@@ -241,6 +247,106 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             },
           }
         : {}),
+    };
+
+    type AttachmentItemLite = {
+      id?: number | string;
+      name?: string;
+      url?: string;
+      mimetype?: string;
+    };
+
+    const toAttachmentItems = (
+      group?: OrderAttachmentGroup | null,
+    ): AttachmentItemLite[] => {
+      // backend biasanya kirim `attachments`, tapi beberapa response bisa beda key
+      // (mis. `attachment_ids` / `files`). Fallback biar list tidak dianggap kosong.
+      const g = group as unknown as Record<string, unknown> | null | undefined;
+      const raw = g?.attachments ?? g?.attachment_ids ?? g?.files;
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .filter(
+          (x): x is Record<string, unknown> => !!x && typeof x === "object",
+        )
+        .map((o) => {
+          const id = o["id"];
+          const name = o["name"];
+          const url = o["url"];
+          const mimetype = o["mimetype"];
+          return {
+            id:
+              typeof id === "number" || typeof id === "string" ? id : undefined,
+            name: typeof name === "string" ? name : undefined,
+            url: typeof url === "string" ? url : undefined,
+            mimetype: typeof mimetype === "string" ? mimetype : undefined,
+          };
+        });
+    };
+
+    // sumber data attachment yang paling update biasanya dari props (state parent),
+    // sedangkan `stop.pickupAttachment` / `stop.dropOffAttachment` sering belum ikut ter-update.
+    const pickupGroup = pickupAttachment ?? stop.pickupAttachment ?? null;
+    const dropOffGroup = dropOffAttachment ?? stop.dropOffAttachment ?? null;
+
+    const pickupItems = toAttachmentItems(pickupGroup);
+    const dropOffItems = toAttachmentItems(dropOffGroup);
+
+    console.log("pickupItems", pickupItems);
+    console.log("dropOffItems", dropOffItems);
+
+
+
+    const showPickupDropDocList =
+      userType === "shipper" &&
+      mode === "edit" &&
+      (pickupGroup != null || dropOffGroup != null);
+
+    console.log("showPickupDropDocList", showPickupDropDocList);
+
+    const renderDocList = (items: AttachmentItemLite[]) => {
+      
+      console.log("renderDocList", { items });
+
+      if (items.length === 0) {
+        return <div className="text-xs text-slate-500">-</div>;
+      }
+      return (
+        <ul className="space-y-2">
+          {items.map((it, idx) => {
+            const key =
+              typeof it.id === "number" || typeof it.id === "string"
+                ? String(it.id)
+                : `idx-${idx}`;
+            const label = it.name ?? `File ${idx + 1}`;
+            const href = it.url;
+            return (
+              <li
+                key={key}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
+              >
+                <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
+                  {label}
+                </span>
+                {href ? (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="shrink-0 text-sm font-medium text-primary hover:underline"
+                  >
+                    Download
+                  </a>
+                ) : (
+                  <span className="shrink-0 text-xs text-slate-400">
+                    No link
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      );
     };
 
     return (
@@ -386,6 +492,26 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
             </>
           )}
         </div>
+
+        {showPickupDropDocList && userType === "shipper" && (
+          <div className="mt-8">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 text-sm font-semibold text-slate-800">
+                  Pickup Document
+                </div>
+                {renderDocList(pickupItems)}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 text-sm font-semibold text-slate-800">
+                  Drop Off Document
+                </div>
+                {renderDocList(dropOffItems)}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   },

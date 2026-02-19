@@ -372,6 +372,16 @@ function toExistingFileItems(
   }));
 }
 
+function routeAttachmentGroup(
+  r: unknown,
+  which: "pickup_attachment" | "drop_off_attachment",
+): OrderAttachmentGroup | null {
+  if (!r || typeof r !== "object") return null;
+  const v = (r as Record<string, unknown>)[which];
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  return v as OrderAttachmentGroup;
+}
+
 function prefillFromInitial(
   data: NonNullable<OrdersCreateFormProps["initialData"]>,
   userTz: string = "Asia/Jakarta",
@@ -390,7 +400,7 @@ function prefillFromInitial(
     }
   }
 
-  const isReviewed = (data.state ?? "").toLowerCase().includes("review");
+  // const isReviewed = (data.state ?? "").toLowerCase().includes("review");
   const form = {
     states: data.states ? extractApiSteps(data) : ([] as StatusStep[]),
     state: data.state ?? "",
@@ -491,6 +501,11 @@ function prefillFromInitial(
     ? (data.route_ids as RouteItem[])
     : ([] as RouteItem[]);
 
+  console.log("OrderCreateForm - Prefill form from initial data:", {
+    data,
+    routes,
+  });
+
   const main = routes.flat().find((r) => r.is_main_route === true);
   form.mainRouteId = typeof main?.id === "number" ? main.id : null;
   const etdLocal = odooUtcToDatetimeLocalValue(main?.etd_date ?? null, tz);
@@ -564,11 +579,13 @@ function prefillFromInitial(
       destLatitude: r.dest_latitude ?? "",
       destLongitude: r.dest_longitude ?? "",
       delivery_note_uri: r.delivery_note_uri ?? "",
+      pickupAttachment: routeAttachmentGroup(r, "pickup_attachment"),
+      dropOffAttachment: routeAttachmentGroup(r, "drop_off_attachment"),
     }),
   );
 
   const current = data.states?.find((s) => s.is_current);
-  
+
   form.isReadOnly = current
     ? !["draft", "pending"].includes(current.key)
     : false;
@@ -775,6 +792,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
           destZipCode: "",
           destLatitude: "",
           destLongitude: "",
+          pickupAttachment: null,
+          dropOffAttachment: null,
         },
         {
           id: 0,
@@ -800,6 +819,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
           destZipCode: "",
           destLatitude: "",
           destLongitude: "",
+          pickupAttachment: null,
+          dropOffAttachment: null,
         },
       ] as ExtraStop[]
     ).map((s) => ({ ...s, uid: genUid() })),
@@ -1042,6 +1063,7 @@ export default function OrdersCreateForm<T extends TmsUserType>({
     if (f.extraStops.length > 0) {
       setMultiPickupDrop(true);
       setExtraStops(withUid(f.extraStops));
+      console.log("OrdersCreateForm - Prefill extra stops:", f.extraStops);
     }
 
     setExistingPackingList(f.existingPackingList);
@@ -1295,6 +1317,10 @@ export default function OrdersCreateForm<T extends TmsUserType>({
           if (f.extraStops.length > 0) {
             setMultiPickupDrop(true);
             setExtraStops(withUid(f.extraStops));
+            console.log(
+              "OrdersCreateForm - Prefill extra stops:",
+              f.extraStops,
+            );
           }
 
           setExistingPackingList(f.existingPackingList);
@@ -1996,27 +2022,6 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   );
   const [chatDlgTitle, setChatDlgTitle] = useState("");
   const [chatDlgMsg, setChatDlgMsg] = useState<React.ReactNode>("");
-
-  // function openChatSuccessDialog(message?: string, title?: string) {
-  //   setChatDlgKind("success");
-  //   setChatDlgTitle(title ?? t("common.success") ?? "Berhasil");
-  //   setChatDlgMsg(message ?? t("orders.message_sent") ?? "Pesan terkirim.");
-  //   setChatDlgOpen(true);
-  // }
-  // function openChatErrorDialog(err: unknown, title?: string) {
-  //   const msg =
-  //     (typeof err === "object" &&
-  //       err !== null &&
-  //       // @ts-expect-error best-effort
-  //       (err.detail?.[0]?.msg || err.message || err.error)) ||
-  //     String(err);
-  //   setChatDlgKind("error");
-  //   setChatDlgTitle(title ?? t("common.error") ?? "Error");
-  //   setChatDlgMsg(
-  //     <pre className="whitespace-pre-wrap text-xs text-red-700">{msg}</pre>
-  //   );
-  //   setChatDlgOpen(true);
-  // }
 
   if (!i18nReady || loadingDetail) {
     return (

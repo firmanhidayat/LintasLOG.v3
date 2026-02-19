@@ -281,6 +281,8 @@ export type OrdersCreateFormProps = {
 
       etd_date?: string;
       eta_date?: string;
+      pickupAttachment?: OrderAttachmentItem | null;
+      dropOffAttachment?: OrderAttachmentItem | null;
     }>;
     idReadOnly?: boolean;
 
