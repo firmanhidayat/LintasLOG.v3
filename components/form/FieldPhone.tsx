@@ -72,6 +72,7 @@ export default function PhoneField({
   kind,
   required,
   placeholder,
+  disabled,
 }: {
   label: string;
   value: string;
@@ -79,6 +80,7 @@ export default function PhoneField({
   kind: PhoneKind; // "mobile" | "landline"
   required?: boolean;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   const [touched, setTouched] = React.useState(false);
   const err = buildError(value, kind, required);
@@ -100,6 +102,7 @@ export default function PhoneField({
         placeholder={placeholder}
         required={required}
         aria-invalid={touched && !!err}
+        disabled={disabled}
       />
       {touched && err && (
         <p className="mt-1 font-extralight text-xs text-red-600">{err}</p>

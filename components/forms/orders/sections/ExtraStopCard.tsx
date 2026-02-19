@@ -278,12 +278,13 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
 
         {/* )} */}
 
-        <div
+        {/* <div
           className={cn(
             "rounded-xl border border-gray-200 p-3 ",
             isReadOnly && "hidden",
           )}
-        >
+        > */}
+        <div>
           {userType === "shipper" && (
             <>
               <div className="mb-2 text-sm font-semibold">
@@ -299,6 +300,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="space-y-4">
                   <DateTimePickerTW
+                    disabled={isReadOnly}
                     label={
                       (t("orders.tgl_muat") ?? "Tgl Muat") + ` (${idx + 1})`
                     }
@@ -323,6 +325,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
                     }
                     value={stop.originPicName}
                     onChange={(v) => onChange({ originPicName: v })}
+                    disabled={isReadOnly}
                   />
                   <FieldPhone
                     label={
@@ -333,11 +336,13 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
                     onChange={(v) => onChange({ originPicPhone: v })}
                     kind="mobile"
                     placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
+                    disabled={isReadOnly}
                   />
                 </div>
 
                 <div className="space-y-4">
                   <DateTimePickerTW
+                    disabled={isReadOnly}
                     label={
                       (t("orders.tgl_bongkar") ?? "Tgl Bongkar") +
                       ` (${idx + 1})`
@@ -363,6 +368,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
                     }
                     value={stop.destPicName}
                     onChange={(v) => onChange({ destPicName: v })}
+                    disabled={isReadOnly}
                   />
                   <FieldPhone
                     label={
@@ -373,6 +379,7 @@ const ExtraStopCard = React.forwardRef<HTMLDivElement, Props>(
                     onChange={(v) => onChange({ destPicPhone: v })}
                     kind="mobile"
                     placeholder={t("placeholders.phone") ?? "08xx atau +628xx"}
+                    disabled={isReadOnly}
                   />
                 </div>
               </div>
