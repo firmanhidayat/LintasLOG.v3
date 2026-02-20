@@ -1692,10 +1692,10 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       }
 
       // Pickup / Drop-off attachments (independent uploader)
-      payload.pickup_attachment_id = pickupAttachment?.id ?? 0;
-      payload.drop_off_attachment_id = dropOffAttachment?.id ?? 0;
-      payload.pickup_attachment = pickupAttachment ?? null;
-      payload.drop_off_attachment = dropOffAttachment ?? null;
+      // payload.pickup_attachment_id = pickupAttachment?.id ?? 0;
+      // payload.drop_off_attachment_id = dropOffAttachment?.id ?? 0;
+      // payload.pickup_attachment = pickupAttachment ?? null;
+      // payload.drop_off_attachment = dropOffAttachment ?? null;
     }
 
     if (typeof params?.packingListAttachmentId === "number") {
@@ -1760,6 +1760,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
 
       // === 2) Build payload order + attachment_id bila ada ===
       const apiPayload = buildApiPayload(attachIds ?? undefined);
+
+      console.log("OrdersCreateForm - Submitting payload: ", apiPayload);
 
       const method = mode === "create" ? "POST" : "PUT";
       let url = POST_ORDER_URL;
