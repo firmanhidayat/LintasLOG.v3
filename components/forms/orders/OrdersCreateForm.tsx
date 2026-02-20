@@ -939,6 +939,9 @@ export default function OrdersCreateForm<T extends TmsUserType>({
 
   const [reloadSelfAfterDlg, setReloadSelfAfterDlg] = useState(false);
 
+  
+  const [detailReloadNonce, setDetailReloadNonce] = useState(0);
+
   function openErrorDialog(err: unknown, title?: string) {
     const msg =
       (typeof err === "object" &&
@@ -1218,7 +1221,13 @@ export default function OrdersCreateForm<T extends TmsUserType>({
   );
 
   useEffect(() => {
-    if (mode !== "edit" || initialData) return;
+    //if (mode !== "edit" || initialData) return;
+
+    if (mode !== "edit") return;
+    // refetch kalau ada trigger manual (detailReloadNonce).
+    if (initialData && detailReloadNonce === 0) return;
+
+
     if (!effectiveOrderId) {
       setLoadingDetail(false);
       return;
@@ -1347,7 +1356,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       }
     })();
     return () => abort.abort();
-  }, [mode, effectiveOrderId, initialData, router.replace]);
+  // }, [mode, effectiveOrderId, initialData, router.replace]);
+  }, [mode, effectiveOrderId, initialData, router.replace, detailReloadNonce]);
 
   async function uploadDocumentsForDocType(
     files: File[],
@@ -1947,6 +1957,8 @@ export default function OrdersCreateForm<T extends TmsUserType>({
       }
 
       setReloadSelfAfterDlg(true);
+      // Refresh data agar status tracker (steps) dan state form ikut ter-update.
+      setDetailReloadNonce((n) => n + 1);
       setLastCreatedId(undefined); // biar gak ke-trigger navigasi lastCreatedId. karena dialog nya samaan bareng bareng
 
       setDlgKind("success");
@@ -2412,12 +2424,21 @@ export default function OrdersCreateForm<T extends TmsUserType>({
             setDlgOpen(false);
             if (reloadSelfAfterDlg) {
               setReloadSelfAfterDlg(false);
-              router.push(
-                `/orders/details/?id=${encodeURIComponent(
-                  String(effectiveOrderId),
-                )}`,
+              
+              // router.push(
+              //   `/orders/details/?id=${encodeURIComponent(
+              //     String(effectiveOrderId),
+              //   )}`,
+              // );
+              // // window.location.reload(); // reload page dirinya sendiri OKEH!! kadang gak jalan
+              // return;
+
+              const target = safeJoin(
+                APP_BASE_PATH,
+                `/orders/details/?id=${encodeURIComponent(String(effectiveOrderId))}`,
               );
-              // window.location.reload(); // reload page dirinya sendiri OKEH!! kadang gak jalan
+              router.replace(target);
+              router.refresh();
               return;
             }
 
